@@ -1,0 +1,78 @@
+/* Global Reset */
+* { box-sizing: border-box; }
+
+.admin-login-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+
+/* ฝั่งซ้าย */
+.admin-left-panel {
+    flex: 1; 
+    background-image: url('https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+}
+
+/* ฝั่งขวา */
+.admin-right-panel {
+    flex: 1; 
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    
+    /* 🔥 (2) บรรทัดนี้สำคัญมาก! ถ้าไม่มี ปุ่ม Back จะไม่รู้ว่าต้องอยู่ตรงไหน */
+    position: relative; 
+}
+
+/* 🔥 (3) สไตล์ปุ่ม Back */
+.btn-back-link {
+    position: absolute; /* ลอยอิสระ */
+    top: 30px;          /* ห่างจากขอบบน 30px */
+    left: 30px;         /* ห่างจากขอบซ้าย 30px */
+    background: none;
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 10;        /* ดันให้มาอยู่ข้างหน้าสุด */
+}
+
+.btn-back-link:hover {
+    color: #2E7D32; 
+}
+
+/* กล่องฟอร์ม */
+.admin-login-box { width: 100%; max-width: 400px; text-align: center; }
+.icon-header { font-size: 2rem; margin-bottom: 10px; color: #2E7D32; } /* เปลี่ยนสีโล่เป็นเขียวหน่อย */
+.admin-login-box h1 { font-size: 1.8rem; font-weight: 800; color: #333; margin: 0 0 5px 0; }
+.subtitle { font-size: 0.9rem; color: #888; margin-bottom: 30px; }
+
+/* Form Styles */
+.form-group { margin-bottom: 20px; text-align: left; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 8px; }
+.form-group input { width: 100%; padding: 12px 15px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; outline: none; transition: 0.2s; }
+.form-group input:focus { border-color: #2E7D32; }
+
+/* Password Input */
+.password-input-wrapper { position: relative; }
+.password-input-wrapper input { padding-right: 40px; }
+.eye-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 1.1rem; opacity: 0.6; }
+
+/* Links & Buttons */
+.forgot-password-link { text-align: right; margin-bottom: 25px; }
+.forgot-password-link a { color: #2E7D32; font-size: 0.8rem; text-decoration: none; font-weight: 600; }
+
+.btn-admin-login { width: 100%; padding: 12px; background-color: #2E7D32; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+.btn-admin-login:hover { background-color: #1B5E20; }
+
+.signup-link { margin-top: 20px; font-size: 0.9rem; color: #666; }
+.signup-link a { color: #2E7D32; text-decoration: none; font-weight: 600; margin-left: 5px; }

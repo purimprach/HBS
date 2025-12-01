@@ -1,0 +1,86 @@
+/* Container เต็มจอ + รูปพื้นหลัง */
+.first-login-container {
+    height: 100vh;
+    width: 100%;
+    
+    /* 1. ใส่สีพื้นหลังสำรองไว้ (สีเทาเข้ม) เผื่อรูปโหลดช้า */
+    background-color: #333;
+
+    /* 2. รูปพื้นหลัง (เปลี่ยน Link ใหม่ที่เสถียรขึ้น) */
+    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), 
+                      url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1920&auto=format&fit=crop');
+    
+    /* จัดวางรูปให้เต็มจอ */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    
+    /* จัดการ์ดให้อยู่ตรงกลาง */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'Inter', sans-serif;
+}
+
+/* การ์ดสีขาวตรงกลาง */
+.first-login-card {
+    background-color: white;
+    padding: 50px 60px;
+    border-radius: 8px; /* ปรับมุมมนเพิ่มนิดนึง */
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* เพิ่มเงาให้ดูลอยขึ้น */
+    width: 100%;
+    max-width: 450px;
+    position: relative;
+    z-index: 10;
+}
+
+/* ไอคอนโล่ */
+.hb-icon {
+    font-size: 3rem; /* ขยายไอคอนใหญ่ขึ้น */
+    margin-bottom: 15px;
+    color: #333;
+}
+
+/* หัวข้อ */
+.first-login-card h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin: 0 0 10px 0;
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: #666;
+    margin-top: 0;
+    margin-bottom: 40px;
+    font-weight: 500;
+}
+
+/* กลุ่มปุ่ม */
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn-role-login {
+    background-color: #2E7D32; /* สีเขียว HBS */
+    color: white;
+    border: none;
+    padding: 14px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
+}
+
+.btn-role-login:hover {
+    background-color: #1B5E20;
+    transform: translateY(-2px); /* ขยับขึ้นนิดนึงตอนชี้ */
+    box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
+}

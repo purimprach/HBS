@@ -1,0 +1,114 @@
+/* =========================================
+   1. Global & Layout
+   ========================================= */
+.waiting-container { min-height: 100vh; display: flex; flex-direction: column; background-color: #F0F4F8; font-family: 'Prompt', 'Inter', sans-serif; }
+
+.waiting-content { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+
+/* Card Style */
+.card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.card h2, .card h3 { margin-top: 0; color: #333; margin-bottom: 15px; }
+
+/* =========================================
+   2. Session Card
+   ========================================= */
+.session-card h2 { font-size: 1.5rem; margin-bottom: 5px; }
+.mode-tag { color: #2e8b57; font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 15px; }
+.session-desc { font-size: 0.9rem; color: #666; line-height: 1.5; margin-bottom: 25px; }
+
+.session-stats { display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 20px; }
+.stat-item { display: flex; flex-direction: column; align-items: center; width: 33%; }
+.stat-label { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
+.stat-value { font-size: 1rem; font-weight: bold; color: #333; }
+
+/* =========================================
+   3. Team List Card
+   ========================================= */
+.table-header { display: flex; padding: 10px 15px; background-color: #f9f9f9; font-weight: bold; font-size: 0.9rem; color: #555; border-radius: 6px; margin-bottom: 10px; }
+.table-row { display: flex; padding: 12px 15px; align-items: center; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+.table-row:last-child { border-bottom: none; }
+
+/* Row Highlight (You) */
+.row-highlight { background-color: #E8F5E9; border-radius: 6px; border-bottom: none; }
+
+/* Status Badges */
+.status-badge { font-size: 0.8rem; font-weight: bold; padding: 4px 12px; border-radius: 20px; min-width: 80px; text-align: center; }
+.status-badge.ready { color: #2e8b57; background-color: rgba(46, 139, 87, 0.1); }
+.status-badge.not-ready { color: #D4AC0D; background-color: rgba(241, 196, 15, 0.15); }
+
+.waiting-footer { display: flex; flex-direction: column; align-items: flex-end; margin-top: 20px; gap: 10px; }
+.countdown-text { color: #E74C3C; font-weight: bold; font-size: 0.95rem; }
+.btn-confirm-ready { background-color: #7F8C8D; color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: not-allowed; font-size: 1rem; }
+
+/* =========================================
+   4. Details Card
+   ========================================= */
+.details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
+.detail-item h4 { font-size: 0.9rem; margin: 0 0 5px 0; color: #333; }
+.detail-item p { font-size: 0.85rem; margin: 0; color: #666; line-height: 1.4; }
+.details-footer { text-align: right; margin-top: 20px; }
+.btn-open-rules { background: white; border: 1px solid #2e8b57; color: #2e8b57; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+
+/* =========================================
+   5. Scoring Card
+   ========================================= */
+.scoring-note { font-size: 0.85rem; background-color: #f9f9f9; padding: 15px; border-radius: 6px; color: #555; margin-bottom: 25px; line-height: 1.5; }
+.scoring-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+
+.score-box { display: flex; justify-content: space-between; align-items: stretch; border: 1px solid #2e8b57; border-radius: 8px; overflow: hidden; background: white; min-height: 80px; }
+.score-content { flex: 1; padding: 15px; display: flex; align-items: flex-start; gap: 12px; }
+.score-icon { font-size: 1.5rem; }
+.score-text h4 { margin: 0 0 5px 0; font-size: 0.95rem; color: #333; }
+.score-text p { margin: 0; font-size: 0.75rem; color: #777; line-height: 1.3; }
+
+.score-percent { width: 60px; background-color: #2e8b57; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; }
+
+/* Reuse Header from previous pages if needed or define here */
+.account-header { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; background-color: white; height: 70px; border-bottom: 1px solid #eee; }
+.header-left { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.1rem; color: #333; }
+.header-right { display: flex; align-items: center; gap: 15px; }
+.lang-btn { background: none; border: none; font-weight: bold; cursor: pointer; }
+.user-mini-profile { display: flex; align-items: center; gap: 10px; }
+.user-info-text { display: flex; flex-direction: column; text-align: right; line-height: 1.2; }
+.user-name { font-size: 0.9rem; font-weight: bold; }
+.user-role { font-size: 0.75rem; color: #888; }
+.user-avatar-small { width: 35px; height: 35px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+/* ... (CSS ส่วนอื่นๆ คงเดิม) ... */
+
+/* Status Badges */
+.status-badge { font-size: 0.8rem; font-weight: bold; padding: 4px 12px; border-radius: 20px; min-width: 80px; text-align: center; }
+.status-badge.ready { color: #2e8b57; background-color: rgba(46, 139, 87, 0.1); }
+.status-badge.not-ready { color: #D4AC0D; background-color: rgba(241, 196, 15, 0.15); }
+
+/* Footer & Button Styles */
+.waiting-footer { display: flex; flex-direction: column; align-items: flex-end; margin-top: 20px; gap: 10px; }
+.countdown-text { color: #E74C3C; font-weight: bold; font-size: 0.95rem; }
+
+/* ปุ่มยืนยัน Base Style */
+.btn-confirm-ready { 
+    border: none; 
+    padding: 10px 25px; 
+    border-radius: 6px; 
+    font-weight: bold; 
+    font-size: 1rem; 
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+/* ปุ่มสถานะ Active (ยังไม่กด - สีเขียว) */
+.btn-confirm-ready.active {
+    background-color: #2e8b57;
+    color: white;
+}
+.btn-confirm-ready.active:hover {
+    background-color: #246e45;
+}
+
+/* ปุ่มสถานะ Disabled (กดแล้ว - สีเทา) */
+.btn-confirm-ready.disabled {
+    background-color: #7F8C8D;
+    color: white;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
