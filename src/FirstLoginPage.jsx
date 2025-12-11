@@ -1,44 +1,47 @@
 import React from 'react';
+import { Hotel } from 'lucide-react';
+import { useNavigate } from 'react-router-dom'; // 1. เพิ่ม import นี้
 import './FirstLoginPage.css';
-import { useNavigate } from 'react-router-dom';
 
-function FirstLoginPage() {
-  const navigate = useNavigate();
+const FirstLoginPage = () => {
+  const navigate = useNavigate(); // 2. สร้างตัวสั่งเปลี่ยนหน้า
 
-  const handleLogin = (role) => {
-    console.log("Selected Role:", role); // เช็คใน Console ว่าค่ามาถูกไหม
-
-    if (role === 'admin') {
-      navigate('/admin-login'); // ถ้าเป็น admin ให้ไปหน้าใหม่ (Split Screen)
-    } else {
-      navigate('/login');       // ถ้าเป็น player ให้ไปหน้าเดิม (Login ปกติ)
-    }
+  // ฟังก์ชันสำหรับกดปุ่ม
+  const handlePlayerLogin = () => {
+    navigate('/login'); // 3. สั่งให้ไปที่หน้า /login
   };
 
   return (
-    <div className="first-login-container">
-      <div className="first-login-card">
-        
-        <div className="hb-icon">🏨</div>
+    <div className="login-container">
+      <div className="login-overlay"></div>
 
-        <h1>Welcome to HBS</h1>
-        <p className="subtitle">Hotel Business Simulator</p>
-
-        <div className="button-group">
-            {/* ปุ่ม Player: ส่งค่า 'player' */}
-            <button className="btn-role-login" onClick={() => handleLogin('player')}>
-                Login as a player
-            </button>
-            
-            {/* ปุ่ม Admin: ส่งค่า 'admin' */}
-            <button className="btn-role-login" onClick={() => handleLogin('admin')}>
-                Login as a admin
-            </button>
+      <div className="login-card">
+        <div className="icon-wrapper">
+          <Hotel size={40} strokeWidth={2} color="#333" />
         </div>
 
+        <h1 className="login-title">Welcome to HBS</h1>
+        <p className="login-subtitle">HOTEL BUSINESS SIMULATOR</p>
+
+        <div className="login-actions">
+          {/* 4. เรียกใช้ฟังก์ชันใน onClick */}
+          <button 
+          className="player-login-btn" 
+           onClick={() => navigate('/login')}
+          >
+            Login as a player
+          </button>
+
+          <button 
+            className="admin-login-link" 
+            onClick={() => console.log('Login as Admin clicked')}
+          >
+            Login as an admin
+          </button>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default FirstLoginPage;

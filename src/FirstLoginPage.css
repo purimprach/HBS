@@ -1,86 +1,128 @@
-/* Container เต็มจอ + รูปพื้นหลัง */
-.first-login-container {
-    height: 100vh;
-    width: 100%;
-    
-    /* 1. ใส่สีพื้นหลังสำรองไว้ (สีเทาเข้ม) เผื่อรูปโหลดช้า */
-    background-color: #333;
-
-    /* 2. รูปพื้นหลัง (เปลี่ยน Link ใหม่ที่เสถียรขึ้น) */
-    background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), 
-                      url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1920&auto=format&fit=crop');
-    
-    /* จัดวางรูปให้เต็มจอ */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    
-    /* จัดการ์ดให้อยู่ตรงกลาง */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Inter', sans-serif;
+/* Reset ค่าพื้นฐาน */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* การ์ดสีขาวตรงกลาง */
-.first-login-card {
-    background-color: white;
-    padding: 50px 60px;
-    border-radius: 8px; /* ปรับมุมมนเพิ่มนิดนึง */
-    text-align: center;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* เพิ่มเงาให้ดูลอยขึ้น */
-    width: 100%;
-    max-width: 450px;
-    position: relative;
-    z-index: 10;
+body, html {
+  height: 100%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* ไอคอนโล่ */
-.hb-icon {
-    font-size: 3rem; /* ขยายไอคอนใหญ่ขึ้น */
-    margin-bottom: 15px;
-    color: #333;
+/* 1. คอนเทนเนอร์หลัก + พื้นหลังรูปภาพ */
+.login-container {
+  position: relative;
+  width: 100%;
+  height: 100vh; /* เต็มความสูงหน้าจอ */
+  
+  /* ใส่ URL รูปภาพพื้นหลังตรงนี้ครับ */
+  background-image: url('https://images.unsplash.com/photo-1503221043305-f7498f8b7888?q=80&w=2070&auto=format&fit=crop'); 
+  background-size: cover;
+  background-position: center;
+  
+  /* จัดการ์ดให้อยู่ตรงกลางหน้าจอ */
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* หัวข้อ */
-.first-login-card h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #1a1a1a;
-    margin: 0 0 10px 0;
+/* 2. เลเยอร์สีดำโปร่งแสงทับพื้นหลัง (เพื่อให้ข้อความอ่านง่าย) */
+.login-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4); /* สีดำโปร่งแสง 40% */
+  z-index: 1;
 }
 
-.subtitle {
-    font-size: 1rem;
-    color: #666;
-    margin-top: 0;
-    margin-bottom: 40px;
-    font-weight: 500;
+/* 3. การ์ด Login (สีขาว) */
+.login-card {
+  position: relative;
+  z-index: 2; /* ให้อยู่เหนือ overlay */
+  background-color: #ffffff;
+  width: 420px; /* ความกว้างการ์ด */
+  padding: 3rem 2.5rem 4rem; /* เว้นล่างเยอะหน่อยเผื่อที่ให้ปุ่ม Admin */
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* กลุ่มปุ่ม */
-.button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+/* 4. ส่วนไอคอน */
+.icon-wrapper {
+  margin-bottom: 1rem;
+  color: #1a1a1a; /* สีไอคอนดำเข้ม */
+  display: flex;
+  justify-content: center;
 }
 
-.btn-role-login {
-    background-color: #2E7D32; /* สีเขียว HBS */
-    color: white;
-    border: none;
-    padding: 14px;
-    font-size: 1rem;
-    font-weight: 600;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
-    box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
+/* 5. หัวข้อ "Welcome to HBS" */
+.login-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 0.5rem;
 }
 
-.btn-role-login:hover {
-    background-color: #1B5E20;
-    transform: translateY(-2px); /* ขยับขึ้นนิดนึงตอนชี้ */
-    box-shadow: 0 6px 12px rgba(46, 125, 50, 0.3);
+/* 6. คำบรรยาย "HOTEL BUSINESS SIMULATOR" */
+.login-subtitle {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: uppercase; /* ตัวพิมพ์ใหญ่ทั้งหมด */
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin-bottom: 2.5rem; /* ระยะห่างก่อนถึงปุ่ม */
+}
+
+/* 7. กล่องคลุมปุ่ม */
+.login-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 8. ปุ่ม Player (สีเขียว) */
+.player-login-btn {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: #2E8B57; /* สีเขียวตามรูป (SeaGreen) */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.player-login-btn:hover {
+  background-color: #257046; /* สีเข้มขึ้นเมื่อเอาเมาส์ชี้ */
+}
+
+/* 9. ลิงก์ Admin (ชิดขวาล่าง) */
+.admin-login-link {
+  position: absolute; /* จัดตำแหน่งแบบอิสระ */
+  bottom: 15px;       /* ห่างจากด้านล่าง 15px */
+  right: 20px;        /* ห่างจากด้านขวา 20px */
+  
+  background: none;
+  border: none;
+  color: #2E8B57;     /* สีเขียวเดียวกับปุ่ม */
+  font-size: 0.75rem; /* ตัวอักษรเล็ก */
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline; /* ขีดเส้นใต้ */
+  opacity: 0.8;
+}
+
+.admin-login-link:hover {
+  opacity: 1;
+  color: #1e5c39;
 }

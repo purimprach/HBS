@@ -1,51 +1,58 @@
 import React, { useState } from 'react';
-import './LoginPage.css'; // ใช้ CSS เดิม
-import { Link } from 'react-router-dom'; // Import Link
+import { ArrowLeft, Hotel, KeyRound } from 'lucide-react'; // เพิ่มไอคอน KeyRound
+import { useNavigate } from 'react-router-dom';
+import './LoginPlayerPage.css'; // ✅ ใช้ CSS ตัวเดิมเพื่อความสวยงาม
 
-function ForgotPassword() {
+const ForgotPassword = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
 
   return (
-    <div className="login-page-container">
-      <div className="login-card">
-        {/* ส่วนซ้าย: รูปภาพ (ใช้รูปเดิม) */}
-        <div className="login-image-section" style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop')`
-        }}>
-        </div>
+    <div className="player-login-container">
+      
+      {/* ฝั่งซ้าย: รูปภาพ (เปลี่ยนรูปได้ตามต้องการ) */}
+      <div className="login-image-section" style={{
+         backgroundImage: `url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?q=80&w=2000&auto=format&fit=crop')`
+      }}>
+      </div>
 
-        {/* ส่วนขวา: ฟอร์ม */}
-        <div className="login-form-section">
-          <div className="form-container">
-            <div className="form-header">
-              <div className="logo-icon">🏢</div>
-              <h2>Forget Password</h2> {/* 1. แก้ Title */}
+      {/* ฝั่งขวา: ฟอร์ม */}
+      <div className="login-form-section">
+        
+        {/* ปุ่มย้อนกลับ */}
+        <button className="back-btn" onClick={() => navigate('/login')}>
+          <ArrowLeft size={20} />
+          <span>Back to Login</span>
+        </button>
+
+        <div className="form-wrapper">
+          <div className="form-header">
+            <div className="icon-box">
+               {/* ใช้ไอคอนกุญแจสื่อถึงรหัสผ่าน */}
+              <KeyRound size={32} color="#1a1a1a" strokeWidth={2} />
+            </div>
+            <h2>Forgot Password</h2>
+            <p style={{marginTop: '0.5rem', color: '#666', fontSize: '0.9rem'}}>
+              Enter your email and we'll send you a link to reset your password.
+            </p>
+          </div>
+
+          <form className="login-form" onSubmit={(e) => e.preventDefault()}>
+            <div className="input-group">
+              <label>Email Address</label>
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="input-field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
 
-            <form>
-              <div className="input-group">
-                <label htmlFor="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-
-              {/* (ลบช่อง Password ออกไป) */}
-
-              <button type="submit" className="login-button" style={{marginTop: '20px'}}>
-                Send Resend Link {/* 2. แก้ข้อความปุ่ม */}
-              </button>
-
-              <div className="signup-link">
-                 {/* 3. แก้ Link ให้กลับไปหน้า Login */}
-                <Link to="/login">Back to Login</Link>
-              </div>
-            </form>
-          </div>
+            <button type="submit" className="submit-btn" style={{marginTop: '1rem'}}>
+              Send Reset Link
+            </button>
+          </form>
         </div>
       </div>
     </div>

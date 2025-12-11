@@ -1,266 +1,163 @@
-/* =========================================
-   1. Global & Layout
-   ========================================= */
-* { box-sizing: border-box; }
+/* AccountPage.css - Final Grid Fix */
 
-body { 
-    margin: 0; 
-    font-family: 'Inter', sans-serif; 
-    background-color: #f5f7fa; 
-    color: #333; 
-}
+/* --- Main Layout --- */
+.account-container { background-color: #f8f9fa; min-height: 100vh; font-family: 'Segoe UI', Roboto, sans-serif; color: #333; }
+.account-header { display: flex; justify-content: space-between; align-items: center; padding: 0 3%; height: 72px; background-color: #fff; border-bottom: 1px solid #e5e7eb; }
+.header-left, .header-right { display: flex; align-items: center; gap: 12px; }
+.header-title { font-weight: 700; font-size: 1rem; color: #111; }
+.lang-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; color: #111; margin-right: 10px; }
+.header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+.settings-btn { background-color: #198754; color: white; border: 1px solid #198754; } .settings-btn:hover { background-color: #146c43; }
+.logout-btn { background-color: white; color: #198754; border: 1px solid #198754; } .logout-btn:hover { background-color: #f0fdf4; }
 
-.account-container { 
-    min-height: 100vh; 
-    display: flex; 
-    flex-direction: column; 
-}
-
-/* =========================================
-   2. Header (Navbar)
-   ========================================= */
-.account-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 15px 40px; 
-    background-color: white; 
-    border-bottom: 1px solid #eee; 
-}
-.header-left { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.1rem; }
-.header-right { display: flex; align-items: center; gap: 15px; }
-
-.lang-btn { background: none; border: none; font-weight: bold; cursor: pointer; }
-.settings-btn { 
-    background-color: #2e8b57; color: white; border: none; 
-    padding: 8px 16px; border-radius: 6px; cursor: pointer; 
-    display: flex; align-items: center; gap: 5px; 
-    text-decoration: none; font-size: 0.9rem;
-}
-.logout-btn { 
-    text-decoration: none; color: #2e8b57; border: 1px solid #2e8b57; 
-    padding: 7px 15px; border-radius: 6px; font-size: 0.9rem; 
-}
-
-/* =========================================
-   3. Main Content & Layout
-   ========================================= */
-.main-content { 
-    padding: 40px; 
-    max-width: 1400px; 
-    margin: 0 auto; 
-    width: 100%; 
-}
-
+.main-content { width: 94%; max-width: 1800px; margin: 0 auto; padding: 40px 0; }
 .welcome-section { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
-.user-avatar-large { 
-    width: 60px; height: 60px; border-radius: 50%; border: 1px solid #333; 
-    display: flex; align-items: center; justify-content: center; font-size: 30px; 
-}
-.welcome-section h1 { font-size: 2rem; margin: 0; }
+.user-avatar-circle { width: 72px; height: 72px; border: 1.5px solid #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; background-color: #fff; }
+.welcome-section h1 { font-size: 2rem; font-weight: 800; color: #111; letter-spacing: -0.5px; }
 
-/* Grid System */
-.dashboard-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1.5fr; 
-    gap: 30px; 
-    align-items: start; 
-}
+/* Grid Dashboard */
+.dashboard-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; align-items: start; }
+@media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+.left-column, .right-column { display: flex; flex-direction: column; gap: 24px; }
 
-/* Card Base Style */
-.card { 
-    background: white; 
-    border-radius: 12px; 
-    padding: 25px; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
-    margin-bottom: 25px; 
-}
-.card h3 { margin-top: 0; text-align: center; margin-bottom: 20px; font-size: 1.1rem; }
-
-/* =========================================
-   4. Left Column Components
-   ========================================= */
+/* Cards */
+.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); border: 1px solid #f0f0f0; text-align: center; }
+.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #1f2937; }
 
 /* Join Game */
-.join-input-group input { 
-    width: 100%; padding: 12px; 
-    background-color: #f5f7fa; border: none; 
-    border-radius: 6px; margin-bottom: 10px; 
-    text-align: center; color: #333; 
-}
-.helper-text { font-size: 0.8rem; color: #666; text-align: left; margin-bottom: 15px; }
-.helper-text a { color: #2e8b57; font-weight: bold; text-decoration: none; }
-
-.join-confirm-btn { 
-    width: 100%; padding: 10px; 
-    background-color: #b0b0b0; color: white; 
-    border: none; border-radius: 6px; 
-    cursor: pointer; transition: 0.2s; 
-}
-.join-confirm-btn.active { background-color: #2e8b57; }
-.join-confirm-btn.active:hover { background-color: #246e45; }
+.join-input { width: 100%; height: 40px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 12px; outline: none; padding: 0 12px; text-align: center; font-weight: 600; letter-spacing: 1px; color: #333; }
+.helper-text { font-size: 0.75rem; color: #6b7280; margin-bottom: 20px; } .helper-text a { color: #198754; text-decoration: none; font-weight: 700; }
+.join-btn { width: 200px; padding: 10px; background-color: #b0b8b4; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: not-allowed; transition: background-color 0.2s; }
+.join-btn.active { background-color: #198754; cursor: pointer; }
 
 /* Join Team */
-.team-invite-box { 
-    width: 100%; height: 100px; 
-    background-color: #E8F5E9; 
-    border-radius: 8px; margin-bottom: 20px; 
-}
-.join-team-actions { display: flex; justify-content: space-between; gap: 15px; }
-.btn-deny, .btn-accept { 
-    flex: 1; padding: 10px; 
-    border-radius: 20px; border: none; 
-    font-weight: bold; cursor: pointer; 
-}
-.btn-deny { background-color: #BDBDBD; color: white; }
-.btn-accept { background-color: #BDBDBD; color: white; }
+.team-invite-placeholder { width: 100%; max-width: 280px; height: 80px; background-color: #ecfdf5; border-radius: 4px; margin: 0 auto 24px; }
+.join-team-actions { display: flex; justify-content: center; gap: 16px; }
+.btn-deny, .btn-accept { width: 120px; padding: 10px; border-radius: 6px; border: none; font-weight: 700; }
+.btn-deny:disabled, .btn-accept:disabled { background-color: #ced4da; color: white; cursor: not-allowed; }
 
 /* History */
-.history-header { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-.badge-count { background: #e0e0e0; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; }
-.history-card { 
-    background: white; border-radius: 12px; padding: 20px; 
-    margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); 
-    border: 1px solid #eee; 
-}
-.history-top { display: flex; justify-content: space-between; margin-bottom: 15px; }
-.history-top h4 { margin: 0 0 5px 0; font-size: 1rem; }
-.sub-text { font-size: 0.8rem; color: #777; margin: 2px 0; }
-.rank-icon { font-size: 1.5rem; }
-.history-bottom { 
-    display: flex; justify-content: space-between; 
-    font-size: 0.8rem; color: #999; 
-    border-top: 1px solid #eee; padding-top: 10px; 
-}
-.history-action { text-align: right; margin-top: 5px; font-size: 0.8rem; }
-.history-action a { color: #2e8b57; text-decoration: none; font-weight: bold; }
+.history-card-section { text-align: left; padding: 20px; }
+.card-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.header-with-icon { display: flex; align-items: center; gap: 8px; }
+.badge-count { background-color: #f3f4f6; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.history-item { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; } .history-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.history-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.history-top-row h4 { margin: 0; font-size: 0.9rem; font-weight: 700; color: #111; } .medal { font-size: 1.1rem; }
+.sub-detail { font-size: 0.75rem; color: #6b7280; margin: 2px 0; }
+.history-footer { display: flex; justify-content: space-between; font-size: 0.7rem; color: #9ca3af; margin-top: 12px; }
+.view-report-link { text-align: right; margin-top: 4px; } .view-report-link a { font-size: 0.75rem; color: #198754; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; }
 
-/* =========================================
-   5. Right Column - Announcements (Corner Tag Style)
-   ========================================= */
-.announcement-header { 
-    display: flex; justify-content: space-between; 
-    align-items: center; border-bottom: 1px solid #eee; 
-    padding-bottom: 10px; margin-bottom: 15px; 
-}
-.badge-count-gray { background: #eee; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; color: #555; margin-left: 5px;}
+/* Announcements */
+.announcements-card { text-align: left; padding: 24px; }
+.announcement-item { padding: 20px; border-radius: 8px; margin-bottom: 16px; position: relative; overflow: hidden; }
+.announcement-item.important { background-color: #ecfdf5; } .announcement-item.normal { background-color: #f0fdf9; }
+.admin-tag { position: absolute; top: 0; right: 0; background-color: #ff3b30; color: white; padding: 6px 16px; border-bottom-left-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+.announcement-item h4 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 700; color: #1f2937; padding-right: 60px; }
+.announcement-item p { font-size: 0.8rem; color: #4b5563; line-height: 1.5; margin-bottom: 12px; }
+.ann-meta { font-size: 0.75rem; color: #6b7280; display: flex; gap: 16px; font-weight: 500; }
+.view-all-ann { text-align: right; margin-top: 8px; } .view-all-btn { font-size: 0.8rem; color: #198754; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 
-/* Green Card Style */
-.announcement-item-classic {
-    background-color: #F0FDF4; /* พื้นเขียวอ่อน */
-    padding: 20px 15px 15px 15px; 
-    margin-bottom: 15px; border-radius: 8px; position: relative; 
-    border: 1px solid #DCFCE7; overflow: hidden; 
-}
-.announcement-item-classic.item-important { border-left: 4px solid #FF4D4F; }
+/* ----------------------------------------------------------- */
+/* ✅ Team Setup Card (แก้ Grid ใหม่ให้ตรงเป๊ะ) */
+/* ----------------------------------------------------------- */
 
-.ann-title-classic { margin: 0 0 8px 0; font-size: 0.95rem; font-weight: bold; color: #333; padding-right: 60px; }
-.tag-admin-classic { 
-    position: absolute; top: 0; right: 0; 
-    background-color: #FF4D4F; color: white; 
-    font-size: 0.75rem; padding: 6px 16px; font-weight: 600; 
-    border-radius: 0 0 0 12px; 
+.team-setup-card-inline {
+  background: white; border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #f0f0f0;
+  overflow: visible; padding: 0; margin-top: 24px;
 }
-.ann-desc-classic { font-size: 0.85rem; color: #555; margin: 0 0 10px 0; line-height: 1.4; }
-.ann-footer-classic { font-size: 0.75rem; color: #888; display: flex; gap: 15px; }
-
-.announcement-footer-action { margin-top: 15px; text-align: right; }
-.btn-view-all-classic { 
-    background-color: white; border: 1px solid #333; color: #333; 
-    padding: 5px 15px; border-radius: 4px; font-size: 0.8rem; 
-    font-weight: bold; cursor: pointer; transition: 0.2s; 
-    display: inline-flex; align-items: center; gap: 5px; 
+.team-setup-header-tag {
+  background-color: #198754; color: white; font-weight: 700; font-size: 1rem;
+  padding: 10px 24px; display: inline-block; border-bottom-right-radius: 16px; margin-bottom: 24px;
 }
-.btn-view-all-classic:hover { background-color: #f0f0f0; }
+.team-form-body { padding: 0 32px 32px 32px; }
+.form-group { margin-bottom: 24px; }
+.form-group label {
+  display: block; color: #198754; font-weight: 700; font-size: 1rem; margin-bottom: 8px;
+}
+.form-input {
+  width: 100%; padding: 10px 14px; border: 1px solid #dee2e6;
+  background-color: #fff; border-radius: 6px; font-size: 0.95rem; outline: none; color: #495057;
+}
+.form-input.readonly { background-color: #f1f3f5; color: #6c757d; }
 
-/* =========================================
-   6. TEAM SETUP CARD
-   ========================================= */
-.team-setup-card { 
-    padding: 0; 
-    border-radius: 12px; 
-    overflow: hidden; 
-    position: relative; 
-    border: 1px solid #eee;
+/* --- Member Grid System --- */
+.members-grid-container { display: flex; flex-direction: column; gap: 24px; } /* ช่องไฟระหว่างแถว */
+
+/* 🔥 จัด Grid ให้ Header และ Rows ใช้โครงสร้างเดียวกันเป๊ะ */
+.member-grid-header, .member-row {
+  display: grid;
+  /* Label(50px) | Input(Auto) | Role(170px) | Actions(Min 240px) */
+  grid-template-columns: 50px 1fr 170px minmax(240px, 1.2fr); 
+  gap: 20px; 
+  align-items: center;
 }
 
-/* Header Tag ติดขอบซ้ายบน */
-.card-header-tag { position: absolute; top: 0; left: 0; }
-.card-header-tag h3 { 
-    background-color: #2E7D32; color: white; 
-    padding: 10px 25px; 
-    border-radius: 0 0 16px 0; 
-    font-size: 1rem; margin: 0; 
-    display: inline-block; 
-    font-weight: bold;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+/* ✅ ส่วนหัวตาราง: ดัน Role Selection ให้ตรงคอลัมน์ 3 */
+.member-grid-header {
+    margin-bottom: 8px; /* เว้นระยะห่างจากแถวแรกเล็กน้อย */
 }
 
-.team-form { padding: 80px 30px 30px 30px; }
-.form-group { margin-bottom: 25px; }
-.form-group label { display: block; font-weight: 600; color: #333; margin-bottom: 8px; font-size: 0.9rem; }
+.role-header-text {
+  grid-column: 3; /* บังคับให้อยู่ Column 3 ตรงกับปุ่ม Dropdown */
+  font-size: 0.75rem; font-weight: 700; color: #000;
+  white-space: nowrap; cursor: help;
+  /* จัดชิดล่าง เพื่อให้ดูเหมือนลอยอยู่เหนือปุ่ม */
+  align-self: end; 
+}
+.q-mark { text-decoration: underline; margin-left: 2px; }
 
-/* Minimal Input (พื้นขาว ขอบบาง) */
-.input-minimal { 
-    display: flex; align-items: center; 
-    background-color: #FFFFFF; 
-    border: 1px solid #E2E8F0; 
-    border-radius: 6px; height: 40px; width: 100%; 
-}
-.input-minimal input { 
-    flex: 1; background: transparent; border: none; 
-    padding: 0 15px; font-size: 0.9rem; outline: none; 
-    width: 100%; color: #333; 
-}
-.input-minimal input::placeholder { color: #A0AEC0; opacity: 1; }
-
-/* 5-Column Grid */
-.member-row { 
-    display: grid; 
-    grid-template-columns: 50px 2fr 1.2fr 90px 90px; 
-    gap: 15px; align-items: center; margin-bottom: 20px; 
-}
-/* 🔥 Fix: ดันแถวแรกให้ห่างหัวข้อ */
-.member-row:first-of-type {
-    margin-top: 45px;
-}
-
-.col-label { font-size: 0.85rem; color: #444; font-weight: 500; }
-
-/* Role Header */
-.role-col { position: relative; width: 100%; }
-.role-header-group { 
-    position: absolute; top: -48px; left: 0; width: 200%; 
-    display: flex; flex-direction: column; align-items: flex-start; gap: 3px; 
-}
-.role-main-label { font-size: 0.85rem; font-weight: bold; color: #333; }
-.role-sub-label { font-size: 0.65rem; color: #666; cursor: pointer; text-decoration: underline; margin-bottom: 2px; }
+.col-label { font-weight: 700; color: #000; font-size: 0.9rem; }
+.input-icon-wrapper { position: relative; width: 100%; }
+.input-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
 
 /* Role Dropdown */
+.select-wrapper {
+    position: relative; width: 100%; height: 38px;
+    border-radius: 6px; overflow: hidden; cursor: pointer; transition: background 0.2s;
+}
+.select-wrapper.purple { background-color: #A855F7; }
+.select-wrapper.purple .role-select { color: white; }
+.select-wrapper.purple .select-arrow { color: white; }
+
+.select-wrapper.gray { background-color: #e9ecef; border: 1px solid #ced4da; }
+.select-wrapper.gray .role-select { color: #6c757d; }
+.select-wrapper.gray .select-arrow { color: #6c757d; }
+
 .role-select {
-    appearance: none; -webkit-appearance: none; 
-    background-color: #A855F7; color: white; padding: 0 15px; height: 38px;
-    border-radius: 6px; font-size: 0.85rem; border: none; cursor: pointer; width: 100%;
-    font-family: 'Inter', sans-serif; font-weight: 500;
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-    background-repeat: no-repeat; background-position: right 15px center; background-size: 10px auto;
+    width: 100%; height: 100%; background-color: transparent; border: none;
+    font-size: 0.85rem; font-weight: 600; padding: 0 10px;
+    appearance: none; -webkit-appearance: none; cursor: pointer;
+    position: relative; z-index: 2;
 }
-.role-select:focus { outline: none; box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.5); }
-.role-select option { background-color: #FFFFFF; color: #333333; }
-
-/* Buttons */
-.btn-send-small, .btn-share {
-    height: 32px; width: 100%; display: flex; align-items: center; justify-content: center;
-    border-radius: 16px; font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+.select-arrow {
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    pointer-events: none; z-index: 1;
 }
+.role-select option { color: #333; background-color: white; }
+.role-select option:disabled { color: #ccc; background-color: #f9f9f9; }
 
-.btn-send-small { background-color: #BDBDBD; color: white; border: none; cursor: default; transition: 0.2s; }
-.btn-send-small.active { background-color: #2E7D32; cursor: pointer; }
-.btn-send-small.active:hover { background-color: #1b5e20; }
+/* Status & Buttons */
+.col-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-.btn-share { background-color: #2E7D32; color: white; border: none; cursor: pointer; transition: 0.2s; gap: 5px; }
-.btn-share:hover { background-color: #1b5e20; }
+.status-pill {
+  height: 32px; padding: 0 14px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 700; color: white;
+  display: flex; align-items: center; justify-content: center; min-width: 80px;
+}
+.status-pill.waiting { background-color: #adb5bd; }
+.status-pill.accepted { background-color: #86efac; color: #14532d; }
 
-.form-footer-actions { display: flex; justify-content: space-between; margin-top: 40px; }
-.btn-edit-gray { background-color: #BDBDBD; color: white; border: none; padding: 12px 50px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-ok-green { background-color: #2E7D32; color: white; border: none; padding: 12px 50px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+.pill-btn {
+  height: 32px; padding: 0 14px; border-radius: 20px; border: none;
+  font-size: 0.75rem; font-weight: 700; color: white; cursor: pointer;
+  display: flex; align-items: center; gap: 4px; min-width: 80px; justify-content: center;
+}
+.pill-btn.share, .pill-btn.send { background-color: #198754; }
+
+/* Footer */
+.form-footer { display: flex; justify-content: space-between; margin-top: 40px; }
+.footer-btn { width: 140px; padding: 10px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.footer-btn.edit { background-color: #ced4da; color: white; }
+.footer-btn.ok { background-color: #198754; color: white; }
