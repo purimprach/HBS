@@ -1,0 +1,394 @@
+/* src/HomePage.css - Final Version */
+
+/* 1. นำเข้าฟอนต์ Sarabun */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+
+/* --- Global Settings --- */
+.homepage-container {
+    background-color: #F8F9FA;
+    min-height: 100vh;
+    /* กำหนดลำดับฟอนต์: หา TH Sarabun New ก่อน ถ้าไม่มีใช้ Sarabun */
+    font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
+    /* เพิ่มขนาดฟอนต์พื้นฐานเพื่อให้ดูง่ายขึ้น */
+    font-size: 18px; 
+    color: #333;
+}
+
+/* --- Top Bar --- */
+.top-status-bar {
+    background: white;
+    /* เพิ่ม Padding ให้แถบดูสูงขึ้น */
+    padding: 15px 40px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1rem;
+    color: #666;
+    border-bottom: 1px solid #eee;
+}
+.status-left span { font-weight: 500; }
+.divider { margin: 0 10px; color: #ddd; }
+.status-right { display: flex; align-items: center; gap: 15px; }
+.lang-btn { background: none; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; }
+.mini-profile { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.avatar-xs { width: 32px; height: 32px; background: #ddd; border-radius: 50%; }
+
+/* --- Hero Section (ส่วนรูปภาพด้านบน) --- */
+.hero-section {
+    position: relative;
+    height: 280px; /* ความสูงของ Banner */
+    background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+    background-size: cover;
+    background-position: center;
+    color: white;
+    display: flex;
+    /* จัดข้อความให้อยู่กึ่งกลางแนวตั้ง */
+    align-items: center; 
+}
+
+/* Overlay สีดำจางๆ เพื่อให้อ่านตัวหนังสือชัดขึ้น */
+.hero-overlay {
+    background: rgba(0, 0, 0, 0.4); /* ดำจางๆ 20% */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 60px; /* ระยะห่างจากขอบซ้าย */
+}
+
+.hero-content {
+    max-width: 800px;
+    text-align: left;
+}
+
+.premium-badge {
+    background: #2E7D32; /* สีเขียว */
+    color: white;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.hero-content h1 {
+    font-size: 2.8rem; /* ชื่อโรงแรมตัวใหญ่ */
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.1;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5); /* เงาตัวหนังสือ */
+}
+
+.sub-hero {
+    font-size: 1.6rem;
+    font-weight: 500;
+    margin: 10px 0 25px 0;
+    opacity: 0.95;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.hero-meta {
+    display: flex;
+    flex-direction: column; /* เรียงเป็นแนวตั้ง */
+    gap: 12px;
+}
+.meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+/* --- Main Layout (Grid พื้นฐาน) --- */
+.main-layout {
+    max-width: 96%;
+    margin: 0 auto; /* ลบ margin แนวตั้งออก เพื่อคุมด้วย class ย่อย */
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+    align-items: start;
+}
+
+/* ส่วนหัว (Welcome + Timer) */
+.layout-header {
+    margin-top: 30px;
+    margin-bottom: 20px; /* เว้นระยะห่างจากส่วนการ์ดไม่ให้ติดกันเกินไป */
+}
+
+/* ส่วนเนื้อหา (Cards) */
+.layout-content {
+    margin-bottom: 50px;
+}
+
+/* --- Left Column --- */
+.left-column { display: flex; flex-direction: column; gap: 30px; }
+
+.welcome-text h3 { margin: 0 0 10px 0; font-size: 1.6rem; color: #1a1a1a; font-weight: 700; }
+.welcome-text p { margin: 0; color: #555; font-size: 1.1rem; line-height: 1.6; }
+.highlight-text { color: #2E7D32; font-weight: bold; }
+
+/* --- Green Card Premium (พื้นหลังเขียวเข้ม) --- */
+.green-card-premium {
+    background-color: #2E7D32; /* พื้นหลังเขียวเข้ม */
+    border-radius: 16px;
+    padding: 30px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+    margin-bottom: 30px;
+}
+
+.green-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.icon-bg-circle {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.header-text h3 { margin: 0; font-size: 1.5rem; font-weight: 600; color: white; }
+.header-text span { font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); }
+
+.green-info-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.green-info-item {
+    background: rgba(255, 255, 255, 0.1); /* พื้นหลังโปร่งใส Glass Effect */
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 160px;
+    transition: background 0.2s;
+}
+.green-info-item:hover { background: rgba(255, 255, 255, 0.15); }
+.g-icon { margin-bottom: auto; opacity: 0.9; color: white; }
+.g-label { font-size: 0.9rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px; }
+.g-value { font-size: 1.8rem; font-weight: 700; line-height: 1.1; color: white; }
+.g-sub { font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); margin-top: 5px; }
+
+/* --- General Sections (Rooms, Staff, Facilities) --- */
+.section-container { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+.section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
+.header-icon-bg {
+    width: 42px; height: 42px; background: #F3F4F6; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+}
+.section-header h3 { margin: 0; font-size: 1.3rem; color: #333; }
+.header-text-group { display: flex; flex-direction: column; }
+.header-text-group span { font-size: 0.85rem; color: #888; }
+
+/* Room Grid */
+.room-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+.room-card-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px; border: 1px solid #eee; border-radius: 10px;
+}
+.room-info h4 { margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 600; }
+.room-info span { font-size: 0.9rem; color: #888; }
+.room-badge {
+    background: #E8F5E9; color: #2E7D32; padding: 6px 12px;
+    border-radius: 6px; font-weight: bold; font-size: 1rem;
+}
+.room-summary { display: flex; gap: 15px; }
+.sum-box {
+    flex: 1; background: #F9FAFB; padding: 20px; border-radius: 10px; text-align: center;
+    display: flex; flex-direction: column; justify-content: center;
+}
+.sum-box span { font-size: 0.9rem; color: #666; }
+.sum-box strong { font-size: 1.6rem; color: #333; line-height: 1.2; margin: 5px 0; }
+.sum-box.highlight { background: #FFF8E1; }
+.sum-box.highlight strong { color: #F59E0B; }
+.sum-box.blue { background: #E3F2FD; }
+.sum-box.blue strong { color: #1976D2; }
+
+/* Staff Grid */
+.staff-grid { display: flex; gap: 20px; }
+.total-staff-card {
+    width: 160px; background: #E8F5E9; border-radius: 10px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 20px; color: #2E7D32; flex-shrink: 0;
+}
+.total-staff-card strong { font-size: 2rem; margin: 10px 0 5px 0; }
+.total-staff-card span { font-size: 0.9rem; }
+.staff-list-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; flex: 1; }
+.staff-item {
+    border: 1px solid #eee; border-radius: 8px; padding: 12px;
+    display: flex; align-items: center; gap: 10px;
+}
+.staff-icon { font-size: 1.4rem; }
+.staff-detail { display: flex; flex-direction: column; }
+.role-name { font-size: 0.85rem; color: #555; font-weight: 500; }
+.role-count { font-size: 1rem; font-weight: bold; color: #333; }
+
+/* Facilities */
+.facilities-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+.fac-item {
+    border: 1px solid #eee; border-radius: 8px; padding: 20px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.fac-icon { font-size: 1.8rem; color: #00838F; }
+.fac-info strong { display: block; font-size: 1rem; margin-bottom: 3px; }
+.fac-info span { font-size: 0.8rem; color: #888; }
+
+/* --- Right Column (Sidebar) --- */
+.right-column { display: flex; flex-direction: column; gap: 20px; }
+
+/* Timer Widget */
+.timer-widget {
+    display: flex; justify-content: space-between; align-items: center;
+    background: transparent; padding: 5px 0; margin-bottom: 5px;
+}
+.timer-widget span { font-weight: 600; color: #555; font-size: 1.1rem; }
+.time-box {
+    background: #E53935; color: white; padding: 6px 18px;
+    border-radius: 8px; font-weight: bold; font-family: monospace; font-size: 1.3rem;
+}
+
+/* Common Card Style */
+.card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+
+/* Gold Card (Finance) */
+.gold-card { background: #E5C37E; color: #5D4037; border: none; }
+.card-header-gold {
+    display: flex; align-items: center; gap: 10px; padding: 15px 25px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.card-header-gold h3 { margin: 0; font-size: 1.1rem; opacity: 0.9; }
+.financial-big-number { padding: 25px; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.financial-big-number span { display: block; font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; }
+.financial-big-number strong { font-size: 2.5rem; font-weight: 800; }
+.financial-list { list-style: none; padding: 20px 25px; margin: 0; }
+.financial-list li {
+    display: flex; justify-content: space-between; font-size: 0.9rem;
+    margin-bottom: 10px; opacity: 0.9;
+}
+
+/* White Card Content */
+.white-card { padding: 25px; }
+.card-header-simple { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: #2E7D32; }
+.card-header-simple h3 { margin: 0; font-size: 1.1rem; color: #333; }
+
+/* Progress */
+.progress-body { display: flex; flex-direction: column; gap: 20px; }
+.round-info { display: flex; align-items: baseline; gap: 12px; }
+.big-round { font-size: 2.2rem; font-weight: bold; color: #333; line-height: 1; }
+.big-round small { font-size: 1.1rem; color: #888; }
+.progress-bar-bg { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: #2E7D32; }
+.progress-details li { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.9rem; color: #555; }
+
+/* Team */
+.team-body { display: flex; flex-direction: column; gap: 15px; }
+.team-name-box, .team-members-count { display: flex; justify-content: space-between; font-size: 0.95rem; }
+.team-name-box .label, .team-members-count span { color: #888; }
+.team-name-box strong { color: #333; }
+.team-roles-list { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
+.role-tag {
+    font-size: 0.8rem; color: white; padding: 6px 12px; border-radius: 6px; text-align: center;
+}
+.role-tag.ceo { background: #1B5E20; }
+.role-tag.finance { background: #2E7D32; }
+.role-tag.mkt { background: #43A047; }
+.role-tag.hr { background: #66BB6A; }
+
+/* Next Action */
+.next-action-area { text-align: center; margin-top: 25px; }
+.next-action-area span { display: block; font-size: 0.9rem; color: #666; margin-bottom: 12px; }
+.btn-next {
+    width: 100%; background: #2E7D32; color: white; border: none;
+    padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem;
+    transition: background 0.2s;
+}
+.btn-next:hover { background: #1B5E20; }
+
+/* --- Timer Widget Styles --- */
+.timer-container {
+    background: white;
+    border-radius: 12px;
+    padding: 15px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* จัดชิดบนเพื่อให้ข้อความเตือนไม่ดัน layout */
+    margin-bottom: 20px;
+}
+
+.timer-label {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #333;
+    margin-top: 5px; /* ดันลงมานิดหน่อยให้ตรงกับกล่องเวลา */
+}
+
+.timer-right-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.time-badge {
+    padding: 5px 15px;
+    border-radius: 8px;
+    font-family: 'Courier New', Courier, monospace; /* ฟอนต์ตัวเลขแบบ Monospace */
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff; /* ตัวเลขสีขาว (หรือปรับตามดีไซน์ถ้าต้องการสีอื่น) */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease;
+}
+
+/* สีพื้นหลังของเวลาในแต่ละช่วง */
+.bg-normal { background-color: #66BB6A; color: white; } /* สีเขียว */
+.bg-warning { background-color: #FDD835; color: #5D4037; } /* สีเหลือง (ตัวหนังสือเข้ม) */
+.bg-critical { background-color: #EF5350; color: white; } /* สีแดง */
+
+.warning-message {
+    font-size: 0.85rem; /* ปรับขนาดตัวอักษรให้พอดี */
+    font-weight: 700;
+    text-align: right;
+    margin-top: 5px;    /* เว้นระยะห่างจากตัวเลข */
+    min-height: 1.2em;  /* ✅ สำคัญ: จองความสูงไว้เสมอ 1 บรรทัด */
+    display: block;     /* บังคับให้เป็นบล็อกเพื่อกินพื้นที่ */
+}
+
+/* ✅ เพิ่มคลาสนี้: ซ่อนตัวหนังสือแต่ยังกินพื้นที่ (Layout ไม่ขยับ) */
+.text-invisible {
+    visibility: hidden;
+}
+
+/* ข้อความเตือนแต่ละสี */
+.text-warning { color: #F57F17; }
+.text-critical { color: #D32F2F; }
+
+/* เอฟเฟกต์กระพริบสำหรับ 1 นาทีสุดท้าย */
+@keyframes blink-critical {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.blink-active {
+    animation: blink-critical 1s infinite;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

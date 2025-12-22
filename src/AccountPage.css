@@ -88,9 +88,8 @@
 /* 🔥 จัด Grid ให้ Header และ Rows ใช้โครงสร้างเดียวกันเป๊ะ */
 .member-grid-header, .member-row {
   display: grid;
-  /* Label(50px) | Input(Auto) | Role(170px) | Actions(Min 240px) */
-  grid-template-columns: 50px 1fr 170px minmax(240px, 1.2fr); 
-  gap: 20px; 
+  grid-template-columns: 50px 1.5fr 160px minmax(220px, 1fr); 
+  gap: 15px; 
   align-items: center;
 }
 
@@ -161,3 +160,48 @@
 .footer-btn { width: 140px; padding: 10px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
 .footer-btn.edit { background-color: #ced4da; color: white; }
 .footer-btn.ok { background-color: #198754; color: white; }
+
+/* ... (CSS เดิม) ... */
+
+/* เพิ่มต่อท้ายไฟล์ */
+
+/* สถานะ Waiting สีเหลือง */
+.status-pill.waiting { 
+    background-color: #FBC02D; 
+    color: white; 
+}
+
+/* ปุ่ม Send สีเขียว */
+.pill-btn.send {
+    background-color: #198754;
+    color: white;
+}
+
+/* ปุ่ม Send สีเทา (Disabled) */
+.pill-btn.disabled {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    cursor: not-allowed;
+    border: 1px solid #dee2e6;
+}
+
+/* Input เมื่อเป็น ReadOnly (หลังกด Send) */
+.form-input.readonly {
+    background-color: #f1f3f5;
+    color: #6c757d;
+}
+
+/* ทำให้ไอคอนดินสอกดได้ */
+.input-icon.clickable {
+    cursor: pointer;
+    color: #666;
+}
+.input-icon.clickable:hover {
+    color: #000;
+}
+
+/* เพิ่ม Padding ด้านขวา เพื่อกันไม่ให้ข้อความไปทับกับไอคอนดินสอ */
+.input-icon-wrapper .form-input {
+    padding-right: 40px; /* เว้นที่ด้านขวา 40px (จากเดิม 14px) */
+    text-overflow: ellipsis; /* ถ้าข้อความยาวเกินให้ขึ้น ... */
+}

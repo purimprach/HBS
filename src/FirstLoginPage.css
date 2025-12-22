@@ -1,128 +1,138 @@
-/* Reset ค่าพื้นฐาน */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
 }
 
-body, html {
-  height: 100%;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* 1. คอนเทนเนอร์หลัก + พื้นหลังรูปภาพ */
-.login-container {
+/* คอนเทนเนอร์หลัก เต็มหน้าจอ */
+.landing-container {
   position: relative;
   width: 100%;
-  height: 100vh; /* เต็มความสูงหน้าจอ */
-  
-  /* ใส่ URL รูปภาพพื้นหลังตรงนี้ครับ */
-  background-image: url('https://images.unsplash.com/photo-1503221043305-f7498f8b7888?q=80&w=2070&auto=format&fit=crop'); 
-  background-size: cover;
-  background-position: center;
-  
-  /* จัดการ์ดให้อยู่ตรงกลางหน้าจอ */
+  height: 100vh;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: center; /* จัดกึ่งกลางแนวนอน */
+  align-items: center;     /* จัดกึ่งกลางแนวตั้ง */
+  overflow: hidden;
 }
 
-/* 2. เลเยอร์สีดำโปร่งแสงทับพื้นหลัง (เพื่อให้ข้อความอ่านง่าย) */
-.login-overlay {
+/* พื้นหลังรูปภาพ */
+.background-image {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.4); /* สีดำโปร่งแสง 40% */
+  /* ใส่ URL รูปวิวเมืองเชียงใหม่ของคุณที่นี่ */
+  background-image: url('https://images.unsplash.com/photo-1503221043305-f7498f8b7888?q=80&w=2070&auto=format&fit=crop'); 
+  background-size: cover;
+  background-position: center;
   z-index: 1;
 }
 
-/* 3. การ์ด Login (สีขาว) */
-.login-card {
-  position: relative;
-  z-index: 2; /* ให้อยู่เหนือ overlay */
-  background-color: #ffffff;
-  width: 420px; /* ความกว้างการ์ด */
-  padding: 3rem 2.5rem 4rem; /* เว้นล่างเยอะหน่อยเผื่อที่ให้ปุ่ม Admin */
-  border-radius: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* Overlay สีดำจางๆ (ถ้าต้องการให้พื้นหลังมืดลงนิดนึง) */
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.2); /* ปรับความเข้มได้ 0.1 - 0.5 */
+  z-index: 2;
 }
 
-/* 4. ส่วนไอคอน */
+/* กล่องการ์ดสีขาวตรงกลาง */
+.login-card-centered {
+  position: relative;
+  z-index: 10; /* ต้องอยู่เหนือ overlay */
+  background-color: white;
+  width: 480px; /* ความกว้างตามความเหมาะสม */
+  padding: 3rem 2.5rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  /* ไม่ใส่ border-radius ตามรูปตัวอย่างที่เป็นสี่เหลี่ยมคมๆ */
+}
+
+/* ไอคอน */
 .icon-wrapper {
-  margin-bottom: 1rem;
-  color: #1a1a1a; /* สีไอคอนดำเข้ม */
+  margin-bottom: 1.5rem;
   display: flex;
   justify-content: center;
 }
 
-/* 5. หัวข้อ "Welcome to HBS" */
-.login-title {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #222;
-  margin-bottom: 0.5rem;
+/* หัวข้อหลัก */
+.main-title {
+  font-size: 1.4rem;
+  font-weight: 800; /* ตัวหนามาก */
+  color: #1a1a1a;
+  letter-spacing: 0.5px;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
 }
 
-/* 6. คำบรรยาย "HOTEL BUSINESS SIMULATOR" */
-.login-subtitle {
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase; /* ตัวพิมพ์ใหญ่ทั้งหมด */
-  letter-spacing: 1px;
+/* หัวข้อรอง */
+.sub-title {
+  font-size: 0.9rem;
   font-weight: 600;
-  margin-bottom: 2.5rem; /* ระยะห่างก่อนถึงปุ่ม */
+  color: #666;
+  margin-bottom: 2.5rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-/* 7. กล่องคลุมปุ่ม */
-.login-actions {
-  width: 100%;
+/* ส่วนปุ่มกด */
+.action-buttons {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1rem;
+  position: relative; /* เพื่อจัดตำแหน่ง admin link */
 }
 
-/* 8. ปุ่ม Player (สีเขียว) */
-.player-login-btn {
-  width: 100%;
-  padding: 0.9rem;
-  background-color: #2E8B57; /* สีเขียวตามรูป (SeaGreen) */
+/* ปุ่ม Login as a player */
+.btn-login-player {
+  background-color: #2E7D32; /* สีเขียวเข้มตามรูป */
   color: white;
   border: none;
-  border-radius: 6px;
+  width: 100%;
+  padding: 1rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 4px; /* มุมมนเล็กน้อย */
+  transition: background-color 0.2s;
 }
 
-.player-login-btn:hover {
-  background-color: #257046; /* สีเข้มขึ้นเมื่อเอาเมาส์ชี้ */
+.btn-login-player:hover {
+  background-color: #1B5E20;
 }
 
-/* 9. ลิงก์ Admin (ชิดขวาล่าง) */
-.admin-login-link {
-  position: absolute; /* จัดตำแหน่งแบบอิสระ */
-  bottom: 15px;       /* ห่างจากด้านล่าง 15px */
-  right: 20px;        /* ห่างจากด้านขวา 20px */
-  
+/* ลิงก์ Login as Admin */
+.link-login-admin {
   background: none;
   border: none;
-  color: #2E8B57;     /* สีเขียวเดียวกับปุ่ม */
-  font-size: 0.75rem; /* ตัวอักษรเล็ก */
+  color: #2E7D32; /* สีเขียวเดียวกับปุ่ม */
+  font-size: 0.75rem;
   font-weight: 600;
   cursor: pointer;
-  text-decoration: underline; /* ขีดเส้นใต้ */
-  opacity: 0.8;
+  
+  /* จัดตำแหน่งไปขวาล่างของกล่อง */
+  position: absolute;
+  right: 0;
+  bottom: -25px; /* ขยับลงมาด้านล่างปุ่มนิดนึง */
+  text-decoration: none;
 }
 
-.admin-login-link:hover {
-  opacity: 1;
-  color: #1e5c39;
+.link-login-admin:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .login-card-centered {
+    width: 90%;
+    padding: 2rem;
+  }
 }

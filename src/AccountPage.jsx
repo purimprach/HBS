@@ -16,7 +16,9 @@ function AccountPage() {
   const [isJoined, setIsJoined] = useState(false);
 
   const ROLES = ['CEO', 'Finance', 'Marketing', 'HR'];
+  const MY_EMAIL = "Janeza@gmail.com"; 
 
+  // ✅ Default: You เป็น CEO, คนอื่นว่าง
   const [teamRoles, setTeamRoles] = useState({
     you: 'CEO',
     member2: '',
@@ -24,14 +26,27 @@ function AccountPage() {
     member4: ''
   });
 
+  const [teamMembers, setTeamMembers] = useState([
+    { key: 'member2', email: '', status: 'idle' }, 
+    { key: 'member3', email: '', status: 'idle' },
+    { key: 'member4', email: '', status: 'idle' }
+  ]);
+
+  // ✅ Logic สลับ Role (Swap)
   const handleRoleChange = (currentMemberKey, newRole) => {
     setTeamRoles(prevRoles => {
+      // 1. หาว่าใครถือ Role นี้อยู่ไหม?
       const memberHoldingThisRole = Object.keys(prevRoles).find(
         key => prevRoles[key] === newRole && key !== currentMemberKey
       );
+
+      // 2. Role เดิมของคนที่กำลังเปลี่ยน
       const oldRole = prevRoles[currentMemberKey];
+
+      // 3. กำหนด Role ใหม่ให้คนเปลี่ยน
       let newState = { ...prevRoles, [currentMemberKey]: newRole };
       
+      // 4. ถ้ามีคนถืออยู่ ให้สลับเอา Role เดิมของเราไปให้เขา (Swap)
       if (memberHoldingThisRole) {
         newState[memberHoldingThisRole] = oldRole;
       }
@@ -46,25 +61,66 @@ function AccountPage() {
       }
   };
 
+  const handleEmailChange = (index, value) => {
+    const updatedMembers = [...teamMembers];
+    updatedMembers[index].email = value;
+    if (updatedMembers[index].status !== 'sent') {
+        updatedMembers[index].status = value.trim() !== '' ? 'typing' : 'idle';
+    }
+    setTeamMembers(updatedMembers);
+  };
+
+  const handleSendInvite = (index) => {
+    const targetMember = teamMembers[index];
+    const memberKey = targetMember.key;
+    const emailToSend = targetMember.email.trim();
+    const roleSelected = teamRoles[memberKey];
+
+    if (emailToSend === '' || !roleSelected) return;
+
+    if (emailToSend === MY_EMAIL) {
+        alert("คุณไม่สามารถเชิญตัวเองได้");
+        return;
+    }
+
+    const isDuplicate = teamMembers.some((member, i) => i !== index && member.email === emailToSend);
+    if (isDuplicate) {
+        alert("อีเมลนี้ถูกเพิ่มไปแล้วในช่องอื่น");
+        return;
+    }
+
+    const updatedMembers = [...teamMembers];
+    updatedMembers[index].status = 'sent';
+    setTeamMembers(updatedMembers);
+  };
+
+  const handleEditClick = (index) => {
+    const updatedMembers = [...teamMembers];
+    updatedMembers[index].status = 'typing';
+    setTeamMembers(updatedMembers);
+  };
+
+  const handleOkClick = () => {
+    setShowTeamSetup(false);
+    navigate('/waiting-room'); 
+  };
+
   // Mock Data
   const gameHistory = [
     { id: 1, name: 'Grand Coastal Resort', detail: 'Chiang Mai Series', info: '2nd Place of 8 players', turns: '12/12 Turns', date: 'Nov 10, 2024', rankType: 'silver' },
     { id: 2, name: 'Metropolis Business Hotel', detail: 'Bangkok League 2023', info: '1st Place of 6 players', turns: '10/10 Turns', date: 'Oct 25, 2024', rankType: 'gold' },
     { id: 3, name: 'Sunset Beach Resort', detail: 'Coastal Challenge', info: '5th Place of 10 players', turns: '8/8 Turns', date: 'Oct 5, 2024', rankType: 'trophy' },
   ];
-
   const allAnnouncements = [
     { id: 1, type: 'important', title: 'Important: Read Case Study Before Turn 3', desc: 'All teams must review the industry analysis case study before making Turn 3 decisions.', author: 'Dr. Somchai', date: 'Nov 15, 2024', hasTag: true },
     { id: 2, type: 'normal', title: 'Maintenance Notice', desc: 'System maintenance scheduled.', author: 'Admin', date: 'Nov 13, 2024', hasTag: false },
     { id: 3, type: 'normal', title: 'Week 2 Ranking Released', desc: 'Leaderboard updated.', author: 'Game Master', date: 'Nov 12, 2024', hasTag: false },
     { id: 4, type: 'normal', title: 'New Feature: Market Analysis', desc: 'Competitor pricing view.', author: 'Dev Team', date: 'Nov 10, 2024', hasTag: false }
   ];
-
   const displayedAnnouncements = isExpanded ? allAnnouncements : allAnnouncements.slice(0, 2);
 
   return (
     <div className="account-container">
-      {/* Header */}
       <nav className="account-header">
         <div className="header-left">
           <Building2 size={24} color="#1a1a1a" />
@@ -166,15 +222,13 @@ function AccountPage() {
                         </div>
 
                         <div className="form-group">
-                            {/* หัวข้อหลัก */}
                             <label style={{marginBottom:'10px'}}>Team member</label>
                             
-                            {/* ✅ ส่วนหัวตาราง Grid: แยกออกมาเพื่อจัดตำแหน่ง Role Selection ? */}
                             <div className="member-grid-header">
-                                <div></div> {/* เว้นที่ Label */}
-                                <div></div> {/* เว้นที่ Input */}
+                                <div></div>
+                                <div></div> 
                                 <div className="role-header-text">Role Selection <span className="q-mark">?</span></div>
-                                <div></div> {/* เว้นที่ Actions */}
+                                <div></div> 
                             </div>
 
                             <div className="members-grid-container">
@@ -182,11 +236,13 @@ function AccountPage() {
                                 <div className="member-row">
                                     <div className="col-label">You</div>
                                     <div className="col-input">
-                                         <input type="text" value="Janeza@gmail.com" readOnly className="form-input readonly" />
+                                         <input type="text" value={MY_EMAIL} readOnly className="form-input readonly" />
                                     </div>
+                                    {/* ✅ You Dropdown: เพิ่ม Default Option เพื่อรองรับการถูกแย่ง Role */}
                                     <div className="col-role">
                                         <div className={`select-wrapper ${teamRoles.you ? 'purple' : 'gray'}`}>
                                             <select className="role-select" value={teamRoles.you} onChange={(e) => handleRoleChange('you', e.target.value)}>
+                                                <option value="" disabled>Select Role</option> {/* เพิ่มบรรทัดนี้ */}
                                                 {ROLES.map(role => (
                                                     <option key={role} value={role}>{role}</option>
                                                 ))}
@@ -197,81 +253,76 @@ function AccountPage() {
                                     <div className="col-action"></div>
                                 </div>
 
-                                {/* Row 2: Other */}
-                                <div className="member-row">
-                                    <div className="col-label">Other</div>
-                                    <div className="col-input input-icon-wrapper">
-                                         <input type="text" placeholder="ptest@gmail.com" className="form-input" />
-                                         <Edit3 size={14} className="input-icon"/>
-                                    </div>
-                                    <div className="col-role">
-                                        <div className={`select-wrapper ${teamRoles.member2 ? 'purple' : 'gray'}`}>
-                                            <select className="role-select" value={teamRoles.member2} onChange={(e) => handleRoleChange('member2', e.target.value)}>
-                                                <option value="" disabled>Select Role</option>
-                                                {ROLES.map(role => (
-                                                    <option key={role} value={role}>{role}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={14} className="select-arrow" />
-                                        </div>
-                                    </div>
-                                    <div className="col-action">
-                                        <span className="status-pill waiting">Waiting</span>
-                                        <button className="pill-btn share"><Share2 size={12}/> Share</button>
-                                    </div>
-                                </div>
+                                {/* Row 2-4: Other Members */}
+                                {teamMembers.map((member, index) => {
+                                    const roleValue = teamRoles[member.key];
+                                    const hasEmail = member.email.trim() !== '';
+                                    const hasRole = roleValue && roleValue !== '';
+                                    const canSend = hasEmail && hasRole; 
+                                    const isSent = member.status === 'sent';
+                                    
+                                    return (
+                                        <div key={member.key} className="member-row">
+                                            <div className="col-label">{index === 0 ? 'Other' : ''}</div>
+                                            
+                                            <div className="col-input input-icon-wrapper">
+                                                <input 
+                                                    type="text" 
+                                                    placeholder="example@email.com"
+                                                    className={`form-input ${isSent ? 'readonly' : ''}`} 
+                                                    value={member.email}
+                                                    onChange={(e) => handleEmailChange(index, e.target.value)}
+                                                    readOnly={isSent}
+                                                />
+                                                {isSent && (
+                                                    <Edit3 
+                                                        size={14} 
+                                                        className="input-icon clickable" 
+                                                        onClick={() => handleEditClick(index)}
+                                                    />
+                                                )}
+                                            </div>
 
-                                {/* Row 3 */}
-                                <div className="member-row">
-                                    <div className="col-label"></div>
-                                    <div className="col-input">
-                                        <input type="text" placeholder="John.D@gmail.com" className="form-input" />
-                                    </div>
-                                    <div className="col-role">
-                                        <div className={`select-wrapper ${teamRoles.member3 ? 'purple' : 'gray'}`}>
-                                            <select className="role-select" value={teamRoles.member3} onChange={(e) => handleRoleChange('member3', e.target.value)}>
-                                                <option value="" disabled>Select Role</option>
-                                                {ROLES.map(role => (
-                                                    <option key={role} value={role}>{role}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={14} className="select-arrow" />
-                                        </div>
-                                    </div>
-                                    <div className="col-action">
-                                        <span className="status-pill accepted">Accepted</span>
-                                        <button className="pill-btn share"><Share2 size={12}/> Share</button>
-                                    </div>
-                                </div>
+                                            <div className="col-role">
+                                                <div className={`select-wrapper ${roleValue ? 'purple' : 'gray'}`}>
+                                                    <select className="role-select" value={roleValue} onChange={(e) => handleRoleChange(member.key, e.target.value)}>
+                                                        <option value="" disabled>Select Role</option>
+                                                        {ROLES.map(role => (
+                                                            <option key={role} value={role}>{role}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown size={14} className="select-arrow" />
+                                                </div>
+                                            </div>
 
-                                {/* Row 4 */}
-                                <div className="member-row">
-                                    <div className="col-label"></div>
-                                    <div className="col-input">
-                                        <input type="text" placeholder="san@gmail.com" className="form-input" />
-                                    </div>
-                                    <div className="col-role">
-                                        <div className={`select-wrapper ${teamRoles.member4 ? 'purple' : 'gray'}`}>
-                                            <select className="role-select" value={teamRoles.member4} onChange={(e) => handleRoleChange('member4', e.target.value)}>
-                                                <option value="" disabled>Select Role</option>
-                                                {ROLES.map(role => (
-                                                    <option key={role} value={role}>{role}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={14} className="select-arrow" />
+                                            <div className="col-action">
+                                                {isSent ? (
+                                                    <>
+                                                        <span className="status-pill waiting">Waiting</span>
+                                                        <button className="pill-btn share"><Share2 size={12}/> Share</button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <button 
+                                                            className={`pill-btn ${canSend ? 'send' : 'disabled'}`} 
+                                                            onClick={() => canSend && handleSendInvite(index)}
+                                                            disabled={!canSend}
+                                                        >
+                                                            Send
+                                                        </button>
+                                                        <button className="pill-btn share"><Share2 size={12}/> Share</button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="col-action">
-                                        <button className="pill-btn send">Send</button>
-                                        <button className="pill-btn share"><Share2 size={12}/> Share</button>
-                                    </div>
-                                </div>
+                                    );
+                                })}
                             </div>
                         </div>
 
                         <div className="form-footer">
                             <button className="footer-btn edit">Edit</button>
-                            <button className="footer-btn ok" onClick={() => setShowTeamSetup(false)}>OK</button>
+                            <button className="footer-btn ok" onClick={handleOkClick}>OK</button>
                         </div>
                     </div>
                 </div>

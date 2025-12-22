@@ -1,114 +1,179 @@
-/* =========================================
-   1. Global & Layout
-   ========================================= */
-.waiting-container { min-height: 100vh; display: flex; flex-direction: column; background-color: #F0F4F8; font-family: 'Prompt', 'Inter', sans-serif; }
+/* นำเข้าฟอนต์จาก Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 
-.waiting-content { padding: 30px; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+/* ✅ Global Reset */
+* { box-sizing: border-box; font-family: 'Sarabun', sans-serif; }
 
-/* Card Style */
-.card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-.card h2, .card h3 { margin-top: 0; color: #333; margin-bottom: 15px; }
+.waiting-container { background-color: #F8F9FA; min-height: 100vh; font-size: 16px; color: #333; }
 
-/* =========================================
-   2. Session Card
-   ========================================= */
-.session-card h2 { font-size: 1.5rem; margin-bottom: 5px; }
-.mode-tag { color: #2e8b57; font-weight: bold; font-size: 0.9rem; display: block; margin-bottom: 15px; }
-.session-desc { font-size: 0.9rem; color: #666; line-height: 1.5; margin-bottom: 25px; }
-
-.session-stats { display: flex; justify-content: space-between; border-top: 1px solid #eee; padding-top: 20px; }
-.stat-item { display: flex; flex-direction: column; align-items: center; width: 33%; }
-.stat-label { font-size: 0.85rem; color: #888; margin-bottom: 5px; }
-.stat-value { font-size: 1rem; font-weight: bold; color: #333; }
-
-/* =========================================
-   3. Team List Card
-   ========================================= */
-.table-header { display: flex; padding: 10px 15px; background-color: #f9f9f9; font-weight: bold; font-size: 0.9rem; color: #555; border-radius: 6px; margin-bottom: 10px; }
-.table-row { display: flex; padding: 12px 15px; align-items: center; border-bottom: 1px solid #eee; font-size: 0.95rem; }
-.table-row:last-child { border-bottom: none; }
-
-/* Row Highlight (You) */
-.row-highlight { background-color: #E8F5E9; border-radius: 6px; border-bottom: none; }
-
-/* Status Badges */
-.status-badge { font-size: 0.8rem; font-weight: bold; padding: 4px 12px; border-radius: 20px; min-width: 80px; text-align: center; }
-.status-badge.ready { color: #2e8b57; background-color: rgba(46, 139, 87, 0.1); }
-.status-badge.not-ready { color: #D4AC0D; background-color: rgba(241, 196, 15, 0.15); }
-
-.waiting-footer { display: flex; flex-direction: column; align-items: flex-end; margin-top: 20px; gap: 10px; }
-.countdown-text { color: #E74C3C; font-weight: bold; font-size: 0.95rem; }
-.btn-confirm-ready { background-color: #7F8C8D; color: white; border: none; padding: 10px 25px; border-radius: 6px; font-weight: bold; cursor: not-allowed; font-size: 1rem; }
-
-/* =========================================
-   4. Details Card
-   ========================================= */
-.details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 40px; }
-.detail-item h4 { font-size: 0.9rem; margin: 0 0 5px 0; color: #333; }
-.detail-item p { font-size: 0.85rem; margin: 0; color: #666; line-height: 1.4; }
-.details-footer { text-align: right; margin-top: 20px; }
-.btn-open-rules { background: white; border: 1px solid #2e8b57; color: #2e8b57; padding: 8px 16px; border-radius: 6px; font-size: 0.85rem; font-weight: bold; cursor: pointer; }
-
-/* =========================================
-   5. Scoring Card
-   ========================================= */
-.scoring-note { font-size: 0.85rem; background-color: #f9f9f9; padding: 15px; border-radius: 6px; color: #555; margin-bottom: 25px; line-height: 1.5; }
-.scoring-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-
-.score-box { display: flex; justify-content: space-between; align-items: stretch; border: 1px solid #2e8b57; border-radius: 8px; overflow: hidden; background: white; min-height: 80px; }
-.score-content { flex: 1; padding: 15px; display: flex; align-items: flex-start; gap: 12px; }
-.score-icon { font-size: 1.5rem; }
-.score-text h4 { margin: 0 0 5px 0; font-size: 0.95rem; color: #333; }
-.score-text p { margin: 0; font-size: 0.75rem; color: #777; line-height: 1.3; }
-
-.score-percent { width: 60px; background-color: #2e8b57; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.1rem; }
-
-/* Reuse Header from previous pages if needed or define here */
-.account-header { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; background-color: white; height: 70px; border-bottom: 1px solid #eee; }
-.header-left { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.1rem; color: #333; }
-.header-right { display: flex; align-items: center; gap: 15px; }
-.lang-btn { background: none; border: none; font-weight: bold; cursor: pointer; }
-.user-mini-profile { display: flex; align-items: center; gap: 10px; }
-.user-info-text { display: flex; flex-direction: column; text-align: right; line-height: 1.2; }
+/* Navbar */
+.waiting-header { display: flex; justify-content: space-between; align-items: center; padding: 0 40px; height: 70px; background: white; border-bottom: 1px solid #eee; position: sticky; top: 0; z-index: 100; }
+.header-brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.2rem; color: #1a1a1a; }
+.header-right { display: flex; align-items: center; gap: 20px; }
+.btn-exit-room { display: flex; align-items: center; gap: 6px; background-color: transparent; border: 1px solid #d32f2f; color: #d32f2f; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-right: 10px; }
+.btn-exit-room:hover { background-color: #d32f2f; color: white; }
+.lang-btn { background: none; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; font-size: 0.9rem; color: #555; }
+.user-mini-profile { display: flex; align-items: center; gap: 12px; padding-left: 15px; border-left: 1px solid #eee; }
+.user-avatar-small { width: 36px; height: 36px; background: #f0f0f0; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #666; }
+.user-info-text { display: flex; flex-direction: column; text-align: right; line-height: 1.3; }
 .user-name { font-size: 0.9rem; font-weight: bold; }
 .user-role { font-size: 0.75rem; color: #888; }
-.user-avatar-small { width: 35px; height: 35px; background: #eee; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-/* ... (CSS ส่วนอื่นๆ คงเดิม) ... */
-
-/* Status Badges */
-.status-badge { font-size: 0.8rem; font-weight: bold; padding: 4px 12px; border-radius: 20px; min-width: 80px; text-align: center; }
-.status-badge.ready { color: #2e8b57; background-color: rgba(46, 139, 87, 0.1); }
-.status-badge.not-ready { color: #D4AC0D; background-color: rgba(241, 196, 15, 0.15); }
-
-/* Footer & Button Styles */
-.waiting-footer { display: flex; flex-direction: column; align-items: flex-end; margin-top: 20px; gap: 10px; }
-.countdown-text { color: #E74C3C; font-weight: bold; font-size: 0.95rem; }
-
-/* ปุ่มยืนยัน Base Style */
-.btn-confirm-ready { 
-    border: none; 
-    padding: 10px 25px; 
-    border-radius: 6px; 
-    font-weight: bold; 
-    font-size: 1rem; 
-    transition: 0.2s;
-    cursor: pointer;
+/* Content Wrapper */
+.waiting-content {
+    max-width: 96%; /* ✅ ปรับเป็น 96% ตามต้องการ */
+    margin: 30px auto;
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
 }
 
-/* ปุ่มสถานะ Active (ยังไม่กด - สีเขียว) */
-.btn-confirm-ready.active {
-    background-color: #2e8b57;
-    color: white;
-}
-.btn-confirm-ready.active:hover {
-    background-color: #246e45;
+/* 1. Session Hero Card */
+.session-hero-card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 40px; }
+.session-header-left { text-align: left; display: flex; flex-direction: column; align-items: flex-start; max-width: 100%; }
+.session-header-left h2 { margin: 0 0 15px 0; font-size: 2rem; color: #1a1a1a; font-weight: 800; }
+.mode-badge { background-color: #D4AC0D; color: white; padding: 6px 18px; border-radius: 30px; font-size: 0.95rem; font-weight: bold; display: inline-block; margin-bottom: 20px; }
+.session-desc { color: #555; line-height: 1.7; font-size: 1rem; margin: 0; max-width: 950px; }
+
+/* Grid Stats */
+.session-stats-grid { display: grid; grid-template-columns: 0.9fr 0.9fr 2.0fr 2.0fr; gap: 20px; align-items: stretch; }
+.stat-box-white { border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; text-align: center; background: white; display: flex; flex-direction: column; justify-content: center; height: 100px; transition: transform 0.2s; }
+.stat-box-white:hover { border-color: #2E7D32; transform: translateY(-2px); }
+.stat-label { font-size: 0.9rem; color: #888; margin-bottom: 8px; font-weight: 600; }
+.stat-value { font-size: 1.4rem; font-weight: 700; color: #333; }
+
+/* Timer */
+.timer-box-green { background-color: #2E7D32; color: white; border-radius: 12px; padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3); height: 100px; transition: background-color 0.3s ease; }
+.timer-box-warning { background-color: #C0392B; color: white; border-radius: 12px; padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4); height: 100px; animation: pulseWarning 1s infinite alternate; }
+.timer-info { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; justify-content: center; }
+.timer-title-row { display: flex; align-items: center; gap: 8px; }
+.timer-label { font-size: 1.1rem; font-weight: 700; line-height: 1; color: #ffffff !important; }
+.timer-sub { font-size: 0.8rem; opacity: 0.9; font-weight: 400; margin-left: 28px; color: #ffffff !important; }
+.timer-display-row { display: flex; align-items: center; gap: 4px; font-family: 'Sarabun', sans-serif; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 2.8rem; line-height: 1; color: white; }
+.digit-box { background: rgba(255,255,255,0.2); padding: 2px 10px; border-radius: 8px; min-width: 55px; text-align: center; }
+.colon { opacity: 0.8; position: relative; top: -4px; font-size: 2.5rem; }
+@keyframes pulseWarning { 0% { background-color: #C0392B; box-shadow: 0 0 10px rgba(192, 57, 43, 0.5); } 100% { background-color: #E74C3C; box-shadow: 0 0 20px rgba(231, 76, 60, 0.8); } }
+
+/* 2. Team Table */
+.team-table-card { background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+.team-header-row { margin-bottom: 25px; }
+.team-header-row h3 { margin: 0; font-size: 1.4rem; color: #1a1a1a; }
+.custom-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.tbl-head { display: grid; grid-template-columns: 0.8fr 2fr 2fr 1.5fr 1fr; background-color: #2E7D32; color: white; padding: 15px 25px; border-radius: 10px 10px 0 0; font-weight: 700; font-size: 1rem; }
+.tbl-row { display: grid; grid-template-columns: 0.8fr 2fr 2fr 1.5fr 1fr; padding: 20px 25px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 1rem; color: #444; transition: background-color 0.1s; }
+.tbl-row:last-child { border-bottom: none; }
+.row-highlight { background-color: #E8F5E9; font-weight: 600; border-left: 4px solid #2E7D32; padding-left: 21px; }
+.status-text-green { color: #2E7D32; font-weight: bold; background: #e8f5e9; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;}
+.status-text-yellow { color: #F57F17; font-weight: bold; background: #FFF9C4; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem;}
+.table-footer-action { display: flex; justify-content: flex-end; margin-top: 30px; }
+.btn-confirm-action { border: none; padding: 14px 40px; border-radius: 10px; font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: 0.2s; min-width: 180px; }
+.btn-confirm-action.active { background-color: #2E7D32; color: white; box-shadow: 0 6px 15px rgba(46,125,50,0.3); }
+.btn-confirm-action.active:hover { background-color: #1B5E20; transform: translateY(-2px); }
+.btn-confirm-action.confirmed { background-color: #9E9E9E; color: white; cursor: not-allowed; }
+
+/* ✅ 3. Rules Section (NEW: Card รวมใหญ่) */
+.rules-main-card {
+    background: white;
+    border-radius: 16px;
+    padding: 30px 40px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-bottom: 40px;
 }
 
-/* ปุ่มสถานะ Disabled (กดแล้ว - สีเทา) */
-.btn-confirm-ready.disabled {
-    background-color: #7F8C8D;
-    color: white;
-    cursor: not-allowed;
-    opacity: 0.8;
+/* Header ใน Card */
+.rules-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: left;
+    /* ในรูป image_14d294 ไม่มีเส้นขีดข้างล่างชัดเจน ผมจึงไม่ใส่ border-bottom หรือใส่แบบจางมากๆ */
+    padding-bottom: 10px;
+}
+.rules-header-left { display: flex; align-items: center; gap: 12px; }
+.rules-icon-main { width: 48px; height: 48px; background-color: #2E7D32; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(46, 125, 50, 0.2); }
+.rules-text-group {
+  display: flex;
+  flex-direction: column;  /* เรียงข้อความลงมาแนวตั้ง */
+  justify-content: center; /* จัดให้อยู่กลางกล่อง */
+}
+.rules-text-group h3 { margin: 0; line-height: 1.2; font-size: 1.3rem; color: #1a1a1a; font-weight: 700; }
+.rules-text-group span { font-size: 0.9rem; color: #666; line-height: 1.2;}
+.btn-outline-green { border: 2px solid #2E7D32; color: #2E7D32; background: white; padding: 10px 20px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; transition: all 0.2s; }
+.btn-outline-green:hover { background-color: #E8F5E9; }
+
+/* Grid การ์ดย่อย */
+.rules-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+
+/* ดีไซน์การ์ดกติกา (ขอบเขียวบน) */
+.rule-card-modern {
+    background: white;
+    border: 1px solid #eee;
+    border-top: 5px solid #2E7D32; /* ✅ ขอบเขียวบน */
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    min-height: 180px;
+    transition: transform 0.2s;
+}
+.rule-card-modern:hover { transform: translateY(-3px); }
+.rule-card-top { display: flex; gap: 15px; }
+.rule-icon-box { min-width: 55px; height: 55px; background-color: #E8F5E9; border: 1px solid #C8E6C9; color: #2E7D32; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.rule-info {
+    width: 100%;
+    display: flex;            /* ทำให้เป็น Flex Container */
+    flex-direction: column;   /* เรียงลูกๆ ในแนวตั้ง */
+    justify-content: center;  /* จัดกึ่งกลางในแนวตั้ง (ให้ตรงกับไอคอน) */
+    align-items: flex-start;  /* จัดชิดซ้าย */
+    gap: 6px;                 /* ระยะห่างระหว่างหัวข้อกับคำอธิบาย */
+}
+.rule-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;      /* จัดหัวข้อและ Badge ให้อยู่กึ่งกลางบรรทัดเดียวกัน */
+    width: 100%;              /* ให้กว้างเต็มพื้นที่ */
+    /* margin-bottom: 8px; <-- ลบบรรทัดนี้ออกครับ เพราะเราใช้ gap ใน .rule-info แทนแล้ว */
+}
+.rule-header-row h4 { margin: 0; font-weight: 700; font-size: 1rem; color: #333; }
+.rule-badge { background-color: #2E7D32; color: white; font-size: 0.75rem; padding: 2px 10px; border-radius: 12px; font-weight: 600; white-space: nowrap; }
+.rule-info p { margin: 0; font-size: 0.85rem; color: #666; line-height: 1.5;text-align: left; }
+.rule-footer { display: flex; align-items: center; gap: 6px; margin-top: 15px; font-size: 0.8rem; font-weight: 600; padding-left: 70px; }
+.text-success { color: #2E7D32; }
+.text-alert { color: #2E7D32; } /* ในรูปเป็นสีเขียวเหมือนกัน หรือแก้เป็น #d32f2f ถ้าอยากได้แดง */
+
+/* 4. Scoring Section */
+.scoring-card { background: white; border-radius: 16px; padding: 35px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); margin-bottom: 50px; }
+.scoring-card h3 { margin-top: 0; font-size: 1.4rem; color: #1a1a1a; margin-bottom: 25px; }
+.scoring-note { background-color: #f0f0f0; text-align: left; padding: 20px 25px; border-radius: 8px; font-size: 0.95rem; color: #444; margin-bottom: 35px; border-left: 5px solid #bbb; line-height: 1.6; }
+.scoring-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.score-box-modern { border: 2px solid #2E7D32; border-radius: 12px; background: white; position: relative; padding: 20px; min-height: 130px; display: flex; align-items: center; transition: transform 0.2s; }
+.score-box-modern:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(46, 125, 50, 0.15); }
+.score-content-wrapper { display: flex; align-items: flex-start; gap: 15px; width: 100%; }
+.score-icon-box { color: #1a1a1a; min-width: 40px; display: flex; justify-content: center; margin-top: 4px; }
+.score-text-info h4 { margin: 0 0 6px 0; font-size: 1rem; font-weight: 700; color: #333; }
+.score-text-info p { margin: 0; font-size: 0.8rem; color: #666; line-height: 1.4; padding-right: 35px; }
+.score-percent-badge { position: absolute; top: 15px; right: 15px; background-color: #2E7D32; color: white; font-weight: 700; font-size: 0.9rem; padding: 2px 10px; border-radius: 12px; min-width: 50px; text-align: center; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .scoring-grid { grid-template-columns: 1fr 1fr; }
+    .rules-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 992px) {
+    .session-stats-grid { grid-template-columns: 1fr 1fr; }
+    .waiting-content { padding: 0 20px; }
+}
+@media (max-width: 768px) {
+    .scoring-grid { grid-template-columns: 1fr; }
+    .rules-grid { grid-template-columns: 1fr; }
+    .session-stats-grid { grid-template-columns: 1fr; }
+    .tbl-head, .tbl-row { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+    .timer-box-green, .timer-box-warning { height: auto; padding: 20px; flex-direction: column; gap: 15px; }
+    .timer-display-row { font-size: 3.5rem; }
+    .timer-sub { margin-left: 0; text-align: center; }
 }

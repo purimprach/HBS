@@ -2,11 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
-import { BrowserRouter } from 'react-router-dom' // 1. Import
+import { BrowserRouter } from 'react-router-dom' // ✅ ต้อง Import
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>  {/* 2. ห่อ App ไว้ */}
+    <BrowserRouter> {/* ✅ ต้องหุ้ม App ด้วยตัวนี้ */}
       <App />
     </BrowserRouter>
   </React.StrictMode>,

@@ -1,142 +1,251 @@
-/* =========================================
-   1. Global & Layout
-   ========================================= */
-* { box-sizing: border-box; }
-body { margin: 0; font-family: 'Inter', sans-serif; background-color: #f5f7fa; color: #333; }
+/* SettingsPage.css - Refined Compact Layout */
 
-.settings-container { min-height: 100vh; display: flex; flex-direction: column; }
-
-.settings-content { 
-    padding: 40px; 
-    max-width: 1000px; 
-    margin: 0 auto; 
-    width: 100%; 
-    padding-bottom: 80px; /* เผื่อที่ให้ปุ่มด้านล่าง */
-}
-
-.settings-content h1 { font-size: 2rem; margin-bottom: 20px; }
-
-.settings-card { 
-    background: white; border-radius: 12px; padding: 30px; 
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 25px; 
-}
-.settings-card h3 { 
-    margin-top: 0; margin-bottom: 25px; font-size: 1.1rem; 
-    border-bottom: 1px solid #eee; padding-bottom: 15px; 
-}
-
-/* =========================================
-   2. Navbar (Standard)
-   ========================================= */
-.account-header { 
-    display: flex; justify-content: space-between; align-items: center; 
-    padding: 15px 40px; background-color: white; border-bottom: 1px solid #eee; 
-}
-.header-left { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.1rem; }
-.header-right { display: flex; align-items: center; gap: 15px; }
-
-.lang-btn { background: none; border: none; font-weight: bold; cursor: pointer; }
-.settings-btn { 
-    background-color: #2e8b57; color: white; border: none; padding: 8px 16px; 
-    border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; text-decoration: none; font-size: 0.9rem;
-}
-.settings-btn.active { background-color: #2e8b57; } /* Active state */
-
-.logout-btn { 
-    text-decoration: none; color: #2e8b57; border: 1px solid #2e8b57; 
-    padding: 7px 15px; border-radius: 6px; font-size: 0.9rem; 
-}
-
-/* =========================================
-   3. Profile Section
-   ========================================= */
-.profile-layout { display: grid; grid-template-columns: 1fr 200px; gap: 40px; }
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 8px; color: #333; }
-.input-minimal { display: flex; align-items: center; background-color: #F8F9FA; border: 1px solid #eee; border-radius: 6px; height: 40px; width: 100%; }
-.input-minimal input { flex: 1; background: transparent; border: none; padding: 0 15px; font-size: 0.9rem; outline: none; width: 100%; color: #333; }
-.form-group-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.btn-save-gray { background-color: #ccc; color: white; border: none; padding: 10px 30px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-.profile-picture-section { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; }
-.profile-img-circle { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-.profile-img-circle img { width: 100%; height: 100%; object-fit: cover; }
-.btn-change-profile { background: white; border: 1px solid #2e8b57; color: #2e8b57; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
-.btn-change-profile:hover { background: #2e8b57; color: white; }
-
-/* =========================================
-   4. General Settings Rows
-   ========================================= */
-.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f9f9f9; }
-.setting-row:last-child { border-bottom: none; }
-.setting-label h4 { margin: 0 0 5px 0; font-size: 0.95rem; }
-.setting-label p { margin: 0; font-size: 0.8rem; color: #888; }
-.full-width { width: 100%; }
-
-.theme-toggle { background: #f0f0f0; border-radius: 20px; padding: 4px; display: flex; }
-.theme-btn { background: transparent; border: none; padding: 6px 15px; border-radius: 16px; font-size: 0.8rem; font-weight: bold; color: #666; cursor: pointer; transition: 0.2s; }
-.theme-btn.active { background: #2e8b57; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-
-.lang-select { padding: 8px 15px; border-radius: 6px; border: 1px solid #ddd; font-size: 0.9rem; color: #333; outline: none; cursor: pointer; }
-
-/* =========================================
-   5. Sliders & Switches
-   ========================================= */
-.setting-slider-row { margin-bottom: 25px; }
-.setting-slider-row h4 { margin: 0 0 5px 0; font-size: 0.95rem; }
-.setting-slider-row p { margin: 0 0 15px 0; font-size: 0.8rem; color: #888; }
-.slider-container { display: flex; align-items: center; gap: 15px; font-size: 0.8rem; color: #888; margin-top: 15px; }
-
-input[type=range].green-slider { -webkit-appearance: none; width: 100%; height: 6px; background: #E0E0E0; border-radius: 5px; outline: none; cursor: pointer; }
-input[type=range].green-slider::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; border-radius: 50%; background: #2e8b57; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); margin-top: -6px; }
-input[type=range].green-slider { accent-color: #2e8b57; }
-
-.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
-.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
-input:checked + .slider { background-color: #2e8b57; }
-input:checked + .slider:before { transform: translateX(20px); }
-
-.btn-open-manual { background-color: #2e8b57; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; }
-.btn-open-manual:hover { background-color: #246e45; }
-
-/* =========================================
-   6. Footer Buttons (New)
-   ========================================= */
-.settings-footer-actions {
+/* Layout & Background */
+.settings-page-wrapper {
+    background-color: #F4F6F8;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
     display: flex;
-    justify-content: flex-end; /* ชิดขวา */
-    gap: 15px;
-    margin-top: 30px;
+    flex-direction: column;
 }
 
-.btn-back-lobby {
-    background-color: white;
-    border: 1px solid #2e8b57;
-    color: #2e8b57;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-weight: bold;
-    text-decoration: none;
-    transition: 0.2s;
-    font-size: 1rem;
-}
-.btn-back-lobby:hover {
-    background-color: #f0fdf4;
-}
-
-.btn-save-change {
-    background-color: #2e8b57;
-    border: 1px solid #2e8b57;
+/* Navbar */
+.settings-navbar {
+    background-color: #1a1a1a;
     color: white;
-    padding: 12px 25px;
-    border-radius: 8px;
-    font-weight: bold;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+}
+.nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; }
+.nav-actions { display: flex; align-items: center; gap: 15px; }
+.lang-text { font-size: 0.85rem; font-weight: bold; cursor: pointer; }
+
+.btn-nav-back {
+    background-color: #2E7D32;
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
     cursor: pointer;
     transition: 0.2s;
-    font-size: 1rem;
 }
-.btn-save-change:hover {
-    background-color: #246e45;
+.btn-nav-back:hover { background-color: #1B5E20; }
+
+.btn-nav-logout {
+    background: transparent;
+    color: #2E7D32;
+    border: 1px solid #2E7D32;
+    background-color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
+
+/* --- Main Container (ปรับลดความกว้างลง) --- */
+.settings-main-container {
+    max-width: 1400px;
+    width: 100%;
+    margin: 30px auto;
+    padding: 0 20px;
+    flex: 1;
+}
+
+.settings-header-title h2 {
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+/* --- Grid Layout (ปรับ Gap ให้ชิดกัน) --- */
+.settings-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr; 
+    gap: 30px; 
+    align-items: start;
+}
+
+/* Sidebar Styling */
+.settings-sidebar {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.settings-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.settings-sidebar li {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 15px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    color: #555;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.settings-sidebar li:hover {
+    background-color: #f0fdf4;
+    color: #2E7D32;
+}
+
+.settings-sidebar li.active {
+    background-color: #2E7D32;
+    color: white;
+    font-weight: 600;
+}
+
+/* --- Content Area Styling (ปรับ Padding) --- */
+.settings-content-area {
+    background: white;
+    border-radius: 12px;
+    padding: 40px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    min-height: 480px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.tab-content h3 {
+    margin-top: 0;
+    margin-bottom: 25px;
+    color: #333;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+/* --- Profile Tab --- */
+.profile-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 180px; /* ปรับสัดส่วนรูปโปรไฟล์ */
+    gap: 40px;
+}
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #444; }
+.setting-input {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background-color: #f9f9f9;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+.profile-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    padding-top: 10px;
+}
+.avatar-preview {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+.avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+.btn-change-photo {
+    font-size: 0.8rem;
+    color: #2E7D32;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* --- Display & Audio Tabs --- */
+.setting-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f5f5f5;
+}
+.setting-item-stack { margin-bottom: 20px; }
+.setting-item-stack label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; }
+
+.setting-info label { font-weight: 600; font-size: 0.95rem; color: #333; display: block; margin-bottom: 4px; }
+.setting-info p { margin: 0; font-size: 0.85rem; color: #888; }
+.setting-info.full { width: 100%; }
+
+.theme-switcher { background: #f0f0f0; padding: 4px; border-radius: 8px; display: flex; }
+.theme-opt {
+    border: none; background: transparent; padding: 6px 14px; font-size: 0.85rem;
+    border-radius: 6px; cursor: pointer; color: #666; font-weight: 600;
+}
+.theme-opt.active { background: #fff; color: #2E7D32; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+
+.setting-select {
+    padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd;
+    min-width: 140px; cursor: pointer;
+}
+
+/* Slider Style */
+.slider-wrapper { display: flex; align-items: center; gap: 15px; margin-top: 10px; color: #666; font-size: 0.8rem; }
+.green-slider {
+    -webkit-appearance: none; width: 100%; height: 6px; background: #e0e0e0; border-radius: 5px;
+}
+.green-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; background: #2E7D32; border-radius: 50%; cursor: pointer; border: 2px solid white; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Switch Toggle */
+.switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #2E7D32; }
+input:checked + .slider:before { transform: translateX(18px); }
+
+/* Help Box */
+.help-box { background: #F0FDF4; border: 1px solid #DCFCE7; padding: 15px 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.btn-open-manual { background: #2E7D32; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;}
+
+/* Footer */
+.settings-footer {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 15px;
+}
+.btn-save-changes {
+    background-color: #2E7D32;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: 0.2s;
+}
+.btn-save-changes:hover { background-color: #1B5E20; }
+
+/* Animation */
+.fade-in { animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
