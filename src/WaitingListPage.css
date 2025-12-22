@@ -21,7 +21,7 @@
 
 /* Content Wrapper */
 .waiting-content {
-    max-width: 96%; /* ✅ ปรับเป็น 96% ตามต้องการ */
+    max-width: 90%; /* ✅ ปรับเป็น 96% ตามต้องการ */
     margin: 30px auto;
     padding: 0 40px;
     display: flex;
@@ -30,21 +30,21 @@
 }
 
 /* 1. Session Hero Card */
-.session-hero-card { background: white; border-radius: 16px; padding: 40px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 40px; }
+.session-hero-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 20px; }
 .session-header-left { text-align: left; display: flex; flex-direction: column; align-items: flex-start; max-width: 100%; }
-.session-header-left h2 { margin: 0 0 15px 0; font-size: 2rem; color: #1a1a1a; font-weight: 800; }
+.session-header-left h2 { margin: 0 0 6px 0; font-size: 1.4rem; color: #1a1a1a; font-weight: 800; }
 .mode-badge { background-color: #D4AC0D; color: white; padding: 6px 18px; border-radius: 30px; font-size: 0.95rem; font-weight: bold; display: inline-block; margin-bottom: 20px; }
-.session-desc { color: #555; line-height: 1.7; font-size: 1rem; margin: 0; max-width: 950px; }
+.session-desc { color: #555; line-height: 1.7; font-size: 0.8rem; margin: 0; max-width: 950px; }
 
 /* Grid Stats */
-.session-stats-grid { display: grid; grid-template-columns: 0.9fr 0.9fr 2.0fr 2.0fr; gap: 20px; align-items: stretch; }
-.stat-box-white { border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; text-align: center; background: white; display: flex; flex-direction: column; justify-content: center; height: 100px; transition: transform 0.2s; }
+.session-stats-grid { display: grid; grid-template-columns: 0.9fr 0.9fr 2.0fr 2.0fr; gap: 10px; align-items: stretch; }
+.stat-box-white { border: 1px solid #e0e0e0; border-radius: 12px; padding: 10px; text-align: center; background: white; display: flex; flex-direction: column; justify-content: center; height: 70px; transition: transform 0.2s; }
 .stat-box-white:hover { border-color: #2E7D32; transform: translateY(-2px); }
-.stat-label { font-size: 0.9rem; color: #888; margin-bottom: 8px; font-weight: 600; }
-.stat-value { font-size: 1.4rem; font-weight: 700; color: #333; }
+.stat-label { font-size: 0.8rem; color: #888; margin-bottom: 8px; font-weight: 600; }
+.stat-value { font-size: 1.0rem; font-weight: 600; color: #333; }
 
 /* Timer */
-.timer-box-green { background-color: #2E7D32; color: white; border-radius: 12px; padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3); height: 100px; transition: background-color 0.3s ease; }
+.timer-box-green { background-color: #2E7D32; color: white; border-radius: 12px; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(46, 125, 50, 0.3); height: 70px; transition: background-color 0.3s ease; }
 .timer-box-warning { background-color: #C0392B; color: white; border-radius: 12px; padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(192, 57, 43, 0.4); height: 100px; animation: pulseWarning 1s infinite alternate; }
 .timer-info { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; justify-content: center; }
 .timer-title-row { display: flex; align-items: center; gap: 8px; }
