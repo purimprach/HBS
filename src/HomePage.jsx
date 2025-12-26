@@ -14,7 +14,7 @@ function HomePage() {
   const navigate = useNavigate();
 
   // --- ⏰ Timer Logic ---
-  const [timeLeft, setTimeLeft] = useState(180); 
+  const [timeLeft, setTimeLeft] = useState(600); 
 
   useEffect(() => {
     if (timeLeft > 0) {

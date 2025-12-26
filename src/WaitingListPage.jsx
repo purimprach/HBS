@@ -15,7 +15,7 @@ function WaitingListPage() {
 
   // --- State ---
   const [isUserReady, setIsUserReady] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(900); 
+  const [timeLeft, setTimeLeft] = useState(180); 
 
   // --- Logic นับถอยหลัง ---
   useEffect(() => {
@@ -32,7 +32,7 @@ function WaitingListPage() {
   // [Helper] ฟังก์ชันเลือกสถานะตามเวลา (3 ระดับ)
   const getTimerStatus = (seconds) => {
     if (seconds <= 60 && seconds > 0) return 'critical'; // แดง (<= 1 นาที)
-    if (seconds <= 180 && seconds > 0) return 'warning'; // เหลือง (<= 3 นาที)
+    if (seconds <= 120 && seconds > 0) return 'warning'; // เหลือง (<= 3 นาที)
     return 'normal'; // เขียว (> 3 นาที)
   };
 
@@ -178,10 +178,14 @@ function WaitingListPage() {
                     const status = getTimerStatus(timeLeft);
                     let boxClass = "timer-box-normal";
                     let iconColor = "#198754";
+                    // 1. ตั้งค่าข้อความปกติ
+                    let warningText = "โปรดยืนยันก่อนหมดเวลา";
 
                     if (status === 'critical') {
                         boxClass = "timer-box-critical";
                         iconColor = "white";
+                        // 2. เปลี่ยนข้อความเมื่อเป็นสีแดง (วิกฤต)
+                        warningText = "ถ้าไม่ยืนยันจะถูกตัดออกจากเกมโดยอัตโนมัติ";
                     } else if (status === 'warning') {
                         boxClass = "timer-box-warning";
                         iconColor = "#212529"; // สีดำ ให้ตัดกับพื้นเหลือง
@@ -194,7 +198,10 @@ function WaitingListPage() {
                                     <Clock size={22} color={iconColor} />
                                     <span className="timer-text-main">เกมจะเริ่มในอีก</span>
                                  </div>
-                                 <span className="timer-sub-text">โปรดยืนยันก่อนหมดเวลา</span>
+                                 {/* 3. แสดงข้อความ และสั่งให้ตัดคำถ้าข้อความยาว (whiteSpace: 'normal') */}
+                                 <span className="timer-sub-text" style={{ whiteSpace: status === 'critical' ? 'normal' : 'nowrap' }}>
+                                    {warningText}
+                                 </span>
                             </div>
                             {formatTimeDigits(timeLeft)}
                         </div>
