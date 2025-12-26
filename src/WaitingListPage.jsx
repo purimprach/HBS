@@ -2,8 +2,12 @@ import React, { useState, useEffect } from 'react';
 import './WaitingListPage.css'; 
 import { useNavigate } from 'react-router-dom';
 import { 
-  Clock, BookOpen, DollarSign, Settings, TrendingUp, AlertTriangle, 
-  Calendar, Users, User, Globe, LogOut, Building, Zap, Sliders, ClipboardList 
+  // --- Icons หลัก ---
+  Clock, BookOpen, User, Globe, LogOut, 
+  // --- Icons สำหรับ Rules (ต้องมี Zap ด้วย) ---
+  Calendar, DollarSign, Zap, Sliders, TrendingUp, AlertTriangle,
+  // --- Icons ใหม่สำหรับ Scoring (ให้ตรงกับรูป) ---
+  CircleDollarSign, Building2, PieChart, Users, BarChart3, ClipboardList
 } from 'lucide-react';
 
 function WaitingListPage() {
@@ -25,8 +29,12 @@ function WaitingListPage() {
     }
   }, [timeLeft, navigate]);
 
-  // เช็คนาทีสุดท้าย
-  const isLastMinute = timeLeft <= 60 && timeLeft > 0;
+  // [Helper] ฟังก์ชันเลือกสถานะตามเวลา (3 ระดับ)
+  const getTimerStatus = (seconds) => {
+    if (seconds <= 60 && seconds > 0) return 'critical'; // แดง (<= 1 นาที)
+    if (seconds <= 180 && seconds > 0) return 'warning'; // เหลือง (<= 3 นาที)
+    return 'normal'; // เขียว (> 3 นาที)
+  };
 
   const handleConfirmReady = () => {
     setIsUserReady(true);
@@ -42,15 +50,15 @@ function WaitingListPage() {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return (
-      <div className="timer-display-row">
-        <span className="digit-box">{m < 10 ? '0' + m : m}</span>
-        <span className="colon">:</span>
-        <span className="digit-box">{s < 10 ? '0' + s : s}</span>
+      <div className="timer-digits-wrapper">
+         <div className="digit-card">{m < 10 ? '0' + m : m}</div>
+         <span className="timer-colon">:</span>
+         <div className="digit-card">{s < 10 ? '0' + s : s}</div>
       </div>
     );
   };
 
-  // Mock Data: Teams
+  // Mock Data
   const teams = [
     { rank: 4, name: 'พญานาค (You)', captain: 'Username 4', members: 4, isUser: true }, 
     { rank: 1, name: 'Coastal Kings', captain: 'Username 1', members: 4, isUser: false },
@@ -59,99 +67,64 @@ function WaitingListPage() {
     { rank: 5, name: 'Coastal Ace', captain: 'Username 5', members: 4, isUser: false },
   ];
 
-  // Mock Data: Game Rules
   const gameRules = [
-    { 
-        icon: <Calendar size={28} />, 
-        title: 'ระยะเวลาของเกม', 
-        desc: 'เกมจะเล่นทั้งหมด 12 รอบ', 
-        badge: '12 รอบ' 
-    },
-    { 
-        icon: <Clock size={28} />, 
-        title: 'ระยะเวลาต่อรอบ', 
-        desc: 'กำหนดเวลาแบ่งในแต่ละรอบคือ 15 นาที', 
-        badge: '15 นาที' 
-    },
-    { 
-        icon: <DollarSign size={28} />, 
-        title: 'เงินสดเริ่มต้น', 
-        desc: 'เงินสดเริ่มต้นที่ 10,000,000 บาท', 
-        badge: '10M',
-        footerIcon: <Zap size={14} />,
-        footerText: 'ข้อมูลสำคัญ'
-    },
-    { 
-        icon: <Sliders size={28} />, 
-        title: 'การตัดสินใจหลัก', 
-        desc: 'ควบคุมอัตราค่าห้องพัก, ค่าใช้จ่ายทางการตลาด, ระดับพนักงาน, การอัปเกรดและการปรับปรุงสิ่งต่างๆในแต่ละรอบ', 
-        badge: null 
-    },
-    { 
-        icon: <TrendingUp size={28} />, 
-        title: 'ความผันผวนของตลาด', 
-        desc: 'ตั้งค่าเป็น "ปานกลาง" คาดหวังเหตุการณ์ทางเศรษฐกิจแบบสุ่มที่สามารถส่งผลกระทบต่ออัตราการท่องเที่ยวและต้นทุนการดำเนินงาน', 
-        badge: 'ปานกลาง' 
-    },
-    { 
-        icon: <AlertTriangle size={28} />, 
-        title: 'บทลงโทษ', 
-        desc: 'ข้อควรระวัง: หากคุณไม่สามารถรักษากระแสเงินสดให้เป็นบวก และปล่อยให้ตัวเลขติดลบมากเกินไป ธุรกิจของคุณจะล้มละลาย', 
-        badge: null,
-        footerIcon: <AlertTriangle size={14} />,
-        footerText: 'ข้อควรระวัง',
-        isAlert: true 
-    },
+    { icon: <Calendar size={28} />, title: 'ระยะเวลาของเกม', desc: 'เกมจะเล่นทั้งหมด 12 รอบ', badge: '12 รอบ' },
+    { icon: <Clock size={28} />, title: 'ระยะเวลาต่อรอบ', desc: 'กำหนดเวลาแบ่งในแต่ละรอบคือ 15 นาที', badge: '15 นาที' },
+    { icon: <DollarSign size={28} />, title: 'เงินสดเริ่มต้น', desc: 'เงินสดเริ่มต้นที่ 10,000,000 บาท', badge: '10M', footerIcon: <Zap size={14} />, footerText: 'ข้อมูลสำคัญ' },
+    { icon: <Sliders size={28} />, title: 'การตัดสินใจหลัก', desc: 'ควบคุมอัตราค่าห้องพัก, ค่าใช้จ่ายทางการตลาด ฯลฯ', badge: null },
+    { icon: <TrendingUp size={28} />, title: 'ความผันผวนของตลาด', desc: 'ตั้งค่าเป็น "ปานกลาง" คาดหวังเหตุการณ์ทางเศรษฐกิจแบบสุ่ม', badge: 'ปานกลาง' },
+    { icon: <AlertTriangle size={28} />, title: 'บทลงโทษ', desc: 'หากกระแสเงินสดติดลบมากเกินไป ธุรกิจจะล้มละลาย', badge: null, footerIcon: <AlertTriangle size={14} />, footerText: 'ข้อควรระวัง', isAlert: true },
   ];
 
-  // Mock Data: Scoring
+  // ✅ อัปเดตไอคอน Scoring ให้ตรงกับรูปภาพ Ref
   const scoringCriteria = [
     { 
-      title: 'ผลการดำเนินงานทางการเงิน', 
-      desc: 'กำไรสุทธิ, รายได้เฉลี่ยต่อห้อง (RevPAR), อัตราผลตอบแทนต่อส่วนผู้ถือหุ้น (ROE)', 
-      percent: '20%', 
-      icon: <DollarSign size={28} />
+        title: 'ผลการดำเนินงานทางการเงิน', 
+        desc: 'กำไรสุทธิ, รายได้เฉลี่ยต่อห้อง, ROE', 
+        percent: '20%', 
+        icon: <CircleDollarSign size={28} /> // รูปเหรียญ
     },
     { 
-      title: 'ผลการดำเนินงานโดยรวม', 
-      desc: 'ความพึงพอใจพนักงาน, อัตราการลาออก, ชั่วโมง/งบประมาณการฝึกอบรม', 
-      percent: '20%', 
-      icon: <Building size={28} /> 
+        title: 'ผลการดำเนินงานโดยรวม', 
+        desc: 'ความพึงพอใจพนักงาน, อัตราการลาออก', 
+        percent: '20%', 
+        icon: <Building2 size={28} /> // รูปตึก
     },
     { 
-      title: 'การตลาดและแบรนด์', 
-      desc: 'ส่วนแบ่งการตลาด, คะแนนชื่อเสียงของแบรนด์', 
-      percent: '15%', 
-      icon: <Globe size={28} /> 
+        title: 'การตลาดและแบรนด์', 
+        desc: 'ส่วนแบ่งการตลาด, ชื่อเสียงของแบรนด์', 
+        percent: '15%', 
+        icon: <PieChart size={28} /> // รูปกราฟวงกลม
     },
     { 
-      title: 'พนักงานและองค์กร', 
-      desc: 'ความพึงพอใจพนักงาน, อัตราการลาออก, ชั่วโมง/งบประมาณการฝึกอบรม', 
-      percent: '10%', 
-      icon: <Users size={28} /> 
+        title: 'พนักงานและองค์กร', 
+        desc: 'ความพึงพอใจพนักงาน, การฝึกอบรม', 
+        percent: '10%', 
+        icon: <Users size={28} /> // รูปกลุ่มคน
     },
     { 
-      title: 'การเติบโตและมูลค่าในระยะยาว', 
-      desc: 'มูลค่าเพิ่มทางเศรษฐศาสตร์, การเติบโตของมูลค่าทรัพย์สิน', 
-      percent: '10%', 
-      icon: <TrendingUp size={28} /> 
+        title: 'การเติบโตและมูลค่าในระยะยาว', 
+        desc: 'มูลค่าเพิ่มทางเศรษฐศาสตร์, ทรัพย์สิน', 
+        percent: '10%', 
+        icon: <BarChart3 size={28} /> // รูปกราฟแท่ง
     },
     { 
-      title: 'ปฏิบัติการและงานบริการ', 
-      desc: 'คะแนนความพึงพอใจลูกค้า, อัตราการเข้าพัก', 
-      percent: '15%', 
-      icon: <Settings size={28} /> 
+        title: 'ปฏิบัติการและงานบริการ', 
+        desc: 'ความพึงพอใจลูกค้า, อัตราการเข้าพัก', 
+        percent: '15%', 
+        icon: <ClipboardList size={28} /> // รูป Check list
     },
     { 
-      title: 'ความเสี่ยงและวินัยทางการเงิน', 
-      desc: 'กระแสเงินสด / สภาพคล่อง, อัตราส่วนหนี้สินต่อทุน (D/E Ratio), งานซ่อมบำรุงคงค้าง', 
-      percent: '10%', 
-      icon: <AlertTriangle size={28} /> 
+        title: 'ความเสี่ยงและวินัยทางการเงิน', 
+        desc: 'กระแสเงินสด, D/E Ratio', 
+        percent: '10%', 
+        icon: <AlertTriangle size={28} /> // รูปตกใจ (เหมือนเดิม)
     },
   ];
 
   return (
     <div className="waiting-container">
+      {/* Navbar */}
       <nav className="waiting-header">
         <div className="header-brand">
           <span className="logo-emoji">🏨</span>
@@ -174,13 +147,15 @@ function WaitingListPage() {
 
       <main className="waiting-content">
         
-        {/* --- 1. Session Hero Card (Original Code preserved) --- */}
-        <div className="card session-hero-card">
+        {/* --- 1. Session Hero Card --- */}
+        <div className="session-hero-card">
             <div className="session-header-left">
                 <h2>เซสชันเกม: การจำลองธุรกิจโรงแรม</h2>
-                <span className="mode-badge">โหมดผู้เล่นหลายคน</span>
+                <div className="mode-badge-container">
+                    <span className="mode-badge">โหมดผู้เล่นหลายคน</span>
+                </div>
                 <p className="session-desc">
-                    ยินดีต้อนรับ การก้าวเข้าสู่บทบาทของการเป็นหุ้นส่วนของโรงแรมในเกม การจำลองธุรกิจโรงแรม ภารกิจของคุณ คือการบริหารจัดการโรงแรมของคุณให้สามารถดำเนินธุรกิจได้ ภายใต้สภาวะต่างๆ ที่ตลาดมีการเปลี่ยนแปลงตลอดเวลา การแข่งขันที่ดุเดือด คือกุญแจสำคัญที่จะพาคุณก้าวขึ้นเป็นผู้นำในอุตสาหกรรมโรงแรมในซิมูเลชันที่เดิมพันสูงนี้
+                    ยินดีต้องรับ การก้าวเข้าสู่บทบาทของการเป็นหุ้นส่วนของโรงแรมในเกม การจำลองธุรกิจโรงแรม ภารกิจของคุณ คือการบริหารจัดการโรงแรมของคุณให้สามารถดำเนินธุรกิจได้ ภายใต้สภาวะต่างๆ ที่ตลาดมีการเปลี่ยนแปลงตลอดเวลา การแข่งขันที่ดุเดือด คือกุญแจสำคัญที่จะพาคุณก้าวขึ้นเป็นผู้นำในอุตสาหกรรมโรงแรมในซิมูเลชันที่เดิมพันสูงนี้
                 </p>
             </div>
 
@@ -193,77 +168,71 @@ function WaitingListPage() {
                     <span className="stat-label">ผู้ดูแล</span>
                     <span className="stat-value">แอดมิน 1</span>
                 </div>
-                <div className="stat-box-white game-name-box">
+                <div className="stat-box-white">
                     <span className="stat-label">ชื่อเกม</span>
                     <span className="stat-value">HBS 2029</span>
                 </div>
-                <div className={isLastMinute ? "timer-box-warning" : "timer-box-green"}>
-                    <div className="timer-info">
-                        <div className="timer-title-row">
-                            <Clock size={20} className="timer-icon" />
-                            <span className="timer-label">เกมจะเริ่มในอีก</span>
+                
+                {/* Timer Box (Updated Logic) */}
+                {(() => {
+                    const status = getTimerStatus(timeLeft);
+                    let boxClass = "timer-box-normal";
+                    let iconColor = "#198754";
+
+                    if (status === 'critical') {
+                        boxClass = "timer-box-critical";
+                        iconColor = "white";
+                    } else if (status === 'warning') {
+                        boxClass = "timer-box-warning";
+                        iconColor = "#212529"; // สีดำ ให้ตัดกับพื้นเหลือง
+                    }
+
+                    return (
+                        <div className={boxClass}>
+                            <div className="timer-info-group">
+                                 <div className="timer-label-row">
+                                    <Clock size={22} color={iconColor} />
+                                    <span className="timer-text-main">เกมจะเริ่มในอีก</span>
+                                 </div>
+                                 <span className="timer-sub-text">โปรดยืนยันก่อนหมดเวลา</span>
+                            </div>
+                            {formatTimeDigits(timeLeft)}
                         </div>
-                        <span className="timer-sub">โปรดยืนยันก่อนหมดเวลา</span>
-                    </div>
-                    <div className="timer-digits">
-                        {formatTimeDigits(timeLeft)}
-                    </div>
-                </div>
+                    );
+                })()}
             </div>
         </div>
 
-        {/* --- 2. Team Table (Updated with Green Design) --- */}
-        <div className="card team-table-card" style={{ padding: '24px' }}>
-            {/* Header พร้อมไอคอน */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ backgroundColor: '#198754', padding: '8px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {/* --- 2. Team Table --- */}
+        <div className="team-table-card">
+            <div className="team-header-row">
+                <div className="team-icon-box">
                     <Users size={20} color="white" />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem' }}>ทีมที่เข้าร่วม</h3>
+                <h3>ทีมที่เข้าร่วม</h3>
             </div>
 
-            <div className="custom-table" style={{ border: '1px solid #e5e7eb', borderRadius: '8px', overflow: 'hidden' }}>
-                {/* Table Head: สีเขียวเข้ม */}
-                <div className="tbl-head" style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '0.8fr 2fr 1.5fr 1fr 1fr', 
-                    backgroundColor: '#2E7D32', // สีเขียวเข้มตาม Ref
-                    color: 'white', 
-                    padding: '12px 16px',
-                    fontWeight: 'bold',
-                    fontSize: '0.95rem'
-                }}>
+            <div className="custom-table">
+                <div className="tbl-head">
                     <div>ลำดับที่</div>
                     <div>ชื่อทีม</div>
                     <div>หัวหน้าทีม</div>
                     <div style={{ textAlign: 'center' }}>จำนวนผู้เล่น</div>
                     <div style={{ textAlign: 'center' }}>สถานะ</div>
                 </div>
-
                 <div className="tbl-body">
                     {teams.map((team, idx) => {
                         let statusText = team.isUser ? (isUserReady ? 'ยืนยัน' : 'รอยืนยัน') : (team.rank === 3 ? 'รอยืนยัน' : 'ยืนยัน');
-                        let statusColor = team.isUser ? (isUserReady ? '#15803d' : '#ca8a04') : (team.rank === 3 ? '#ca8a04' : '#15803d');
-                        
-                        // Row Background: ถ้าเป็น user ให้เป็นสีเขียวอ่อน
-                        let rowBg = team.isUser ? '#dcfce7' : ((idx % 2 === 0) ? 'white' : '#f9fafb');
+                        let statusClass = (statusText === 'ยืนยัน') ? 'status-text-green' : 'status-text-yellow';
+                        let rowBgClass = team.isUser ? 'row-bg-user' : ((idx % 2 === 0) ? 'row-bg-white' : 'row-bg-gray');
 
                         return (
-                            <div key={idx} style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: '0.8fr 2fr 1.5fr 1fr 1fr', 
-                                padding: '12px 16px', 
-                                backgroundColor: rowBg,
-                                borderBottom: '1px solid #f3f4f6',
-                                alignItems: 'center',
-                                fontSize: '0.9rem',
-                                fontWeight: team.isUser ? '600' : '400' 
-                            }}>
-                                <div style={{ fontWeight: 'bold' }}>{team.rank}</div>
+                            <div key={idx} className={`tbl-row ${rowBgClass}`}>
+                                <div>{team.rank}</div>
                                 <div>{team.name}</div>
                                 <div>{team.captain}</div>
                                 <div style={{ textAlign: 'center' }}>{team.members}</div>
-                                <div style={{ textAlign: 'center', color: statusColor, fontWeight: 'bold' }}>
+                                <div style={{ textAlign: 'center' }} className={statusClass}>
                                     {statusText}
                                 </div>
                             </div>
@@ -272,22 +241,11 @@ function WaitingListPage() {
                 </div>
             </div>
             
-            {/* ปุ่มยืนยัน: ปรับให้เป็นสีเขียวเมื่อ Active */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <div className="table-footer-action">
                 <button 
+                    className="btn-confirm-action"
                     onClick={handleConfirmReady}
                     disabled={isUserReady}
-                    style={{
-                        backgroundColor: isUserReady ? '#6b7280' : '#198754', // เขียวเมื่อยังไม่กด
-                        color: 'white',
-                        border: 'none',
-                        padding: '10px 24px',
-                        borderRadius: '6px',
-                        cursor: isUserReady ? 'default' : 'pointer',
-                        fontWeight: 'bold',
-                        fontSize: '0.95rem',
-                        boxShadow: isUserReady ? 'none' : '0 2px 4px rgba(25, 135, 84, 0.3)'
-                    }}
                 >
                     {isUserReady ? 'ยืนยันเรียบร้อย' : 'ยืนยัน'}
                 </button>
@@ -295,17 +253,11 @@ function WaitingListPage() {
         </div>
 
         {/* --- 3. Rules Section --- */}
-        <div className="card rules-main-card">
-            
+        <div className="rules-main-card">
             <div className="rules-card-header">
                 <div className="rules-header-left">
                     <div className="rules-icon-main"><BookOpen size={24} color="white" /></div>
-                    <div className="rules-text-group" style={{ 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      alignItems: 'flex-start',
-                      textAlign: 'left'
-                      }}>
+                    <div className="rules-text-group">
                         <h3>รายละเอียดและกติกาเกม</h3>
                         <span>ทำความเข้าใจกฎเกณฑ์และโครงสร้างของเกม</span>
                     </div>
@@ -319,9 +271,7 @@ function WaitingListPage() {
                 {gameRules.map((rule, idx) => (
                     <div key={idx} className="rule-card-modern">
                         <div className="rule-card-top">
-                            <div className="rule-icon-box">
-                                {rule.icon}
-                            </div>
+                            <div className="rule-icon-box">{rule.icon}</div>
                             <div className="rule-info">
                                 <div className="rule-header-row">
                                     <h4>{rule.title}</h4>
@@ -342,8 +292,7 @@ function WaitingListPage() {
         </div>
         
         {/* --- 4. Scoring Criteria Section --- */}
-        <div className="card scoring-card">
-          
+        <div className="scoring-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
             <div className="rules-icon-main" style={{ backgroundColor: '#198754' }}>
               <ClipboardList size={24} color="white" />
@@ -353,68 +302,21 @@ function WaitingListPage() {
 
           <div className="scoring-note">
             <strong>เงื่อนไขการชนะ:</strong> ทีมที่มีคะแนนรวมสูงสุดเมื่อจบรอบสุดท้าย จะถูกประกาศให้เป็นผู้ชนะ <br />
-            <strong>คำใบ้กลยุทธ์สำคัญ:</strong> 💡 ในขณะที่ความพึงพอใจของแขกและส่วนแบ่งการตลาดมีความสำคัญในการขับเคลื่อนรายได้ การตัดสินใจอย่างสม่ำเสมอที่ช่วยเพิ่มมูลค่าสินทรัพย์ รวมของคุณ คือเส้นทางที่ตรงที่สุดสู่ชัยชนะ
+            <strong>คำใบ้กลยุทธ์สำคัญ:</strong> ในขณะที่ความพึงพอใจของแขกและส่วนแบ่งการตลาดมีความสำคัญในการขับเคลื่อนรายได้ การตัดสินใจอย่างสม่ำเสมอที่ช่วยเพิ่มมูลค่าสินทรัพย์ รวมของคุณ คือเส้นทางที่ตรงที่สุดสู่ชัยชนะ
           </div>
 
           <div className="scoring-grid">
             {scoringCriteria.map((item, index) => (
-              <div 
-                key={index} 
-                className="score-box-modern" 
-                style={{ 
-                  position: 'relative', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  padding: '12px',
-                  gap: '12px'
-                }} 
-              >
-                  <div className="score-icon-box" style={{ flexShrink: 0 }}>
-                      {item.icon}
+              <div key={index} className="score-box-modern">
+                  <div className="score-icon-box">{item.icon}</div>
+                  <div className="score-text-info">
+                      <h4>{item.title}</h4>
+                      <p>{item.desc}</p>
                   </div>
-                  <div className="score-text-info" style={{ 
-                      flex: 1, 
-                      textAlign: 'left', 
-                      padding: '0',
-                      paddingRight: '35px'
-                  }}>
-                      <h4 style={{ 
-                          margin: '0 0 2px 0', 
-                          fontSize: '0.95rem', 
-                          fontWeight: 'bold',
-                          color: '#212529'
-                      }}>
-                          {item.title}
-                      </h4>
-                      <p style={{ 
-                          margin: 0, 
-                          fontSize: '0.8rem', 
-                          color: '#6c757d',
-                          lineHeight: '1.3'
-                      }}>
-                          {item.desc}
-                      </p>
-                  </div>
-                  <div 
-                      className="score-percent-badge" 
-                      style={{ 
-                        position: 'absolute', 
-                        top: '8px',
-                        right: '8px',
-                        backgroundColor: '#198754', 
-                        color: 'white',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        fontWeight: 'bold',
-                        fontSize: '0.75rem'
-                      }}
-                  >
-                      {item.percent}
-                  </div>
+                  <div className="score-percent-badge">{item.percent}</div>
               </div>
             ))}
           </div>
-
         </div>
 
       </main>
