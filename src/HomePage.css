@@ -35,30 +35,32 @@
 
 /* --- Hero Section (ส่วนรูปภาพด้านบน) --- */
 .hero-section {
-    position: relative;
-    height: 280px; /* ความสูงของ Banner */
-    background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
-    background-size: cover;
-    background-position: center;
-    color: white;
-    display: flex;
-    /* จัดข้อความให้อยู่กึ่งกลางแนวตั้ง */
-    align-items: center; 
+  position: relative;
+  height: 240px;
+  margin: 0px 32px 0;
+  border-radius: 18px;
+  overflow:hidden;
+  background:
+    url("https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1600&q=60")
+    center/cover no-repeat;
+  box-shadow: var(--shadow);
 }
 
-/* Overlay สีดำจางๆ เพื่อให้อ่านตัวหนังสือชัดขึ้น */
+.hero-content { /* ตัวอักษรบนแบนเนอร์โรงแรม */
+    max-width: 800px;
+    text-align: left;
+    color: white;
+}
+
 .hero-overlay {
-    background: rgba(0, 0, 0, 0.4); /* ดำจางๆ 20% */
+    /* ปรับตัวเลขท้ายสุดจาก 0.4 เป็น 0.5 หรือ 0.6 จะมืดลงทำให้ตัวหนังสือเด้งขึ้น */
+    background: rgba(0, 0, 0, 0.5); 
+    
     width: 100%;
     height: 100%;
     display: flex;
     align-items: center;
-    padding: 0 60px; /* ระยะห่างจากขอบซ้าย */
-}
-
-.hero-content {
-    max-width: 800px;
-    text-align: left;
+    padding: 0 60px;
 }
 
 .premium-badge {
@@ -74,15 +76,15 @@
 }
 
 .hero-content h1 {
-    font-size: 2.8rem; /* ชื่อโรงแรมตัวใหญ่ */
+    font-size: 2.2rem; /* ชื่อโรงแรมตัวใหญ่ */
     font-weight: 700;
     margin: 0;
     line-height: 1.1;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5); /* เงาตัวหนังสือ */
 }
 
-.sub-hero {
-    font-size: 1.6rem;
+.sub-hero {/* คำอธิบายใต้ชื่อโรงแรม */
+    font-size: 1.5rem;
     font-weight: 500;
     margin: 10px 0 25px 0;
     opacity: 0.95;
@@ -94,11 +96,11 @@
     flex-direction: column; /* เรียงเป็นแนวตั้ง */
     gap: 12px;
 }
-.meta-row {
+.meta-row { /* คำอธิบายสถาปัตยกรรมไทยผสมผสานความทันสมัย เมืองเชียงใหม่, ภาคเหนือ */
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 500;
     text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
@@ -108,8 +110,6 @@
     max-width: 96%;
     margin: 0 auto; /* ลบ margin แนวตั้งออก เพื่อคุมด้วย class ย่อย */
     padding: 0 20px;
-    display: grid;
-    grid-template-columns: 1fr 350px;
     gap: 30px;
     align-items: start;
 }
@@ -118,69 +118,132 @@
 .layout-header {
     margin-top: 30px;
     margin-bottom: 20px; /* เว้นระยะห่างจากส่วนการ์ดไม่ให้ติดกันเกินไป */
+    display: grid;
+    grid-template-columns: 1fr 350px; /* แบ่งพื้นที่เหมือนเดิม */
+    gap: 30px;
+    align-items: center;
 }
 
 /* ส่วนเนื้อหา (Cards) */
 .layout-content {
-    margin-bottom: 50px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr 350px; /* แบ่งพื้นที่เหมือนเดิม */
+    gap: 15px;
+    align-items: start;
 }
 
 /* --- Left Column --- */
-.left-column { display: flex; flex-direction: column; gap: 30px; }
+.left-column { display: flex; flex-direction: column; gap: 10px; }
 
 .welcome-text h3 { margin: 0 0 10px 0; font-size: 1.6rem; color: #1a1a1a; font-weight: 700; }
 .welcome-text p { margin: 0; color: #555; font-size: 1.1rem; line-height: 1.6; }
 .highlight-text { color: #2E7D32; font-weight: bold; }
 
-/* --- Green Card Premium (พื้นหลังเขียวเข้ม) --- */
+/* --- Green Card Premium (ปรับปรุงใหม่) --- */
 .green-card-premium {
-    background-color: #2E7D32; /* พื้นหลังเขียวเข้ม */
-    border-radius: 16px;
-    padding: 30px;
-    color: white;
-    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
-    margin-bottom: 30px;
+    background-color: #2E7D32;  /* 1. สีพื้นหลังเขียวเข้ม (Forest Green) */
+    border-radius: 16px;        /* 2. ตัดมุมทั้ง 4 ให้โค้งมน 16px */
+    padding: 10px 10px 10px 10px;            /* 3. เว้นระยะห่างข้างใน (จากขอบถึงเนื้อหา) 30px ทุกด้าน */
+    color: white;               /* 4. กำหนดสีตัวอักษรข้างในทั้งหมดเป็นสีขาว */
+    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2); /* 5. ใส่เงาสีเขียวจางๆ ให้การ์ดดูลอยมีมิติ */
+    margin-bottom: 10px;        /* 6. เว้นระยะห่างด้านล่าง 30px (ไม่ให้ติดกับเนื้อหาส่วนต่อไป) */
 }
 
 .green-card-header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 30px;
+    display: flex;          /* 1. ใช้ Flexbox จัดเรียงเนื้อหา (ไอคอนและข้อความ) */
+    align-items: center;    /* 2. จัดให้ไอคอนกับข้อความอยู่กึ่งกลางแนวตั้งตรงกัน */
+    gap: 10px;              /* 3. เว้นระยะห่างระหว่างไอคอนกับข้อความ 15px */
+    margin-bottom: 5px;    /* 4. เว้นระยะห่างด้านล่าง (ก่อนถึงเนื้อหาข้างใน) 25px */
 }
+
 .icon-bg-circle {
-    width: 48px;
-    height: 48px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 48px; height: 48px;  /* 1. กำหนดขนาดกล่องเป็นสี่เหลี่ยมจัตุรัส 48x48px */
+    background: rgba(255, 255, 255, 0.2); /* 2. สีพื้นหลังขาวโปร่งใส (ความเข้ม 20%) ให้เห็นสีเขียวทะลุผ่านได้นิดๆ */
+    border-radius: 12px;        /* 3. ตัดมุมโค้งมน 12px (ทรง Squircle หรือสี่เหลี่ยมมน) */
+    display: flex;              /* 4. ใช้ Flexbox เพื่อจัดไอคอนข้างใน */
+    align-items: center;        /* 5. จัดไอคอนกึ่งกลางแนวตั้ง */
+    justify-content: center;    /* 6. จัดไอคอนกึ่งกลางแนวนอน */
+    backdrop-filter: blur(4px); /* 7. **ลูกเล่นพิเศษ:** ทำเบลอพื้นหลังด้านหลังกล่องนี้ (Glassmorphism Effect) ดูคล้ายกระจกฝ้า */
 }
-.header-text h3 { margin: 0; font-size: 1.5rem; font-weight: 600; color: white; }
-.header-text span { font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); }
 
+/* ✅ ปรับ Grid เป็น 2 คอลัมน์ เพื่อให้ข้อมูลดูแน่นและอ่านง่ายขึ้น */
 .green-info-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    display: grid;                  /* 1. เรียกใช้ระบบ Grid Layout */
+    grid-template-columns: repeat(4, 1fr); /* 2. แบ่งคอลัมน์เป็น 4 ช่องเท่ากัน (1fr = 1 fraction) */
+    gap: 10px;                      /* 3. เว้นระยะห่างระหว่างกล่อง (ทั้งบนล่างและซ้ายขวา) 20px */
 }
 
-.green-info-item {
-    background: rgba(255, 255, 255, 0.1); /* พื้นหลังโปร่งใส Glass Effect */
-    border-radius: 12px;
-    padding: 20px;
+/* --- ส่วนข้อความหัวข้อในการ์ดเขียว --- */
+.green-header-text {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    height: 160px;
-    transition: background 0.2s;
+    align-items: flex-start;
 }
-.green-info-item:hover { background: rgba(255, 255, 255, 0.15); }
-.g-icon { margin-bottom: auto; opacity: 0.9; color: white; }
-.g-label { font-size: 0.9rem; color: rgba(255, 255, 255, 0.8); margin-bottom: 5px; }
-.g-value { font-size: 1.8rem; font-weight: 700; line-height: 1.1; color: white; }
-.g-sub { font-size: 0.8rem; color: rgba(255, 255, 255, 0.6); margin-top: 5px; }
+
+.green-header-text h3 {
+    margin: 20;
+    font-size: 1.3rem;  /* ✅ ปรับขนาด "ข้อมูลพื้นฐานโรงแรม" ตรงนี้ (เดิม 1.5rem) */
+    margin-bottom: 2px;          /* เว้นด้านล่างนิดเดียวพอ */
+    line-height: 1.2;            /* กระชับความสูงบรรทัด */
+    font-weight: 600;
+    color: white;
+}
+
+.green-header-text span {
+    font-size: 0.8rem;  /* ✅ ปรับขนาด "ทรัพย์สินและโครงสร้างหลัก" ตรงนี้ (เดิม 0.9rem) */
+    opacity: 0.9;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 6px;
+}
+
+/* ✅ ปรับกล่องข้อมูลเป็นแนวนอน (ไอคอนซ้าย - ข้อความขวา) */
+.green-info-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;          /* ใช้ Flexbox */
+    flex-direction: row;    /* เรียงแนวนอน */
+    align-items: center;    /* จัดกึ่งกลางแนวตั้ง */
+    gap: 6px;              /* ระยะห่างระหว่างไอคอนกับข้อความ */
+    transition: all 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.green-info-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* ปรับขนาดไอคอน */
+.g-icon {
+    width: 42px; height: 42px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+
+/* จัดการข้อความด้านขวา */
+.g-text-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;  /* สั่งให้กล่องลูก (Label, Value) ชิดซ้ายของ Flex container */
+    text-align: left;         /* สั่งให้ตัวหนังสือชิดซ้าย */
+}
+
+.g-label {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.85);
+    margin-bottom: 2px;
+}
+
+.g-value { /* ข้อความ "15 ไร่", "4 อาคาร" */
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: white;
+}
 
 /* --- General Sections (Rooms, Staff, Facilities) --- */
 .section-container { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -317,16 +380,95 @@
 }
 .btn-next:hover { background: #1B5E20; }
 
-/* --- Timer Widget Styles --- */
-.timer-container {
-    background: white;
-    border-radius: 12px;
-    padding: 15px 20px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+/* --- Modern Timer Widget --- */
+.timer-widget-modern {
+    background: white;              /* 1. กำหนดพื้นหลังกล่องเป็นสีขาว */
+    border-radius: 10px;            /* 2. ตัดมุมกล่องให้โค้งมน 16px (ดูทันสมัย ไม่แข็ง) */
+    padding: 10px 20px;             /* 3. เว้นระยะห่างภายใน: บน-ล่าง 15px, ซ้าย-ขวา 25px */
+    display: flex;                  /* 4. ใช้ระบบ Flexbox เพื่อจัดเรียงของข้างใน */
+    align-items: center;            /* 5. จัดของข้างใน (ไอคอน, ตัวเลข) ให้อยู่กึ่งกลางแนวตั้ง */
+    gap: 60px;                      /* 6. เว้นระยะห่างระหว่าง "ไอคอนนาฬิกา" กับ "ตัวเลข" 20px */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 7. ใส่เงาฟุ้งๆ สีดำจางๆ ให้กล่องดูลอยมีมิติ */
+    border-left: 2px solid #ccc;    /* 8. **ไฮไลท์สำคัญ** สร้างแถบเส้นหนา 5px สีเทาทางซ้ายสุด */
+    transition: all 0.3s ease;      /* 9. ทำให้การเปลี่ยนค่าต่างๆ (เช่น เปลี่ยนสีแถบ) ดูนุ่มนวล ไม่กระตุก */
+}
+
+/* เปลี่ยนสีธีมตามสถานะ */
+.timer-widget-modern.status-normal { border-left-color: #2E7D32; }
+.timer-widget-modern.status-warning { border-left-color: #FBC02D; }
+.timer-widget-modern.status-critical { 
+    border-left-color: #D32F2F; 
+    animation: pulse-border 1.5s infinite;
+}
+
+.timer-icon-col {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start; /* จัดชิดบนเพื่อให้ข้อความเตือนไม่ดัน layout */
-    margin-bottom: 20px;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    color: #555;
+}
+.timer-icon-svg {
+    /* เปลี่ยนสีไอคอนตามแม่ */
+}
+.status-normal .timer-icon-svg { color: #2E7D32; }
+.status-warning .timer-icon-svg { color: #FBC02D; }
+.status-critical .timer-icon-svg { color: #D32F2F; }
+
+.timer-label-sm {/* คำว่า เวลาที่เหลือ */
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #888;
+}
+
+/* กลุ่มตัวเลข */
+.timer-digits-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.digit-box { 
+    background: #333;
+    color: white;
+    font-family: 'Courier New', Courier, monospace; /* ฟอนต์ Digital */
+    font-size: 2.5rem;
+    font-weight: 1000;
+    padding: 5px 5px;
+    border-radius: 8px;
+    min-width: 60px;
+    text-align: center;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); /* เงาข้างในให้ดูจมลงไป */
+    line-height: 1;
+}
+
+/* เปลี่ยนสีพื้นหลังกล่องตัวเลขตามสถานะ */
+.status-normal .digit-box { background: #2E7D32; }   /* เขียว */
+.status-warning .digit-box { background: #F9A825; color: #333; } /* เหลือง */
+.status-critical .digit-box { background: #C62828; }  /* แดง */
+
+.colon-separator {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 4px; /* ปรับตำแหน่งให้ตรงกลาง */
+}
+
+.status-critical .colon-separator {
+    animation: blink-colon 1s infinite;
+    color: #D32F2F;
+}
+
+/* Animations */
+@keyframes pulse-border {
+    0% { box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2); }
+    50% { box-shadow: 0 4px 25px rgba(211, 47, 47, 0.5); }
+    100% { box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2); }
+}
+
+@keyframes blink-colon {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
 }
 
 .timer-label {

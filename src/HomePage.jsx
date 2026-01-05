@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import './HomePage.css';
 import { useNavigate } from 'react-router-dom';
-// ✅ นำเข้าไอคอนครบถ้วน
 import { 
   Globe, MapPin, Home, Building, Car, 
   BedDouble, Users, Briefcase, Clock,
-  DollarSign, Activity, CheckCircle, Wallet,
-  Calendar, Award, Luggage, 
-  Trees, Sparkles
+  Wallet, Calendar, Award, Luggage, 
+  Trees, Sparkles,
+  Wrench, ShieldCheck, Monitor, User, CircleDollarSign, Megaphone
 } from 'lucide-react';
 
 function HomePage() {
@@ -25,10 +24,10 @@ function HomePage() {
     }
   }, [timeLeft]);
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  const getTimerDigits = () => {
+    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const s = (timeLeft % 60).toString().padStart(2, '0');
+    return { m, s };
   };
 
   const getTimerState = () => {
@@ -38,6 +37,7 @@ function HomePage() {
   };
 
   const timerState = getTimerState();
+  const { m, s } = getTimerDigits(); 
 
   // --- Mock Data ---
   const roomTypes = [
@@ -49,22 +49,22 @@ function HomePage() {
   ];
 
   const staffRoles = [
-    { name: 'แม่บ้านและทำความสะอาด', count: 19, icon: '🧹' },
-    { name: 'ฝ่ายบริการห้องพัก', count: 11, icon: '🛎️' },
-    { name: 'ฝ่ายไอที (IT)', count: 2, icon: '💻' },
-    { name: 'คนขับรถทั่วไป', count: 2, icon: '🚗' },
-    { name: 'พนักงานดูแลสวนทั่วไป', count: 2, icon: '🌳' },
-    { name: 'ผู้รักษาความปลอดภัย', count: 6, icon: '🛡️' },
-    { name: 'ฝ่ายขายและการตลาด', count: 4, icon: '📢' },
-    { name: 'ฝ่ายบัญชีและการเงิน', count: 6, icon: '💰' },
-    { name: 'ฝ่ายทรัพยากรบุคคล (HR)', count: 3, icon: '👥' },
-    { name: 'วิศวกร/ซ่อมบำรุง', count: 4, icon: '🔧' },
+    { name: 'แม่บ้านและทำความสะอาด', count: 19, icon: <Sparkles size={24} color="#2E7D32"/> },
+    { name: 'ฝ่ายบริการต้อนรับ', count: 11, icon: <User size={24} color="#2E7D32"/> },  
+    { name: 'ฝ่ายไอที (IT)', count: 2, icon: <Monitor size={24} color="#2E7D32"/> },
+    { name: 'คนขับรถทั่วไป', count: 2, icon: <Car size={24} color="#2E7D32"/> },
+    { name: 'พนักงานดูแลสวนทั่วไป', count: 2, icon: <Trees size={24} color="#2E7D32"/> },
+    { name: 'ผู้รักษาความปลอดภัย', count: 6, icon: <ShieldCheck size={24} color="#2E7D32"/> },
+    { name: 'ฝ่ายขายและการตลาด', count: 4, icon: <Megaphone size={24} color="#2E7D32"/> },
+    { name: 'ฝ่ายบัญชีและการเงิน', count: 6, icon: <CircleDollarSign size={24} color="#2E7D32"/> },
+    { name: 'ฝ่ายทรัพยากรบุคคล (HR)', count: 3, icon: <Users size={24} color="#2E7D32"/> },
+    { name: 'วิศวกรรม/ซ่อมบำรุง', count: 4, icon: <Wrench size={24} color="#2E7D32"/> }, 
   ];
 
   const facilities = [
     { name: 'ห้องประชุม', info: 'จัดสัมนาได้ไม่เกิน 200 คน', icon: <Briefcase size={24}/> },
     { name: 'สวนและพื้นที่พักผ่อน', info: 'พื้นที่ 3 ไร่', icon: <Trees size={24}/> },
-    { name: 'ลานจอดรถ', info: '350 คัน', icon: <Car size={24}/> }, // ใช้ไอคอนรถเพื่อให้สื่อความหมาย
+    { name: 'ลานจอดรถ', info: '350 คัน', icon: <Car size={24}/> }, 
     { name: 'รถรับส่งสนามบิน', info: '2 คัน', icon: <Car size={24}/> },
   ];
 
@@ -99,34 +99,34 @@ function HomePage() {
          </div>
       </header>
 
-      {/* ✅ SECTION 1: ส่วนหัว */}
+      {/* SECTION 1: ส่วนหัว */}
       <div className="main-layout layout-header">
          <div className="welcome-text">
             <h3>ยินดีต้อนรับสู่ การบริหารจัดการโรงแรมในเครือของคุณ</h3>
             <p>คุณกำลังบริหาร <span className="highlight-text">โรงแรม สวัสดี</span> โรงแรมพรีเมี่ยมสไตล์ล้านนา ในการแข่งขันกลุ่มโรงแรมพรีเมี่ยม เวลาในการตัดสินใจครั้งแรก : <span className="highlight-text">15 นาที</span></p>
          </div>
 
-         {/* Timer Widget */}
-         <div className="timer-container">
-               <span className="timer-label">เวลาที่เหลือ</span>
-               <div className="timer-right-side">
-                   <div className={`time-badge bg-${timerState} ${timerState === 'critical' ? 'blink-active' : ''}`}>
-                       {formatTime(timeLeft)}
-                   </div>
-                   <span 
-                     className={`warning-message ${
-                       timerState === 'normal' 
-                         ? 'text-invisible' 
-                         : (timerState === 'warning' ? 'text-warning' : 'text-critical')
-                     }`}
-                   >
-                       {timerState === 'normal' ? 'Placeholder' : (timerState === 'warning' ? 'รีบพิจารณาการลงทุน !' : 'รีบตัดสินใจและกดยืนยัน !')}
-                   </span>
+         <div className={`timer-widget-modern status-${timerState}`}>
+               <div className="timer-icon-col">
+                   <Clock size={28} className="timer-icon-svg" />
+                   <span className="timer-label-sm">เวลาที่เหลือ</span>
                </div>
-           </div>
+               
+               <div className="timer-digits-group">
+                   <div className="digit-box">{m}</div>
+                   <div className="colon-separator">:</div>
+                   <div className="digit-box">{s}</div>
+               </div>
+         </div>
       </div>
 
-      {/* ✅ SECTION 2: ส่วนเนื้อหาหลัก */}
+      <div className="main-layout" style={{ justifyContent: 'flex-end', display: 'flex', marginTop: '-15px' }}>
+            <span className={`warning-message ${timerState === 'normal' ? 'text-invisible' : (timerState === 'warning' ? 'text-warning' : 'text-critical')}`}>
+                {timerState === 'normal' ? '...' : (timerState === 'warning' ? '⚠️ รีบพิจารณาการลงทุน !' : '🔥 รีบตัดสินใจและกดยืนยัน !')}
+            </span>
+      </div>
+
+      {/* ✅ SECTION 2: ส่วนเนื้อหาหลัก (แบ่งซ้าย-ขวา) */}
       <div className="main-layout layout-content">
         
         {/* --- Left Column (ซ้าย) --- */}
@@ -138,13 +138,15 @@ function HomePage() {
              style={{ 
                backgroundColor: '#2E7D32',
                borderRadius: '16px',
-               padding: '30px',
+               padding: '15px 15px', 
                color: 'white',
                boxShadow: '0 4px 15px rgba(46, 125, 50, 0.2)',
-               marginBottom: '30px'
+               display: 'flex',
+               alignItems: 'center', 
+               gap: '40px'          
              }}
            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '30px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px'}}>
                  <div style={{ 
                     width: '48px', height: '48px', 
                     background: 'rgba(255,255,255,0.2)', 
@@ -153,47 +155,39 @@ function HomePage() {
                  }}>
                     <Building size={24} color="white" />
                  </div>
-                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, color: 'white' }}>
-                        ข้อมูลพื้นฐานโรงแรม
-                    </h3>
-                    <span style={{ fontSize: '0.9rem', opacity: 0.9, color: 'white', marginTop: '2px' }}>
-                        ทรัพย์สินและโครงสร้างหลัก
-                    </span>
-                 </div>
+                 <div className="green-header-text">
+                    <h3>ข้อมูลพื้นฐานโรงแรม</h3>
+                    <span>ทรัพย์สินและโครงสร้างหลัก</span>
+                </div>
               </div>
               
-              <div className="green-info-grid">
-                 <div className="green-info-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <div className="g-icon"><Home size={28} color="white"/></div>
-                    <div>
-                        <div className="g-label" style={{color: 'rgba(255,255,255,0.8)'}}>พื้นที่โครงการ</div>
-                        <div className="g-value" style={{color: 'white'}}>15 ไร่</div>
-                        <div className="g-sub" style={{color: 'rgba(255,255,255,0.7)'}}>พื้นที่อาคาร 14,400 ตร.ม.</div>
+              <div className="green-info-grid" style={{ flex: 1 }}>
+                 <div className="green-info-item">
+                    <div className="g-icon"><Home size={24} color="white"/></div>
+                    <div className="g-text-content">
+                        <div className="g-label">พื้นที่โครงการ</div>
+                        <div className="g-value">15 ไร่</div>
                     </div>
                  </div>
-                 <div className="green-info-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <div className="g-icon"><MapPin size={28} color="white"/></div>
-                    <div>
-                        <div className="g-label" style={{color: 'rgba(255,255,255,0.8)'}}>พื้นที่สวน</div>
-                        <div className="g-value" style={{color: 'white'}}>3 ไร่</div>
-                        <div className="g-sub" style={{color: 'rgba(255,255,255,0.7)'}}>ภูมิทัศน์และสวน</div>
+                 <div className="green-info-item">
+                    <div className="g-icon"><MapPin size={24} color="white"/></div>
+                    <div className="g-text-content">
+                        <div className="g-label">พื้นที่สวน</div>
+                        <div className="g-value">3 ไร่</div>
                     </div>
                  </div>
-                 <div className="green-info-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <div className="g-icon"><Building size={28} color="white"/></div>
-                    <div>
-                        <div className="g-label" style={{color: 'rgba(255,255,255,0.8)'}}>อาคารทั้งหมด</div>
-                        <div className="g-value" style={{color: 'white'}}>4 อาคาร</div>
-                        <div className="g-sub">-</div>
+                 <div className="green-info-item">
+                    <div className="g-icon"><Building size={24} color="white"/></div>
+                    <div className="g-text-content">
+                        <div className="g-label">อาคารทั้งหมด</div>
+                        <div className="g-value">4 อาคาร</div>
                     </div>
                  </div>
-                 <div className="green-info-item" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                    <div className="g-icon"><Car size={28} color="white"/></div>
-                    <div>
-                        <div className="g-label" style={{color: 'rgba(255,255,255,0.8)'}}>ที่จอดรถ</div>
-                        <div className="g-value" style={{color: 'white'}}>350 คัน</div>
-                        <div className="g-sub">-</div>
+                 <div className="green-info-item">
+                    <div className="g-icon"><Car size={24} color="white"/></div>
+                    <div className="g-text-content">
+                        <div className="g-label">ที่จอดรถ</div>
+                        <div className="g-value">350 คัน</div>
                     </div>
                  </div>
               </div>
@@ -227,7 +221,7 @@ function HomePage() {
 
               <div style={{ 
                  display: 'grid', 
-                 gridTemplateColumns: '1fr 1fr', 
+                 gridTemplateColumns: 'repeat(3, 1fr)', 
                  gap: '15px', 
                  marginBottom: '30px' 
               }}>
@@ -239,7 +233,7 @@ function HomePage() {
                        display: 'flex', 
                        justifyContent: 'space-between', 
                        alignItems: 'center',
-                       background: '#fff'
+                       background: '#F3F4F6'
                     }}>
                        <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#333' }}>{room.name}</h4>
@@ -253,7 +247,7 @@ function HomePage() {
                           </div>
                        </div>
                        <div style={{ 
-                          background: '#E8F5E9', 
+                          background: '#C8E6C9', 
                           borderRadius: '10px',
                           padding: '5px 15px',
                           textAlign: 'center',
@@ -268,20 +262,20 @@ function HomePage() {
                  ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '20px' }}>
-                 <div style={{ flex: 1, background: '#D4EFDF', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#555', marginBottom: '5px' }}>รวมทั้งหมด</span>
-                    <strong style={{ display: 'block', fontSize: '1.8rem', color: '#1E8449', marginBottom: '2px' }}>110</strong>
-                    <span style={{ fontSize: '0.85rem', color: '#444' }}>ห้องพัก</span>
+              <div style={{ display: 'flex', gap: '15px' }}>
+                 <div style={{ flex: 1, background: '#D4EFDF', borderRadius: '12px', padding: '15px', textAlign: 'center' }}>
+                    <span style={{ display: 'block', fontSize: '0.8rem', color: '#555', marginBottom: '2px' }}>รวมทั้งหมด</span>
+                    <strong style={{ display: 'block', fontSize: '1.6rem', color: '#1E8449', lineHeight: 1, marginBottom: '2px' }}>110</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#444' }}>ห้องพัก</span>
                  </div>
-                 <div style={{ flex: 1, background: '#FFF9C4', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#795548', marginBottom: '5px' }}>ค่าเฉลี่ย/คืน</span>
-                    <strong style={{ display: 'block', fontSize: '1.8rem', color: '#F57F17', marginBottom: '2px' }}>3,000</strong>
-                    <span style={{ fontSize: '0.85rem', color: '#5D4037' }}>บาท</span>
+                 <div style={{ flex: 1, background: '#FFF9C4', borderRadius: '12px', padding: '15px', textAlign: 'center' }}>
+                    <span style={{ display: 'block', fontSize: '0.8rem', color: '#795548', marginBottom: '2px' }}>ค่าเฉลี่ย/คืน</span>
+                    <strong style={{ display: 'block', fontSize: '1.6rem', color: '#F57F17', lineHeight: 1, marginBottom: '2px' }}>3,000</strong>
+                    <span style={{ fontSize: '0.75rem', color: '#5D4037' }}>บาท</span>
                  </div>
-                 <div style={{ flex: 1, background: '#B2EBF2', borderRadius: '12px', padding: '20px', textAlign: 'center' }}>
-                    <span style={{ display: 'block', fontSize: '0.85rem', color: '#006064', marginBottom: '5px' }}>อัตราเข้าพักไตรมาสที่ 0</span>
-                    <strong style={{ display: 'block', fontSize: '1.8rem', color: '#006064', marginBottom: '2px' }}>78%</strong>
+                 <div style={{ flex: 1, background: '#B2EBF2', borderRadius: '12px', padding: '15px', textAlign: 'center' }}>
+                    <span style={{ display: 'block', fontSize: '0.8rem', color: '#006064', marginBottom: '2px' }}>อัตราเข้าพักไตรมาสที่ 0</span>
+                    <strong style={{ display: 'block', fontSize: '1.6rem', color: '#006064', lineHeight: 1 }}>78%</strong>
                  </div>
               </div>
            </div>
@@ -298,155 +292,64 @@ function HomePage() {
                border: '1px solid #f0f0f0'
              }}
            >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '15px', marginBottom: '25px' }}>
                  <div style={{ 
                     width: '48px', height: '48px', 
-                    background: '#FFF8E1', 
+                    background: '#FDF7E8', 
                     borderRadius: '14px', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center' 
                  }}>
-                    <Users size={24} color="#FBC02D"/>
+                    <Users size={24} color="#D4A017"/>
                  </div>
-                 <div>
+                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ margin: 0, fontSize: '1.4rem', color: '#222', fontWeight: 700 }}>พนักงาน</h3>
-                    <span style={{ fontSize: '0.9rem', color: '#999' }}>ทั้งหมด 56 คน แบ่งเป็น 10 ฝ่าย</span>
+                    <span style={{ fontSize: '0.9rem', color: '#888', marginTop: '4px' }}>ทั้งหมด 59 คน แบ่งเป็น 10 ฝ่าย</span>
                  </div>
               </div>
 
-              {/* Banner */}
-              <div style={{
-                  background: 'linear-gradient(90deg, #E8F5E9 0%, #D1F2EB 50%, #B2DFDB 100%)', 
-                  borderRadius: '16px',
-                  padding: '20px 25px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '20px',
-                  marginBottom: '25px',
-                  boxShadow: 'inset 0 0 20px rgba(255,255,255,0.5)' 
-              }}>
-                  <div style={{ 
-                      background: 'white', 
-                      width: '50px', height: '50px',
-                      borderRadius: '14px', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
-                  }}>
-                     <Users size={24} color="#00897B"/>
-                  </div>
-                  <div>
-                      <span style={{ display: 'block', fontSize: '0.85rem', color: '#757575', marginBottom: '2px' }}>พนักงานทั้งหมด</span>
-                      <strong style={{ fontSize: '1.8rem', color: '#2E7D32', fontWeight: 700 }}>59 คน</strong>
-                  </div>
-              </div>
-
-              {/* Grid 3 Columns */}
               <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)', 
-                  gap: '15px'
+                  gap: '10px'
               }}>
                   {staffRoles.map((role, idx) => (
                       <div key={idx} style={{
                           border: '1px solid #eee',
-                          borderRadius: '16px',
-                          padding: '20px',
+                          borderRadius: '12px',
+                          padding: '15px 20px',
                           display: 'flex',
-                          flexDirection: 'column', 
-                          justifyContent: 'center',
-                          background: '#fff',
-                          gap: '10px'
+                          alignItems: 'center',
+                          gap: '15px',
+                          background: '#F9FAFB'
                       }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <div style={{ 
-                                  width: '36px', height: '36px', 
-                                  background: '#E0F2F1', 
-                                  borderRadius: '10px',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  color: '#00695C'
-                              }}>
-                                  <span style={{ fontSize: '1.1rem' }}>{role.icon}</span> 
-                              </div>
-                              <span style={{ fontSize: '0.9rem', color: '#444', fontWeight: 600 }}>{role.name}</span>
+                          <div style={{ 
+                              width: '42px', height: '42px', 
+                              background: '#C8E6C9',    
+                              borderRadius: '10px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#2E7D32',
+                              flexShrink: 0
+                          }}>
+                              <span style={{ fontSize: '1.2rem' }}>{role.icon}</span> 
                           </div>
                           
-                          <div style={{ paddingLeft: '48px' }}> 
-                              <strong style={{ fontSize: '1.1rem', color: '#2E7D32' }}>{role.count}</strong>
-                              <span style={{ fontSize: '0.85rem', color: '#888', marginLeft: '5px' }}>คน</span>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: '0.9rem', color: '#333', fontWeight: 600, marginBottom: '2px' }}>
+                                  {role.name}
+                              </span>
+                              <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                  <strong style={{ fontSize: '1.4rem', color: '#2E7D32', lineHeight: 1 }}>
+                                      {role.count}
+                                  </strong>
+                                  <span style={{ fontSize: '0.8rem', color: '#888' }}>คน</span>
+                              </div>
                           </div>
                       </div>
                   ))}
               </div>
            </div>
-
-          {/* ✅ Facilities Section (แก้ไขตามรูป: Grid 4 ช่อง, ดีไซน์กึ่งกลาง) */}
-           <div 
-             className="section-container" 
-             style={{ 
-               background: 'white', 
-               borderRadius: '24px', 
-               padding: '30px', 
-               boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-               marginBottom: '30px',
-               border: '1px solid #f0f0f0'
-             }}
-           >
-              {/* Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px' }}>
-                 <div style={{ 
-                    width: '48px', height: '48px', 
-                    background: '#E0F7FA', // สีฟ้าอ่อนๆ (Cyan-50)
-                    borderRadius: '14px', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                 }}>
-                    <Sparkles size={24} color="#006064"/> {/* ไอคอนวิบวับตามธีม */}
-                 </div>
-                 <div>
-                    <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#222', fontWeight: 700 }}>สิ่งอำนวยความสะดวก</h3>
-                    <span style={{ fontSize: '0.9rem', color: '#999' }}>บริการและพื้นที่ต่างๆ</span>
-                 </div>
-              </div>
-
-              {/* Grid 4 Columns */}
-              <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)', // ✅ แบ่ง 4 คอลัมน์เท่ากัน
-                  gap: '15px'
-              }}>
-                 {facilities.map((fac, idx) => (
-                      <div key={idx} style={{
-                          border: '1px solid #eee',
-                          borderRadius: '16px',
-                          padding: '25px 15px', // เพิ่ม padding บนล่างให้ดูโปร่ง
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center', // ✅ จัดกึ่งกลาง
-                          textAlign: 'center',
-                          background: '#fff',
-                          gap: '12px'
-                      }}>
-                          {/* Icon Circle */}
-                          <div style={{
-                              width: '45px', height: '45px',
-                              background: '#E8F5E9', // พื้นหลังเขียวอ่อน
-                              borderRadius: '12px',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#2E7D32', // สีไอคอนเขียวเข้ม
-                              marginBottom: '5px'
-                          }}>
-                              {fac.icon}
-                          </div>
-
-                          {/* Text Info */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <strong style={{ fontSize: '0.95rem', color: '#333' }}>{fac.name}</strong>
-                              <span style={{ fontSize: '0.8rem', color: '#888' }}>{fac.info}</span>
-                          </div>
-                      </div>
-                 ))}
-              </div>
-           </div>
-
+        
+        {/* ✅ ปิด left-column ตรงนี้ */}
         </div>
 
         {/* --- Right Column (ขวา) --- */}
@@ -465,7 +368,7 @@ function HomePage() {
                marginBottom: '30px'
              }}
            >
-               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px'}}>
                    <div style={{ 
                        width: '36px', height: '36px', 
                        border: '1px solid #5D4037', borderRadius: '8px',
@@ -481,7 +384,6 @@ function HomePage() {
                    backgroundColor: 'rgba(255,255,255,0.25)',
                    borderRadius: '12px',
                    padding: '15px 20px',
-                   marginBottom: '20px'
                }}>
                    <span style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', opacity: 0.8 }}>
                        เงินสดปัจจุบัน
@@ -492,12 +394,9 @@ function HomePage() {
                </div>
 
                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.9rem' }}>
-                   <li style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', opacity: 0.9 }}>
-                       <span>เงินทุนเริ่มต้น</span>
-                       <span style={{ fontWeight: 600 }}>10M</span>
-                   </li>
                    <li style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', opacity: 0.9 }}>
                        <span>มูลค่าอสังหาฯ</span>
+                       <span style={{ fontWeight: 600 }}>10M</span>
                    </li>
                    <li style={{ 
                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -579,167 +478,112 @@ function HomePage() {
                 </button>
            </div>
 
-           {/* 3. ✅ Progress Card (Updated: ใช้ Flexbox และ gap 12px แทน Grid) */}
-           <div 
-             className="card" 
-             style={{ 
-               background: 'white', 
-               borderRadius: '24px', 
-               padding: '30px', 
-               boxShadow: '0 4px 20px rgba(0,0,0,0.04)', 
-               marginBottom: '30px',
-               border: '1px solid #f9f9f9'
-             }}
-           >
-               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px' }}>
-                   <div style={{ 
-                       width: '45px', height: '45px', 
-                       background: '#E0F2F1', 
-                       borderRadius: '12px', 
-                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                       flexShrink: 0
-                   }}>
-                       <Calendar size={24} color="#00695C"/>
-                   </div>
-                   <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#222', fontWeight: 700 }}>ความคืบหน้า</h3>
-               </div>
-
-               <div style={{ marginBottom: '5px' }}>
-                   <span style={{ fontSize: '0.85rem', color: '#757575', display: 'block', marginBottom: '5px' }}>รอบปัจจุบัน</span>
-                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-                       <span style={{ fontSize: '2.8rem', fontWeight: 700, color: '#2E7D32', lineHeight: 1 }}>1</span>
-                       <span style={{ fontSize: '1.4rem', color: '#616161', fontWeight: 500 }}>/ 12</span>
-                   </div>
-               </div>
-
-               <div style={{ marginBottom: '25px', marginTop: '15px' }}>
-                   <div style={{ 
-                       width: '100%', height: '8px', 
-                       background: '#EEEEEE', 
-                       borderRadius: '10px', 
-                       overflow: 'hidden',
-                       marginBottom: '8px'
-                   }}>
-                       <div style={{ width: '8%', height: '100%', background: '#388E3C', borderRadius: '10px' }}></div> 
-                   </div>
-                   <span style={{ fontSize: '0.75rem', color: '#9E9E9E' }}>8% เสร็จสมบูรณ์</span>
-               </div>
-
-               <div style={{ height: '1px', background: '#F0F0F0', marginBottom: '25px' }}></div>
-
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                   
-                   {/* Item 1: เวลา */}
-                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                       <Clock size={20} color="#388E3C" style={{ marginTop: '2px', flexShrink: 0 }} />
-                       <div>
-                           <span style={{ display: 'block', fontSize: '0.8rem', color: '#9E9E9E', marginBottom: '2px', lineHeight: 1.2 }}>เวลาในการตัดสินใจ</span>
-                           <strong style={{ fontSize: '1rem', color: '#388E3C', fontWeight: 700 }}>15 นาที</strong>
-                       </div>
-                   </div>
-
-                   {/* Item 2: โรงแรม */}
-                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                       <Award size={20} color="#D4AF37" style={{ marginTop: '2px', flexShrink: 0 }} />
-                       <div>
-                           <span style={{ display: 'block', fontSize: '0.8rem', color: '#9E9E9E', marginBottom: '2px', lineHeight: 1.2 }}>จำนวนโรงแรมทั้งหมด</span>
-                           <strong style={{ fontSize: '1rem', color: '#424242', fontWeight: 600 }}>10 โรงแรม</strong>
-                       </div>
-                   </div>
-
-                   {/* Item 3: กลุ่มตลาด */}
-                   <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                       <Luggage size={20} color="#388E3C" style={{ marginTop: '2px', flexShrink: 0 }} />
-                       <div>
-                           <span style={{ display: 'block', fontSize: '0.8rem', color: '#9E9E9E', marginBottom: '2px', lineHeight: 1.2 }}>กลุ่มตลาด</span>
-                           <strong style={{ fontSize: '1rem', color: '#424242', fontWeight: 600 }}>นักท่องเที่ยวและคนในพื้นที่</strong>
-                       </div>
-                   </div>
-
-               </div>
-           </div>
-
-           {/* 4. Team Card */}
+           {/* 3. Team Card */}
            <div 
              className="card" 
              style={{ 
                background: 'white', 
                borderRadius: '16px', 
-               padding: '25px', 
+               padding: '15px', 
                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
              }}
            >
                {/* Header */}
-               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px' }}>
-                   <div style={{ 
-                       width: '42px', height: '42px', 
-                       background: '#E8F5E9', 
-                       borderRadius: '10px', 
-                       display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                   }}>
-                      <Users size={24} color="#2E7D32"/> 
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                       <div style={{ 
+                           width: '40px', height: '40px', 
+                           background: '#E8F5E9', 
+                           borderRadius: '10px', 
+                           display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                       }}>
+                          <Users size={22} color="#2E7D32"/> 
+                       </div>
+                       <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#222', fontWeight: 700 }}>ทีมของคุณ</h3>
                    </div>
-                   <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#333' }}>ทีมของคุณ</h3>
+                   
+                   <button style={{
+                       background: '#2E7D32',
+                       color: 'white',
+                       border: 'none',
+                       borderRadius: '8px',
+                       padding: '6px 12px',
+                       fontSize: '0.85rem',
+                       fontWeight: 600,
+                       cursor: 'pointer',
+                       boxShadow: '0 2px 4px rgba(46, 125, 50, 0.2)'
+                   }}>
+                       จัดการทีม
+                   </button>
                </div>
 
-               <div className="team-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                   
+               <div className="team-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                    <div style={{ 
                        background: '#F9FAFB', 
                        borderRadius: '12px', 
-                       padding: '15px 20px' 
+                       padding: '10px 15px' 
                    }}>
-                       <span style={{ display: 'block', fontSize: '0.85rem', color: '#888', marginBottom: '5px' }}>ชื่อทีม</span>
-                       <strong style={{ fontSize: '1.2rem', color: '#333' }}>ทีมพญานาค</strong>
+                       <span style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '4px' }}>ชื่อทีม</span>
+                       <strong style={{ fontSize: '1.0rem', color: '#333' }}>ทีมพญานาค</strong>
                    </div>
 
                    <div style={{ 
-                       background: 'linear-gradient(90deg, #D4EFDF 0%, #E9F7EF 100%)', 
+                       background: 'linear-gradient(90deg, #D6EAF8 0%, #D5F5E3 100%)', 
                        borderRadius: '12px', 
-                       padding: '15px 20px' 
+                       padding: '10px 15px', 
+                       marginBottom: '5px'
                    }}>
-                       <span style={{ display: 'block', fontSize: '0.85rem', color: '#5D6D7E', marginBottom: '5px' }}>สมาชิกในทีม</span>
-                       <strong style={{ fontSize: '1.6rem', color: '#2E7D32' }}>4 คน</strong>
+                       <span style={{ display: 'block', fontSize: '0.8rem', color: '#5D6D7E', marginBottom: '4px' }}>สมาชิกในทีม</span>
+                       <strong style={{ fontSize: '1.0rem', color: '#2E7D32' }}>4 คน</strong>
                    </div>
                    
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '5px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                        {
                         (() => {
                             const roleBadgeStyle = {
                                 background: 'white',          
                                 color: '#2E7D32',             
                                 border: '1px solid #2E7D32',  
-                                width: '200px',               
-                                height: '38px',               
+                                width: '180px',               
+                                height: '32px',               
                                 borderRadius: '8px', 
-                                fontSize: '0.85rem', 
+                                fontSize: '0.8rem', 
                                 fontWeight: 500,
-                                display: 'flex',          
-                                justifyContent: 'center', 
-                                alignItems: 'center',     
+                                display: 'flex',              
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 whiteSpace: 'nowrap'      
+                            };
+
+                            const rowStyle = {
+                                display: 'flex', 
+                                justifyContent: 'space-between', 
+                                alignItems: 'center', 
+                                background: '#F9FAFB', 
+                                padding: '12px 20px',        
+                                borderRadius: '10px'
                             };
 
                             return (
                                 <>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '12px 15px', borderRadius: '10px' }}>
-                                        <span style={{ fontSize: '0.9rem', color: '#555' }}>คุณ</span>
-                                        <span style={roleBadgeStyle}>ประธานเจ้าหน้าที่บริหาร</span>
+                                    <div style={rowStyle}>
+                                        <strong style={{ fontSize: '0.9rem', color: '#333' }}>คุณ</strong>
+                                        <div style={roleBadgeStyle}>ประธานเจ้าหน้าที่บริหาร</div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '12px 15px', borderRadius: '10px' }}>
+                                    <div style={rowStyle}>
                                         <span style={{ fontSize: '0.9rem', color: '#555' }}>John</span>
-                                        <span style={roleBadgeStyle}>ฝ่ายบัญชีและการเงิน</span>
+                                        <div style={roleBadgeStyle}>ฝ่ายบัญชีและการเงิน</div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '12px 15px', borderRadius: '10px' }}>
+                                    <div style={rowStyle}>
                                         <span style={{ fontSize: '0.9rem', color: '#555' }}>Ptest</span>
-                                        <span style={roleBadgeStyle}>ฝ่ายการตลาด</span>
+                                        <div style={roleBadgeStyle}>ฝ่ายการตลาด</div>
                                     </div>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '12px 15px', borderRadius: '10px' }}>
+                                    <div style={rowStyle}>
                                         <span style={{ fontSize: '0.9rem', color: '#555' }}>San</span>
-                                        <span style={roleBadgeStyle}>ฝ่ายทรัพยากรบุคคล</span>
+                                        <div style={roleBadgeStyle}>ฝ่ายทรัพยากรบุคคล</div>
                                     </div>
                                 </>
                             );
@@ -748,10 +592,81 @@ function HomePage() {
                    </div>
                </div>
            </div>
-
+        
+        {/* ✅ ปิด right-column ตรงนี้ */}
         </div>
 
+      {/* ✅ ปิด layout-content ตรงนี้ */}
       </div>
+
+      {/* ✅ SECTION 3: สิ่งอำนวยความสะดวก (อยู่นอกสุดจริงๆ แล้ว!) */}
+      <div className="main-layout" style={{ marginBottom: '50px' }}>
+           <div 
+             className="section-container" 
+             style={{ 
+               background: 'white', 
+               borderRadius: '24px', 
+               padding: '20px', 
+               boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+               border: '1px solid #f0f0f0',
+               width: '100%',     /* สั่งให้กว้างเต็มที่ */
+               boxSizing: 'border-box'
+             }}
+           >
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px' }}>
+                 <div style={{ 
+                    width: '40px', height: '40px', 
+                    background: '#E0F7FA', 
+                    borderRadius: '14px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                 }}>
+                    <Sparkles size={24} color="#006064"/> 
+                 </div>
+                 <div>
+                    <h3 style={{ margin: 0, fontSize: '1.3rem', color: '#222', fontWeight: 700 }}>สิ่งอำนวยความสะดวก</h3>
+                    <span style={{ fontSize: '0.9rem', color: '#999' }}>บริการและพื้นที่ต่างๆ</span>
+                 </div>
+              </div>
+
+              {/* Grid 4 Columns (จะขยายเต็มจอสวยงาม) */}
+              <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, 1fr)', 
+                  gap: '10px' 
+              }}>
+                 {facilities.map((fac, idx) => (
+                      <div key={idx} style={{
+                          border: '1px solid #eee',
+                          borderRadius: '16px',
+                          padding: '20px 15px', 
+                          display: 'flex',
+                          alignItems: 'center', 
+                          textAlign: 'left',
+                          background: '#F9FAFB',
+                          gap: '15px'
+                      }}>
+                          <div style={{
+                              width: '50px', height: '50px',
+                              background: '#C8E6C9', 
+                              borderRadius: '14px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#1B5E20', 
+                              marginBottom: '5px'
+                          }}>
+                              {fac.icon}
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong style={{ fontSize: '1rem', color: '#333' }}>{fac.name}</strong>
+                              <span style={{ fontSize: '0.85rem', color: '#888' }}>{fac.info}</span>
+                          </div>
+                      </div>
+                 ))}
+              </div>
+           </div>
+      </div>
+      
     </div>
   );
 }
