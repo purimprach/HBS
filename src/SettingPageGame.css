@@ -1,0 +1,419 @@
+/* SettingPageGame.css */
+
+/* ✅ เพิ่มพื้นหลังสีเทาอ่อนให้เฉพาะ Main Content ของหน้านี้ */
+.main-content-area.bg-gray-soft {
+    background-color: #f8fafc;
+}
+
+/* ปรับระยะห่างคอนเทนต์ */
+.setting-body {
+    padding: 30px 40px;
+    width: 100%;        /* ✅ ให้กว้างเต็ม 100% ของพื้นที่ */
+    max-width: none;    /* ❌ ลบหรือแก้ max-width เดิม (เช่น 1000px) ออก */
+    margin: 0;          /* ลบ margin auto ออก เพื่อให้ชิดซ้าย-ขวา */
+}
+
+/* --- 1. Tabs (แถบหัวข้อ) --- */
+.settings-tabs-container {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 0;
+}
+
+.setting-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px 12px 0 0;
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.setting-tab.active {
+    background-color: #2E7D32; /* สีเขียว */
+    color: white;
+    font-weight: 500;
+}
+
+.setting-tab.inactive {
+    background-color: #e0e0e0; /* สีเทา */
+    color: #666;
+}
+
+.setting-tab.inactive:hover {
+    background-color: #d0d0d0;
+}
+
+/* --- 2. Settings Card (กล่องขาว) --- */
+/* --- ปรับกล่องการ์ดให้เต็มพื้นที่ --- */
+.settings-card {
+    width: 100%;        /* ✅ บังคับให้การ์ดกว้างเต็มพื้นที่ container */
+    background-color: white;
+    padding: 40px;
+    border-radius: 0 12px 12px 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    
+    /* ความสูง (ตามที่เคยคุยกันไว้) */
+    height: 600px; 
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.setting-section-title {
+    font-family: 'Kanit', sans-serif;
+    font-size: 1.5rem;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+}
+
+/* --- 3. Form Layout --- */
+.setting-form-group {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+}
+
+.form-label-box {
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+}
+
+.form-label-box label {
+    font-family: 'Kanit', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.form-desc {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+/* --- 4. Controls (ปุ่มปรับต่างๆ) --- */
+
+/* Switch */
+.mode-toggle-switch {
+    display: flex;
+    background-color: #f1f5f9;
+    padding: 4px;
+    border-radius: 50px;
+    border: 1px solid #e2e8f0;
+}
+
+.toggle-opt {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 50px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.toggle-opt.active {
+    background-color: white;
+    color: #2E7D32;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    font-weight: 500;
+}
+
+/* Slider */
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 300px;
+}
+
+.slider-label {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+.green-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+.green-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #2E7D32;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Select Box */
+.custom-select-wrapper {
+    position: relative;
+    width: 300px;
+}
+
+.custom-select {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background-color: #f8fafc;
+    font-family: 'Sarabun', sans-serif;
+    color: #333;
+    appearance: none;
+    cursor: pointer;
+}
+
+.select-arrow {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    pointer-events: none;
+}
+
+/* Footer Button */
+.setting-footer {
+    display: flex;
+    justify-content: flex-end;
+    
+    /* ✅ แก้ไขจุดที่ 2: ดันปุ่มลงไปติดขอบล่างสุดเสมอ */
+    margin-top: auto;       /* คำสั่งเทพ! จะดันตัวเองไปจุดล่างสุดของ Flex container */
+    
+    border-top: 1px solid #eee;
+    padding-top: 20px;      /* ลดระยะห่างลงนิดหน่อยเพื่อให้สวยงาม */
+}
+
+/* เพิ่ม Class นี้ไว้จัดการเนื้อหาภายใน */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+    /* ✅ เพิ่มส่วนนี้ */
+    flex: 1;            /* ขยายพื้นที่ให้เต็มส่วนว่างที่เหลือ */
+    overflow-y: auto;   /* ถ้าเนื้อหายาวเกิน ให้มี Scrollbar เฉพาะส่วนเนื้อหา */
+    padding-right: 10px;/* เว้นระยะให้ Scrollbar ไม่ทับเนื้อหา */
+}
+
+.btn-save {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #2E7D32;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
+    transition: background 0.2s;
+}
+
+.btn-save:hover {
+    background-color: #1b5e20;
+}
+
+/* --- CSS เพิ่มเติมสำหรับ Tabs ใหม่ --- */
+
+/* Utility Classes */
+.w-100 { width: 100%; }
+.mb-2 { margin-bottom: 10px; }
+.ml-3 { margin-left: 15px; }
+.inline-icon { vertical-align: middle; margin-right: 5px; color: #2E7D32; }
+.block { display: block; }
+.flex-row-center { display: flex; align-items: center; }
+
+/* Animation fade-in เวลาเปลี่ยน tab */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Sound Tab Styles --- */
+.setting-form-group-col {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 30px;
+}
+
+.full-width-slider {
+    width: 100%;
+    padding: 0 10px;
+}
+
+.divider-light {
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+    margin: 30px 0;
+}
+
+.icon-sq-gray {
+    width: 40px;
+    height: 40px;
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+}
+
+/* iOS Toggle Switch Style */
+.toggle-switch-ios {
+    position: relative;
+    width: 50px;
+    height: 28px;
+}
+.toggle-switch-ios input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-switch-ios label {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+.toggle-switch-ios label:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+.toggle-switch-ios input:checked + label {
+    background-color: #2E7D32;
+}
+.toggle-switch-ios input:checked + label:before {
+    transform: translateX(22px);
+}
+
+/* --- Accessibility Tab Styles --- */
+.access-card-item {
+    display: flex;
+    align-items: center;
+    background-color: #f8fafc; /* พื้นหลังเทาอ่อน */
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+.access-icon-box {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+    flex-shrink: 0;
+}
+
+.access-text-content {
+    flex: 1;
+}
+
+.access-text-content h3 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    color: #333;
+    font-weight: 600;
+}
+
+.access-text-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* --- Help Tab Styles --- */
+.help-banner-card {
+    display: flex;
+    align-items: center;
+    background-color: #ecfdf5; /* พื้นหลังสีเขียวอ่อนมาก ตามรูป */
+    border: 1px solid #d1fae5;
+    padding: 25px;
+    border-radius: 12px;
+}
+
+.help-icon-box {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 20px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.help-text-content {
+    flex: 1;
+}
+
+.help-text-content h3 {
+    margin: 0 0 5px 0;
+    font-size: 1rem;
+    color: #14532d; /* สีเขียวเข้ม */
+    font-weight: 600;
+}
+
+.help-text-content p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #4b5563;
+}
+
+.btn-green-outline {
+    background-color: #2E7D32;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-green-outline:hover {
+    background-color: #1b5e20;
+}

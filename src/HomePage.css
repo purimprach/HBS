@@ -1,61 +1,47 @@
-/* src/HomePage.css - Final Version */
+/* src/HomePage.css - Final Version (Full Width) */
 
 /* 1. นำเข้าฟอนต์ Sarabun */
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
 
-/* --- Global Settings --- */
-.homepage-container {
+/* --- Global Settings (เปลี่ยนชื่อเป็น content-body ตาม React Code) --- */
+.content-body {
     background-color: #F8F9FA;
     min-height: 100vh;
-    /* กำหนดลำดับฟอนต์: หา TH Sarabun New ก่อน ถ้าไม่มีใช้ Sarabun */
     font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
-    /* เพิ่มขนาดฟอนต์พื้นฐานเพื่อให้ดูง่ายขึ้น */
     font-size: 18px; 
     color: #333;
-}
 
-/* --- Top Bar --- */
-.top-status-bar {
-    background: white;
-    /* เพิ่ม Padding ให้แถบดูสูงขึ้น */
-    padding: 15px 40px; 
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 1rem;
-    color: #666;
-    border-bottom: 1px solid #eee;
+    /* ✅ แก้ไข: ขยายความกว้างเต็มจอ และจัดการระยะห่างขอบจอที่นี่ที่เดียว */
+    width: 100% !important;
+    max-width: none !important;
+    padding: 20px 40px;  /* ระยะห่างจากขอบจอ ซ้าย-ขวา 40px */
+    box-sizing: border-box;
+    margin: 0;
 }
-.status-left span { font-weight: 500; }
-.divider { margin: 0 10px; color: #ddd; }
-.status-right { display: flex; align-items: center; gap: 15px; }
-.lang-btn { background: none; border: none; font-size: 1rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; font-family: inherit; }
-.mini-profile { display: flex; align-items: center; gap: 8px; font-weight: 600; }
-.avatar-xs { width: 32px; height: 32px; background: #ddd; border-radius: 50%; }
 
 /* --- Hero Section (ส่วนรูปภาพด้านบน) --- */
 .hero-section {
   position: relative;
   height: 240px;
-  margin: 0px 32px 0;
+  /* ✅ แก้ไข: ลบ margin ด้านข้างออก ให้ชิดขอบตาม padding ของ content-body */
+  margin: 0 0 30px 0; 
+  width: 100%;
   border-radius: 18px;
   overflow:hidden;
   background:
     url("https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1600&q=60")
     center/cover no-repeat;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.hero-content { /* ตัวอักษรบนแบนเนอร์โรงแรม */
+.hero-content { 
     max-width: 800px;
     text-align: left;
     color: white;
 }
 
 .hero-overlay {
-    /* ปรับตัวเลขท้ายสุดจาก 0.4 เป็น 0.5 หรือ 0.6 จะมืดลงทำให้ตัวหนังสือเด้งขึ้น */
     background: rgba(0, 0, 0, 0.5); 
-    
     width: 100%;
     height: 100%;
     display: flex;
@@ -64,7 +50,7 @@
 }
 
 .premium-badge {
-    background: #2E7D32; /* สีเขียว */
+    background: #2E7D32; 
     color: white;
     padding: 6px 16px;
     border-radius: 6px;
@@ -76,14 +62,14 @@
 }
 
 .hero-content h1 {
-    font-size: 2.2rem; /* ชื่อโรงแรมตัวใหญ่ */
+    font-size: 2.2rem;
     font-weight: 700;
     margin: 0;
     line-height: 1.1;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.5); /* เงาตัวหนังสือ */
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
-.sub-hero {/* คำอธิบายใต้ชื่อโรงแรม */
+.sub-hero {
     font-size: 1.5rem;
     font-weight: 500;
     margin: 10px 0 25px 0;
@@ -93,10 +79,10 @@
 
 .hero-meta {
     display: flex;
-    flex-direction: column; /* เรียงเป็นแนวตั้ง */
+    flex-direction: column;
     gap: 12px;
 }
-.meta-row { /* คำอธิบายสถาปัตยกรรมไทยผสมผสานความทันสมัย เมืองเชียงใหม่, ภาคเหนือ */
+.meta-row {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -107,105 +93,82 @@
 
 /* --- Main Layout (Grid พื้นฐาน) --- */
 .main-layout {
-    max-width: 96%;
-    margin: 0 auto; /* ลบ margin แนวตั้งออก เพื่อคุมด้วย class ย่อย */
-    padding: 0 20px;
-    gap: 30px;
+    /* ✅ แก้ไข: ให้กว้างเต็ม และลบ padding ซ้ำซ้อน */
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0; 
+    gap: 20px;
     align-items: start;
+    box-sizing: border-box;
 }
 
-/* ส่วนหัว (Welcome + Timer) */
+/* ส่วนหัว (Welcome) */
 .layout-header {
-    margin-top: 30px;
-    margin-bottom: 20px; /* เว้นระยะห่างจากส่วนการ์ดไม่ให้ติดกันเกินไป */
-    display: grid;
-    grid-template-columns: 1fr 350px; /* แบ่งพื้นที่เหมือนเดิม */
-    gap: 30px;
-    align-items: center;
+    margin-bottom: 20px;
+    display: block; /* เปลี่ยนเป็น Block เพราะเราเอา Timer ออกแล้ว */
 }
 
 /* ส่วนเนื้อหา (Cards) */
 .layout-content {
     margin-bottom: 10px;
     display: grid;
-    grid-template-columns: 1fr 350px; /* แบ่งพื้นที่เหมือนเดิม */
-    gap: 15px;
+    /* ✅ แก้ไข: แบ่งสัดส่วนเป็น 3 ต่อ 1 เพื่อให้ด้านซ้ายกว้างขึ้นเมื่อจอใหญ่ */
+    grid-template-columns: 3fr 1fr; 
+    gap: 20px; /* เพิ่มระยะห่างระหว่างคอลัมน์ */
     align-items: start;
+    width: 100%;
 }
 
 /* --- Left Column --- */
-.left-column { display: flex; flex-direction: column; gap: 10px; }
+.left-column { display: flex; flex-direction: column; gap: 20px; width: 100%; }
 
 .welcome-text h3 { margin: 0 0 10px 0; font-size: 1.6rem; color: #1a1a1a; font-weight: 700; }
 .welcome-text p { margin: 0; color: #555; font-size: 1.1rem; line-height: 1.6; }
 .highlight-text { color: #2E7D32; font-weight: bold; }
 
-/* --- Green Card Premium (ปรับปรุงใหม่) --- */
-.green-card-premium {
-    background-color: #2E7D32;  /* 1. สีพื้นหลังเขียวเข้ม (Forest Green) */
-    border-radius: 16px;        /* 2. ตัดมุมทั้ง 4 ให้โค้งมน 16px */
-    padding: 10px 10px 10px 10px;            /* 3. เว้นระยะห่างข้างใน (จากขอบถึงเนื้อหา) 30px ทุกด้าน */
-    color: white;               /* 4. กำหนดสีตัวอักษรข้างในทั้งหมดเป็นสีขาว */
-    box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2); /* 5. ใส่เงาสีเขียวจางๆ ให้การ์ดดูลอยมีมิติ */
-    margin-bottom: 10px;        /* 6. เว้นระยะห่างด้านล่าง 30px (ไม่ให้ติดกับเนื้อหาส่วนต่อไป) */
+/* --- Green Card Premium --- */
+.card { 
+    /* Common Card Style */
+    background: white; 
+    border-radius: 12px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
 }
 
-.green-card-header {
-    display: flex;          /* 1. ใช้ Flexbox จัดเรียงเนื้อหา (ไอคอนและข้อความ) */
-    align-items: center;    /* 2. จัดให้ไอคอนกับข้อความอยู่กึ่งกลางแนวตั้งตรงกัน */
-    gap: 10px;              /* 3. เว้นระยะห่างระหว่างไอคอนกับข้อความ 15px */
-    margin-bottom: 5px;    /* 4. เว้นระยะห่างด้านล่าง (ก่อนถึงเนื้อหาข้างใน) 25px */
-}
-
-.icon-bg-circle {
-    width: 48px; height: 48px;  /* 1. กำหนดขนาดกล่องเป็นสี่เหลี่ยมจัตุรัส 48x48px */
-    background: rgba(255, 255, 255, 0.2); /* 2. สีพื้นหลังขาวโปร่งใส (ความเข้ม 20%) ให้เห็นสีเขียวทะลุผ่านได้นิดๆ */
-    border-radius: 12px;        /* 3. ตัดมุมโค้งมน 12px (ทรง Squircle หรือสี่เหลี่ยมมน) */
-    display: flex;              /* 4. ใช้ Flexbox เพื่อจัดไอคอนข้างใน */
-    align-items: center;        /* 5. จัดไอคอนกึ่งกลางแนวตั้ง */
-    justify-content: center;    /* 6. จัดไอคอนกึ่งกลางแนวนอน */
-    backdrop-filter: blur(4px); /* 7. **ลูกเล่นพิเศษ:** ทำเบลอพื้นหลังด้านหลังกล่องนี้ (Glassmorphism Effect) ดูคล้ายกระจกฝ้า */
-}
-
-/* ✅ ปรับ Grid เป็น 2 คอลัมน์ เพื่อให้ข้อมูลดูแน่นและอ่านง่ายขึ้น */
-.green-info-grid {
-    display: grid;                  /* 1. เรียกใช้ระบบ Grid Layout */
-    grid-template-columns: repeat(4, 1fr); /* 2. แบ่งคอลัมน์เป็น 4 ช่องเท่ากัน (1fr = 1 fraction) */
-    gap: 10px;                      /* 3. เว้นระยะห่างระหว่างกล่อง (ทั้งบนล่างและซ้ายขวา) 20px */
-}
-
-/* --- ส่วนข้อความหัวข้อในการ์ดเขียว --- */
-.green-header-text {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
+/* สไตล์เฉพาะส่วนหัวของการ์ดเขียว */
 .green-header-text h3 {
-    margin: 20;
-    font-size: 1.3rem;  /* ✅ ปรับขนาด "ข้อมูลพื้นฐานโรงแรม" ตรงนี้ (เดิม 1.5rem) */
-    margin-bottom: 2px;          /* เว้นด้านล่างนิดเดียวพอ */
-    line-height: 1.2;            /* กระชับความสูงบรรทัด */
+    margin: 0;
+    font-size: 1.2rem;
+    margin-bottom: 2px;
+    line-height: 1.2;
     font-weight: 600;
     color: white;
 }
 
 .green-header-text span {
-    font-size: 0.8rem;  /* ✅ ปรับขนาด "ทรัพย์สินและโครงสร้างหลัก" ตรงนี้ (เดิม 0.9rem) */
+    font-size: 0.8rem;
     opacity: 0.9;
     color: rgba(255, 255, 255, 0.9);
-    margin-top: 6px;
 }
 
-/* ✅ ปรับกล่องข้อมูลเป็นแนวนอน (ไอคอนซ้าย - ข้อความขวา) */
+/* ✅ สไตล์ Grid ข้อมูลใน Green Card */
+.green-info-grid {
+    display: grid;
+    /* แบ่ง 4 ช่อง */
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 10px;
+    width: 100%;
+}
+
 .green-info-item {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 16px;
-    padding: 12px;
-    display: flex;          /* ใช้ Flexbox */
-    flex-direction: row;    /* เรียงแนวนอน */
-    align-items: center;    /* จัดกึ่งกลางแนวตั้ง */
-    gap: 6px;              /* ระยะห่างระหว่างไอคอนกับข้อความ */
+    padding: 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
     transition: all 0.2s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -215,7 +178,6 @@
     transform: translateY(-2px);
 }
 
-/* ปรับขนาดไอคอน */
 .g-icon {
     width: 42px; height: 42px;
     background: rgba(255, 255, 255, 0.2);
@@ -224,12 +186,11 @@
     flex-shrink: 0;
 }
 
-/* จัดการข้อความด้านขวา */
 .g-text-content {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;  /* สั่งให้กล่องลูก (Label, Value) ชิดซ้ายของ Flex container */
-    text-align: left;         /* สั่งให้ตัวหนังสือชิดซ้าย */
+    align-items: flex-start;
+    text-align: left;
 }
 
 .g-label {
@@ -238,7 +199,7 @@
     margin-bottom: 2px;
 }
 
-.g-value { /* ข้อความ "15 ไร่", "4 อาคาร" */
+.g-value {
     font-size: 1.2rem;
     font-weight: 700;
     line-height: 1.2;
@@ -246,291 +207,24 @@
 }
 
 /* --- General Sections (Rooms, Staff, Facilities) --- */
-.section-container { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-.section-header { display: flex; align-items: center; gap: 15px; margin-bottom: 25px; }
-.header-icon-bg {
-    width: 42px; height: 42px; background: #F3F4F6; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
+.section-container { 
+    background: white; 
+    border-radius: 12px; 
+    padding: 25px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+    width: 100%;
+    box-sizing: border-box;
 }
-.section-header h3 { margin: 0; font-size: 1.3rem; color: #333; }
-.header-text-group { display: flex; flex-direction: column; }
-.header-text-group span { font-size: 0.85rem; color: #888; }
-
-/* Room Grid */
-.room-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-.room-card-item {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 20px; border: 1px solid #eee; border-radius: 10px;
-}
-.room-info h4 { margin: 0 0 5px 0; font-size: 1.1rem; font-weight: 600; }
-.room-info span { font-size: 0.9rem; color: #888; }
-.room-badge {
-    background: #E8F5E9; color: #2E7D32; padding: 6px 12px;
-    border-radius: 6px; font-weight: bold; font-size: 1rem;
-}
-.room-summary { display: flex; gap: 15px; }
-.sum-box {
-    flex: 1; background: #F9FAFB; padding: 20px; border-radius: 10px; text-align: center;
-    display: flex; flex-direction: column; justify-content: center;
-}
-.sum-box span { font-size: 0.9rem; color: #666; }
-.sum-box strong { font-size: 1.6rem; color: #333; line-height: 1.2; margin: 5px 0; }
-.sum-box.highlight { background: #FFF8E1; }
-.sum-box.highlight strong { color: #F59E0B; }
-.sum-box.blue { background: #E3F2FD; }
-.sum-box.blue strong { color: #1976D2; }
-
-/* Staff Grid */
-.staff-grid { display: flex; gap: 20px; }
-.total-staff-card {
-    width: 160px; background: #E8F5E9; border-radius: 10px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 20px; color: #2E7D32; flex-shrink: 0;
-}
-.total-staff-card strong { font-size: 2rem; margin: 10px 0 5px 0; }
-.total-staff-card span { font-size: 0.9rem; }
-.staff-list-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; flex: 1; }
-.staff-item {
-    border: 1px solid #eee; border-radius: 8px; padding: 12px;
-    display: flex; align-items: center; gap: 10px;
-}
-.staff-icon { font-size: 1.4rem; }
-.staff-detail { display: flex; flex-direction: column; }
-.role-name { font-size: 0.85rem; color: #555; font-weight: 500; }
-.role-count { font-size: 1rem; font-weight: bold; color: #333; }
-
-/* Facilities */
-.facilities-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
-.fac-item {
-    border: 1px solid #eee; border-radius: 8px; padding: 20px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; gap: 10px;
-}
-.fac-icon { font-size: 1.8rem; color: #00838F; }
-.fac-info strong { display: block; font-size: 1rem; margin-bottom: 3px; }
-.fac-info span { font-size: 0.8rem; color: #888; }
 
 /* --- Right Column (Sidebar) --- */
-.right-column { display: flex; flex-direction: column; gap: 20px; }
+.right-column { display: flex; flex-direction: column; gap: 20px; width: 100%; }
 
-/* Timer Widget */
-.timer-widget {
-    display: flex; justify-content: space-between; align-items: center;
-    background: transparent; padding: 5px 0; margin-bottom: 5px;
-}
-.timer-widget span { font-weight: 600; color: #555; font-size: 1.1rem; }
-.time-box {
-    background: #E53935; color: white; padding: 6px 18px;
-    border-radius: 8px; font-weight: bold; font-family: monospace; font-size: 1.3rem;
-}
-
-/* Common Card Style */
-.card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-
-/* Gold Card (Finance) */
-.gold-card { background: #E5C37E; color: #5D4037; border: none; }
-.card-header-gold {
-    display: flex; align-items: center; gap: 10px; padding: 15px 25px;
-    border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-.card-header-gold h3 { margin: 0; font-size: 1.1rem; opacity: 0.9; }
-.financial-big-number { padding: 25px; border-bottom: 1px solid rgba(0,0,0,0.05); }
-.financial-big-number span { display: block; font-size: 0.9rem; opacity: 0.8; margin-bottom: 5px; }
-.financial-big-number strong { font-size: 2.5rem; font-weight: 800; }
-.financial-list { list-style: none; padding: 20px 25px; margin: 0; }
-.financial-list li {
-    display: flex; justify-content: space-between; font-size: 0.9rem;
-    margin-bottom: 10px; opacity: 0.9;
-}
-
-/* White Card Content */
-.white-card { padding: 25px; }
-.card-header-simple { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; color: #2E7D32; }
-.card-header-simple h3 { margin: 0; font-size: 1.1rem; color: #333; }
-
-/* Progress */
-.progress-body { display: flex; flex-direction: column; gap: 20px; }
-.round-info { display: flex; align-items: baseline; gap: 12px; }
-.big-round { font-size: 2.2rem; font-weight: bold; color: #333; line-height: 1; }
-.big-round small { font-size: 1.1rem; color: #888; }
-.progress-bar-bg { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
-.progress-bar-fill { height: 100%; background: #2E7D32; }
-.progress-details li { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.9rem; color: #555; }
-
-/* Team */
-.team-body { display: flex; flex-direction: column; gap: 15px; }
-.team-name-box, .team-members-count { display: flex; justify-content: space-between; font-size: 0.95rem; }
-.team-name-box .label, .team-members-count span { color: #888; }
-.team-name-box strong { color: #333; }
-.team-roles-list { display: flex; flex-direction: column; gap: 8px; margin-top: 5px; }
-.role-tag {
-    font-size: 0.8rem; color: white; padding: 6px 12px; border-radius: 6px; text-align: center;
-}
-.role-tag.ceo { background: #1B5E20; }
-.role-tag.finance { background: #2E7D32; }
-.role-tag.mkt { background: #43A047; }
-.role-tag.hr { background: #66BB6A; }
-
-/* Next Action */
-.next-action-area { text-align: center; margin-top: 25px; }
-.next-action-area span { display: block; font-size: 0.9rem; color: #666; margin-bottom: 12px; }
-.btn-next {
-    width: 100%; background: #2E7D32; color: white; border: none;
-    padding: 14px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem;
-    transition: background 0.2s;
-}
-.btn-next:hover { background: #1B5E20; }
-
-/* --- Modern Timer Widget --- */
-.timer-widget-modern {
-    background: white;              /* 1. กำหนดพื้นหลังกล่องเป็นสีขาว */
-    border-radius: 10px;            /* 2. ตัดมุมกล่องให้โค้งมน 16px (ดูทันสมัย ไม่แข็ง) */
-    padding: 10px 20px;             /* 3. เว้นระยะห่างภายใน: บน-ล่าง 15px, ซ้าย-ขวา 25px */
-    display: flex;                  /* 4. ใช้ระบบ Flexbox เพื่อจัดเรียงของข้างใน */
-    align-items: center;            /* 5. จัดของข้างใน (ไอคอน, ตัวเลข) ให้อยู่กึ่งกลางแนวตั้ง */
-    gap: 60px;                      /* 6. เว้นระยะห่างระหว่าง "ไอคอนนาฬิกา" กับ "ตัวเลข" 20px */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 7. ใส่เงาฟุ้งๆ สีดำจางๆ ให้กล่องดูลอยมีมิติ */
-    border-left: 2px solid #ccc;    /* 8. **ไฮไลท์สำคัญ** สร้างแถบเส้นหนา 5px สีเทาทางซ้ายสุด */
-    transition: all 0.3s ease;      /* 9. ทำให้การเปลี่ยนค่าต่างๆ (เช่น เปลี่ยนสีแถบ) ดูนุ่มนวล ไม่กระตุก */
-}
-
-/* เปลี่ยนสีธีมตามสถานะ */
-.timer-widget-modern.status-normal { border-left-color: #2E7D32; }
-.timer-widget-modern.status-warning { border-left-color: #FBC02D; }
-.timer-widget-modern.status-critical { 
-    border-left-color: #D32F2F; 
-    animation: pulse-border 1.5s infinite;
-}
-
-.timer-icon-col {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 6px;
-    color: #555;
-}
-.timer-icon-svg {
-    /* เปลี่ยนสีไอคอนตามแม่ */
-}
-.status-normal .timer-icon-svg { color: #2E7D32; }
-.status-warning .timer-icon-svg { color: #FBC02D; }
-.status-critical .timer-icon-svg { color: #D32F2F; }
-
-.timer-label-sm {/* คำว่า เวลาที่เหลือ */
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #888;
-}
-
-/* กลุ่มตัวเลข */
-.timer-digits-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.digit-box { 
-    background: #333;
-    color: white;
-    font-family: 'Courier New', Courier, monospace; /* ฟอนต์ Digital */
-    font-size: 2.5rem;
-    font-weight: 1000;
-    padding: 5px 5px;
-    border-radius: 8px;
-    min-width: 60px;
-    text-align: center;
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5); /* เงาข้างในให้ดูจมลงไป */
-    line-height: 1;
-}
-
-/* เปลี่ยนสีพื้นหลังกล่องตัวเลขตามสถานะ */
-.status-normal .digit-box { background: #2E7D32; }   /* เขียว */
-.status-warning .digit-box { background: #F9A825; color: #333; } /* เหลือง */
-.status-critical .digit-box { background: #C62828; }  /* แดง */
-
-.colon-separator {
-    font-size: 2rem;
-    font-weight: 800;
-    color: #333;
-    margin-bottom: 4px; /* ปรับตำแหน่งให้ตรงกลาง */
-}
-
-.status-critical .colon-separator {
-    animation: blink-colon 1s infinite;
-    color: #D32F2F;
-}
-
-/* Animations */
-@keyframes pulse-border {
-    0% { box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2); }
-    50% { box-shadow: 0 4px 25px rgba(211, 47, 47, 0.5); }
-    100% { box-shadow: 0 4px 15px rgba(211, 47, 47, 0.2); }
-}
-
-@keyframes blink-colon {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-.timer-label {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #333;
-    margin-top: 5px; /* ดันลงมานิดหน่อยให้ตรงกับกล่องเวลา */
-}
-
-.timer-right-side {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 5px;
-}
-
-.time-badge {
-    padding: 5px 15px;
-    border-radius: 8px;
-    font-family: 'Courier New', Courier, monospace; /* ฟอนต์ตัวเลขแบบ Monospace */
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: #fff; /* ตัวเลขสีขาว (หรือปรับตามดีไซน์ถ้าต้องการสีอื่น) */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: background-color 0.3s ease;
-}
-
-/* สีพื้นหลังของเวลาในแต่ละช่วง */
-.bg-normal { background-color: #66BB6A; color: white; } /* สีเขียว */
-.bg-warning { background-color: #FDD835; color: #5D4037; } /* สีเหลือง (ตัวหนังสือเข้ม) */
-.bg-critical { background-color: #EF5350; color: white; } /* สีแดง */
-
-.warning-message {
-    font-size: 0.85rem; /* ปรับขนาดตัวอักษรให้พอดี */
-    font-weight: 700;
-    text-align: right;
-    margin-top: 5px;    /* เว้นระยะห่างจากตัวเลข */
-    min-height: 1.2em;  /* ✅ สำคัญ: จองความสูงไว้เสมอ 1 บรรทัด */
-    display: block;     /* บังคับให้เป็นบล็อกเพื่อกินพื้นที่ */
-}
-
-/* ✅ เพิ่มคลาสนี้: ซ่อนตัวหนังสือแต่ยังกินพื้นที่ (Layout ไม่ขยับ) */
-.text-invisible {
-    visibility: hidden;
-}
-
-/* ข้อความเตือนแต่ละสี */
-.text-warning { color: #F57F17; }
-.text-critical { color: #D32F2F; }
-
-/* เอฟเฟกต์กระพริบสำหรับ 1 นาทีสุดท้าย */
-@keyframes blink-critical {
-    0% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.8; transform: scale(1.02); }
-    100% { opacity: 1; transform: scale(1); }
-}
-
-.blink-active {
-    animation: blink-critical 1s infinite;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+    .layout-content {
+        grid-template-columns: 1fr; /* หน้าจอเล็กให้เรียงลงมา */
+    }
+    .green-info-grid {
+        grid-template-columns: repeat(2, 1fr); /* ในมือถือแบ่ง 2 ช่องพอ */
+    }
 }

@@ -1,43 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import './HomePage.css';
+import React from 'react';
+import './HomePage.css'; // ตรวจสอบว่ามีไฟล์นี้ หรือใช้ EventPage.css ร่วมกันก็ได้ครับ
 import { useNavigate } from 'react-router-dom';
 import { 
-  Globe, MapPin, Home, Building, Car, 
-  BedDouble, Users, Briefcase, Clock,
-  Wallet, Calendar, Award, Luggage, 
-  Trees, Sparkles,
-  Wrench, ShieldCheck, Monitor, User, CircleDollarSign, Megaphone
+  Home, Building, Car, 
+  BedDouble, Users, Briefcase, 
+  Wallet, Trees, Sparkles,
+  Wrench, ShieldCheck, Monitor, User, CircleDollarSign, Megaphone,
+  Clock, MapPin
 } from 'lucide-react';
 
 function HomePage() {
   const navigate = useNavigate();
-
-  // --- ⏰ Timer Logic ---
-  const [timeLeft, setTimeLeft] = useState(600); 
-
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timerId = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(timerId);
-    }
-  }, [timeLeft]);
-
-  const getTimerDigits = () => {
-    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-    const s = (timeLeft % 60).toString().padStart(2, '0');
-    return { m, s };
-  };
-
-  const getTimerState = () => {
-    if (timeLeft <= 60) return 'critical'; 
-    if (timeLeft <= 120) return 'warning'; 
-    return 'normal';
-  };
-
-  const timerState = getTimerState();
-  const { m, s } = getTimerDigits(); 
 
   // --- Mock Data ---
   const roomTypes = [
@@ -69,23 +42,10 @@ function HomePage() {
   ];
 
   return (
-    <div className="homepage-container">
+    <div className="content-body"> {/* ✅ ใช้ content-body เพื่อให้เข้ากับ Layout */}
       
-      {/* Top Bar */}
-      <div className="top-status-bar">
-        <div className="status-left">
-           <span>รอบ : 1 / 12</span>
-           <span className="divider">|</span>
-           <span>ไตรมาสที่ 1 ช่วงเดือน มกราคม-มีนาคม พ.ศ. 2569</span>
-        </div>
-        <div className="status-right">
-           <button className="lang-btn"><Globe size={14}/> TH</button>
-           <div className="mini-profile"><div className="avatar-xs"></div> Jane Doe</div>
-        </div>
-      </div>
-
       {/* Hero Section */}
-      <header className="hero-section">
+      <header className="hero-section" style={{ marginBottom: '30px' }}>
          <div className="hero-overlay">
              <div className="hero-content">
                 <div className="premium-badge">✨ ระดับ Premium</div>
@@ -99,34 +59,16 @@ function HomePage() {
          </div>
       </header>
 
-      {/* SECTION 1: ส่วนหัว */}
-      <div className="main-layout layout-header">
+      {/* SECTION 1: ส่วนหัว (ตัดนาฬิกาออกแล้ว) */}
+      <div className="main-layout layout-header" style={{ display: 'block', marginBottom: '30px' }}>
          <div className="welcome-text">
             <h3>ยินดีต้อนรับสู่ การบริหารจัดการโรงแรมในเครือของคุณ</h3>
             <p>คุณกำลังบริหาร <span className="highlight-text">โรงแรม สวัสดี</span> โรงแรมพรีเมี่ยมสไตล์ล้านนา ในการแข่งขันกลุ่มโรงแรมพรีเมี่ยม เวลาในการตัดสินใจครั้งแรก : <span className="highlight-text">15 นาที</span></p>
          </div>
-
-         <div className={`timer-widget-modern status-${timerState}`}>
-               <div className="timer-icon-col">
-                   <Clock size={28} className="timer-icon-svg" />
-                   <span className="timer-label-sm">เวลาที่เหลือ</span>
-               </div>
-               
-               <div className="timer-digits-group">
-                   <div className="digit-box">{m}</div>
-                   <div className="colon-separator">:</div>
-                   <div className="digit-box">{s}</div>
-               </div>
-         </div>
+         {/* ❌ ลบ Widget นาฬิกาตรงนี้ออก */}
       </div>
 
-      <div className="main-layout" style={{ justifyContent: 'flex-end', display: 'flex', marginTop: '-15px' }}>
-            <span className={`warning-message ${timerState === 'normal' ? 'text-invisible' : (timerState === 'warning' ? 'text-warning' : 'text-critical')}`}>
-                {timerState === 'normal' ? '...' : (timerState === 'warning' ? '⚠️ รีบพิจารณาการลงทุน !' : '🔥 รีบตัดสินใจและกดยืนยัน !')}
-            </span>
-      </div>
-
-      {/* ✅ SECTION 2: ส่วนเนื้อหาหลัก (แบ่งซ้าย-ขวา) */}
+      {/* SECTION 2: ส่วนเนื้อหาหลัก */}
       <div className="main-layout layout-content">
         
         {/* --- Left Column (ซ้าย) --- */}
@@ -138,53 +80,53 @@ function HomePage() {
              style={{ 
                backgroundColor: '#2E7D32',
                borderRadius: '16px',
-               padding: '15px 15px', 
+               padding: '20px 15px', 
                color: 'white',
                boxShadow: '0 4px 15px rgba(46, 125, 50, 0.2)',
                display: 'flex',
                alignItems: 'center', 
-               gap: '40px'          
+               gap: '10px'          
              }}
            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px'}}>
                  <div style={{ 
-                    width: '48px', height: '48px', 
+                    width: '40px', height: '40px', 
                     background: 'rgba(255,255,255,0.2)', 
                     borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexShrink: 0 
                  }}>
-                    <Building size={24} color="white" />
+                    <Building size={20} color="white" />
                  </div>
                  <div className="green-header-text">
-                    <h3>ข้อมูลพื้นฐานโรงแรม</h3>
-                    <span>ทรัพย์สินและโครงสร้างหลัก</span>
+                    <h3>ข้อมูลโรงแรม</h3>
+                    <span>ทรัพย์สินและโครงสร้าง</span>
                 </div>
               </div>
               
               <div className="green-info-grid" style={{ flex: 1 }}>
                  <div className="green-info-item">
-                    <div className="g-icon"><Home size={24} color="white"/></div>
+                    <div className="g-icon"><Home size={20} color="white"/></div>
                     <div className="g-text-content">
                         <div className="g-label">พื้นที่โครงการ</div>
                         <div className="g-value">15 ไร่</div>
                     </div>
                  </div>
                  <div className="green-info-item">
-                    <div className="g-icon"><MapPin size={24} color="white"/></div>
+                    <div className="g-icon"><MapPin size={20} color="white"/></div>
                     <div className="g-text-content">
                         <div className="g-label">พื้นที่สวน</div>
                         <div className="g-value">3 ไร่</div>
                     </div>
                  </div>
                  <div className="green-info-item">
-                    <div className="g-icon"><Building size={24} color="white"/></div>
+                    <div className="g-icon"><Building size={20} color="white"/></div>
                     <div className="g-text-content">
                         <div className="g-label">อาคารทั้งหมด</div>
                         <div className="g-value">4 อาคาร</div>
                     </div>
                  </div>
                  <div className="green-info-item">
-                    <div className="g-icon"><Car size={24} color="white"/></div>
+                    <div className="g-icon"><Car size={20} color="white"/></div>
                     <div className="g-text-content">
                         <div className="g-label">ที่จอดรถ</div>
                         <div className="g-value">350 คัน</div>
@@ -201,27 +143,26 @@ function HomePage() {
                borderRadius: '16px', 
                padding: '30px', 
                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-               marginBottom: '30px'
              }}
            >
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '25px' }}>
                  <div style={{ 
-                    width: '42px', height: '42px', 
+                    width: '35px', height: '35px', 
                     background: '#E0F2F1', 
                     borderRadius: '10px', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center' 
                  }}>
-                    <BedDouble size={24} color="#00695C"/>
+                    <BedDouble size={20} color="#00695C"/>
                  </div>
                  <div>
-                    <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#333' }}>ห้องพัก</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#333' }}>ห้องพัก</h3>
                     <span style={{ fontSize: '0.85rem', color: '#888' }}>ทั้งหมด 110 ห้อง แบ่งเป็น 5 ประเภท</span>
                  </div>
               </div>
 
-              <div style={{ 
+             <div style={{ 
                  display: 'grid', 
-                 gridTemplateColumns: 'repeat(3, 1fr)', 
+                 gridTemplateColumns: 'repeat(2, 1fr)', 
                  gap: '15px', 
                  marginBottom: '30px' 
               }}>
@@ -233,8 +174,19 @@ function HomePage() {
                        display: 'flex', 
                        justifyContent: 'space-between', 
                        alignItems: 'center',
-                       background: '#F3F4F6'
-                    }}>
+                       background: '#F3F4F6',
+                       transition: 'all 0.2s ease', 
+                       cursor: 'default'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#2E7D32'; 
+                        e.currentTarget.style.backgroundColor = '#E5E7EB'; 
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#eee';      
+                        e.currentTarget.style.backgroundColor = '#F3F4F6'; 
+                    }}
+                    >
                        <div>
                           <h4 style={{ margin: '0 0 8px 0', fontSize: '1rem', color: '#333' }}>{room.name}</h4>
                           <div style={{ display: 'flex', gap: '15px', fontSize: '0.8rem', color: '#888' }}>
@@ -288,7 +240,6 @@ function HomePage() {
                borderRadius: '24px', 
                padding: '30px', 
                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-               marginBottom: '30px',
                border: '1px solid #f0f0f0'
              }}
            >
@@ -314,23 +265,36 @@ function HomePage() {
               }}>
                   {staffRoles.map((role, idx) => (
                       <div key={idx} style={{
-                          border: '1px solid #eee',
+                          border: '1px solid #eee', 
                           borderRadius: '12px',
                           padding: '15px 20px',
                           display: 'flex',
                           alignItems: 'center',
                           gap: '15px',
-                          background: '#F9FAFB'
-                      }}>
+                          background: '#F9FAFB', 
+                          transition: 'all 0.2s ease', 
+                          cursor: 'default'
+                      }}
+                      onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#2E7D32'; 
+                          e.currentTarget.style.backgroundColor = '#F0F0F0';
+                      }}
+                      onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#eee';
+                          e.currentTarget.style.backgroundColor = '#F9FAFB';
+                      }}
+                      >
                           <div style={{ 
                               width: '42px', height: '42px', 
-                              background: '#C8E6C9',    
+                              background: '#C8E6C9', 
                               borderRadius: '10px',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#2E7D32',
+                              color: '#1B5E20',
                               flexShrink: 0
                           }}>
-                              <span style={{ fontSize: '1.2rem' }}>{role.icon}</span> 
+                              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {role.icon}
+                              </span> 
                           </div>
                           
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -349,7 +313,6 @@ function HomePage() {
               </div>
            </div>
         
-        {/* ✅ ปิด left-column ตรงนี้ */}
         </div>
 
         {/* --- Right Column (ขวา) --- */}
@@ -365,10 +328,9 @@ function HomePage() {
                color: '#5D4037',
                boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
                border: 'none',
-               marginBottom: '30px'
              }}
            >
-               <div style={{ display: 'flex', alignItems: 'center', gap: '10px'}}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                    <div style={{ 
                        width: '36px', height: '36px', 
                        border: '1px solid #5D4037', borderRadius: '8px',
@@ -384,6 +346,7 @@ function HomePage() {
                    backgroundColor: 'rgba(255,255,255,0.25)',
                    borderRadius: '12px',
                    padding: '15px 20px',
+                   marginBottom: '20px'
                }}>
                    <span style={{ display: 'block', fontSize: '0.85rem', marginBottom: '5px', opacity: 0.8 }}>
                        เงินสดปัจจุบัน
@@ -432,10 +395,9 @@ function HomePage() {
            {/* 2. Action Card */}
            <div className="card" style={{ 
                background: 'white', 
-               borderRadius: '24px',
+               borderRadius: '24px', 
                padding: '30px 25px', 
                boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-               marginBottom: '30px', 
                textAlign: 'center' 
            }}>
                 <p style={{ 
@@ -489,7 +451,7 @@ function HomePage() {
              }}
            >
                {/* Header */}
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                        <div style={{ 
                            width: '40px', height: '40px', 
@@ -499,7 +461,7 @@ function HomePage() {
                        }}>
                           <Users size={22} color="#2E7D32"/> 
                        </div>
-                       <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#222', fontWeight: 700 }}>ทีมของคุณ</h3>
+                       <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#222', fontWeight: 700 }}>ทีมของคุณ</h3>
                    </div>
                    
                    <button style={{
@@ -521,85 +483,48 @@ function HomePage() {
                    <div style={{ 
                        background: '#F9FAFB', 
                        borderRadius: '12px', 
-                       padding: '10px 15px' 
+                       padding: '15px 20px' 
                    }}>
-                       <span style={{ display: 'block', fontSize: '0.8rem', color: '#888', marginBottom: '4px' }}>ชื่อทีม</span>
-                       <strong style={{ fontSize: '1.0rem', color: '#333' }}>ทีมพญานาค</strong>
+                       <span style={{ display: 'block', fontSize: '0.9rem', color: '#888', marginBottom: '4px' }}>ชื่อทีม</span>
+                       <strong style={{ fontSize: '1.2rem', color: '#333' }}>ทีมพญานาค</strong>
                    </div>
 
                    <div style={{ 
                        background: 'linear-gradient(90deg, #D6EAF8 0%, #D5F5E3 100%)', 
                        borderRadius: '12px', 
-                       padding: '10px 15px', 
-                       marginBottom: '5px'
+                       padding: '15px 20px', 
+                       marginBottom: '10px'
                    }}>
-                       <span style={{ display: 'block', fontSize: '0.8rem', color: '#5D6D7E', marginBottom: '4px' }}>สมาชิกในทีม</span>
-                       <strong style={{ fontSize: '1.0rem', color: '#2E7D32' }}>4 คน</strong>
+                       <span style={{ display: 'block', fontSize: '0.9rem', color: '#5D6D7E', marginBottom: '4px' }}>สมาชิกในทีม</span>
+                       <strong style={{ fontSize: '1.2rem', color: '#2E7D32' }}>4 คน</strong>
                    </div>
                    
                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                       {
-                        (() => {
-                            const roleBadgeStyle = {
-                                background: 'white',          
-                                color: '#2E7D32',             
-                                border: '1px solid #2E7D32',  
-                                width: '180px',               
-                                height: '32px',               
-                                borderRadius: '8px', 
-                                fontSize: '0.8rem', 
-                                fontWeight: 500,
-                                display: 'flex',              
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                whiteSpace: 'nowrap'      
-                            };
-
-                            const rowStyle = {
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                background: '#F9FAFB', 
-                                padding: '12px 20px',        
-                                borderRadius: '10px'
-                            };
-
-                            return (
-                                <>
-                                    <div style={rowStyle}>
-                                        <strong style={{ fontSize: '0.9rem', color: '#333' }}>คุณ</strong>
-                                        <div style={roleBadgeStyle}>ประธานเจ้าหน้าที่บริหาร</div>
-                                    </div>
-
-                                    <div style={rowStyle}>
-                                        <span style={{ fontSize: '0.9rem', color: '#555' }}>John</span>
-                                        <div style={roleBadgeStyle}>ฝ่ายบัญชีและการเงิน</div>
-                                    </div>
-
-                                    <div style={rowStyle}>
-                                        <span style={{ fontSize: '0.9rem', color: '#555' }}>Ptest</span>
-                                        <div style={roleBadgeStyle}>ฝ่ายการตลาด</div>
-                                    </div>
-
-                                    <div style={rowStyle}>
-                                        <span style={{ fontSize: '0.9rem', color: '#555' }}>San</span>
-                                        <div style={roleBadgeStyle}>ฝ่ายทรัพยากรบุคคล</div>
-                                    </div>
-                                </>
-                            );
-                        })()
-                       }
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '15px 20px', borderRadius: '10px' }}>
+                            <strong style={{ fontSize: '0.9rem', color: '#333' }}>คุณ</strong>
+                            <div style={{ background: 'white', color: '#2E7D32', border: '1px solid #2E7D32', width: '160px', height: '35px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>ประธานเจ้าหน้าที่บริหาร</div>
+                       </div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '15px 20px', borderRadius: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#555' }}>John</span>
+                            <div style={{ background: 'white', color: '#2E7D32', border: '1px solid #2E7D32', width: '160px', height: '35px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>ฝ่ายบัญชีและการเงิน</div>
+                       </div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '15px 20px', borderRadius: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#555' }}>Ptest</span>
+                            <div style={{ background: 'white', color: '#2E7D32', border: '1px solid #2E7D32', width: '160px', height: '35px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>ฝ่ายการตลาด</div>
+                       </div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#F9FAFB', padding: '15px 20px', borderRadius: '10px' }}>
+                            <span style={{ fontSize: '0.9rem', color: '#555' }}>San</span>
+                            <div style={{ background: 'white', color: '#2E7D32', border: '1px solid #2E7D32', width: '160px', height: '35px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap' }}>ฝ่ายทรัพยากรบุคคล</div>
+                       </div>
                    </div>
                </div>
            </div>
         
-        {/* ✅ ปิด right-column ตรงนี้ */}
         </div>
 
-      {/* ✅ ปิด layout-content ตรงนี้ */}
       </div>
 
-      {/* ✅ SECTION 3: สิ่งอำนวยความสะดวก (อยู่นอกสุดจริงๆ แล้ว!) */}
+      {/* SECTION 3: สิ่งอำนวยความสะดวก */}
       <div className="main-layout" style={{ marginBottom: '50px' }}>
            <div 
              className="section-container" 
@@ -609,7 +534,7 @@ function HomePage() {
                padding: '20px', 
                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                border: '1px solid #f0f0f0',
-               width: '100%',     /* สั่งให้กว้างเต็มที่ */
+               width: '100%', 
                boxSizing: 'border-box'
              }}
            >
@@ -629,7 +554,7 @@ function HomePage() {
                  </div>
               </div>
 
-              {/* Grid 4 Columns (จะขยายเต็มจอสวยงาม) */}
+              {/* Grid 4 Columns */}
               <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(4, 1fr)', 
@@ -637,15 +562,27 @@ function HomePage() {
               }}>
                  {facilities.map((fac, idx) => (
                       <div key={idx} style={{
-                          border: '1px solid #eee',
+                          border: '1px solid #eee', 
                           borderRadius: '16px',
                           padding: '20px 15px', 
                           display: 'flex',
+                          flexDirection: 'row', 
                           alignItems: 'center', 
                           textAlign: 'left',
-                          background: '#F9FAFB',
-                          gap: '15px'
-                      }}>
+                          background: '#F9FAFB', 
+                          gap: '15px',          
+                          transition: 'all 0.2s ease', 
+                          cursor: 'default'
+                      }}
+                      onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = '#2E7D32'; 
+                          e.currentTarget.style.backgroundColor = '#F0F0F0';
+                      }}
+                      onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = '#eee';
+                          e.currentTarget.style.backgroundColor = '#F9FAFB';
+                      }}
+                      >
                           <div style={{
                               width: '50px', height: '50px',
                               background: '#C8E6C9', 

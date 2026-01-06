@@ -15,7 +15,7 @@ function WaitingListPage() {
 
   // --- State ---
   const [isUserReady, setIsUserReady] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(180); 
+  const [timeLeft, setTimeLeft] = useState(150); 
 
   // --- Logic นับถอยหลัง ---
   useEffect(() => {
