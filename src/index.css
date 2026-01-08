@@ -1,0 +1,4 @@
+html {
+  /* ✅ จองพื้นที่สำหรับ Scrollbar ไว้เสมอ เพื่อป้องกันหน้าขยับ */
+  scrollbar-gutter: stable; 
+}

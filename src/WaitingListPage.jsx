@@ -15,7 +15,7 @@ function WaitingListPage() {
 
   // --- State ---
   const [isUserReady, setIsUserReady] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(150); 
+  const [timeLeft, setTimeLeft] = useState(90); 
 
   // --- Logic นับถอยหลัง ---
   useEffect(() => {
@@ -126,9 +126,9 @@ function WaitingListPage() {
     <div className="waiting-container">
       {/* Navbar */}
       <nav className="waiting-header">
-        <div className="header-brand">
-          <span className="logo-emoji">🏨</span>
-          <span className="header-title">Hotel Business Simulator</span>
+        <div className="header-left">
+              <Building2 size={24} color="#1a1a1a" />
+              <span className="header-title">Hotel Business Simulator</span>
         </div>
         <div className="header-right">
           <button className="btn-exit-room" onClick={handleExit}>

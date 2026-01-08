@@ -2,39 +2,34 @@
 
 /* Layout & Background */
 .settings-page-wrapper {
-    background-color: #F4F6F8;
-    min-height: 100vh;
-    font-family: 'Inter', sans-serif;
-    display: flex;
-    flex-direction: column;
+     background-color: #f8f9fa; min-height: 100vh; font-family: 'Segoe UI', Roboto, sans-serif; color: #333;
 }
 
 /* Navbar */
-.settings-navbar {
-    background-color: #1a1a1a;
-    color: white;
-    height: 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 30px;
-}
-.nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; }
-.nav-actions { display: flex; align-items: center; gap: 15px; }
+.settings-navbar {display: flex; justify-content: space-between; align-items: center; padding: 0 3%; height: 72px; background-color: #fff; border-bottom: 1px solid #e5e7eb; }
+.header-title { font-weight: 700; font-size: 1rem; color: #111; }
+.nav-brand,.nav-actions { display: flex; align-items: center; gap: 12px; }
+/*.nav-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; }
+.nav-actions { display: flex; align-items: center; gap: 15px; }*/
 .lang-text { font-size: 0.85rem; font-weight: bold; cursor: pointer; }
 
-.btn-nav-back {
-    background-color: #2E7D32;
-    color: white;
-    border: none;
-    padding: 6px 16px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.2s;
-}
+.btn-nav-back {display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
+.settings-btn { background-color: #198754; color: white; border: 1px solid #198754; } .settings-btn:hover { background-color: #146c43; }
 .btn-nav-back:hover { background-color: #1B5E20; }
+.header-btn { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; /* ✅ เพิ่มบรรทัดนี้: จัดข้อความให้อยู่ตรงกลาง */
+    gap: 8px;                /* ปรับระยะห่างไอคอนกับตัวหนังสือ */
+    padding: 8px 16px; 
+    border-radius: 6px; 
+    text-decoration: none; 
+    font-weight: 600; 
+    font-size: 0.85rem; 
+    transition: all 0.2s;
+    min-width: 110px;        /* ✅ เพิ่มบรรทัดนี้: กำหนดความกว้างขั้นต่ำให้เท่ากัน */
+}
+.logout-btn { background-color: white; color: #198754; border: 1px solid #198754; } .logout-btn:hover { background-color: #f0fdf4; }
 
 .btn-nav-logout {
     background: transparent;

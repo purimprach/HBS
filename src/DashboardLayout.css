@@ -1,0 +1,173 @@
+/* src/DashboardLayout.css */
+
+/* 1. คอนเทนเนอร์หลัก: เต็มจอ + ห้ามมีสไลด์บาร์ที่ Body */
+.dashboard-container {
+  display: flex;
+  height: 100vh;       /* ความสูงเต็มจอ */
+  width: 100vw;        /* ความกว้างเต็มจอ */
+  overflow: hidden;    /* ❌ ปิดสไลด์บาร์ของ browser (แก้สไลด์บาร์ซ้อน) */
+  background-color: var(--bg-color); /* ✅ รองรับ Dark Mode */
+  color: var(--text-color);
+  transition: background-color 0.3s;
+}
+
+/* 2. Sidebar ซ้าย */
+.sidebar {
+  width: 260px;        /* ความกว้างคงที่ */
+  flex-shrink: 0;      /* ห้ามหด */
+  background: var(--sidebar-bg); /* ✅ รองรับ Dark Mode */
+  border-right: 1px solid var(--border-color); /* ✅ */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  z-index: 10;
+  transition: background-color 0.3s;
+}
+
+.sidebar-header {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-color); /* ✅ */
+  border-bottom: 1px solid var(--border-color); /* ✅ */
+}
+
+/* จัดการเมนูใน Sidebar */
+.sidebar-menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  overflow-y: auto; 
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: var(--text-secondary); /* ✅ ใช้ตัวแปรสีรอง */
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.menu-item:hover {
+  background-color: var(--hover-bg); /* ✅ */
+  color: var(--text-color);
+}
+
+.menu-item.active {
+  background-color: #E8F5E9; /* สีเขียวอ่อน (Light Mode) */
+  color: #2E7D32;
+}
+
+/* ปรับสีปุ่ม Active ใน Dark Mode */
+body.dark .menu-item.active {
+  background-color: #1b4d2e;
+  color: #4ade80;
+}
+
+.menu-item.logout {
+  color: #D32F2F;
+}
+.menu-item.logout:hover {
+  background-color: #FFEBEE;
+}
+body.dark .menu-item.logout:hover {
+  background-color: #4a1b1b;
+}
+
+/* 3. เนื้อหาขวา (Main Content) */
+.main-content {
+  flex: 1;             /* กินพื้นที่ที่เหลือจาก Sidebar */
+  display: flex;
+  flex-direction: column;
+  height: 100%;        /* เต็มความสูง */
+  overflow: hidden;    /* ❌ ซ่อนส่วนเกิน (สำคัญมาก) */
+  position: relative;
+  background-color: var(--bg-color); /* ✅ */
+}
+
+/* 4. Header ด้านบน (แก้เรื่องความกว้างทะลุจอ) */
+.dashboard-topbar {
+  flex-shrink: 0;      /* ห้ามหด */
+  width: 100%;         /* กว้างเต็มพื้นที่ Main Content */
+  height: 70px;
+  background: var(--header-bg); /* ✅ */
+  border-bottom: 1px solid var(--border-color); /* ✅ */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;     /* เว้นระยะซ้ายขวา */
+  box-sizing: border-box; /* ✅ สำคัญ: รวม Padding ในความกว้าง */
+  position: relative;  /* ✅ ห้ามใช้ Fixed */
+  z-index: 5;
+}
+
+/* 5. พื้นที่ Scrollable (ส่วนเนื้อหา) */
+.content-scrollable-area {
+  flex: 1;             /* กินพื้นที่ที่เหลือจาก Header */
+  overflow-y: auto;    /* ✅ เปิดสไลด์บาร์แนวตั้งตรงนี้จุดเดียว */
+  overflow-x: hidden;  /* ปิดสไลด์บาร์แนวนอน */
+  padding: 30px;       /* เว้นระยะเนื้อหา */
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* --- จัดการ Element ย่อยๆ ให้รองรับ Dark Mode --- */
+
+/* สีข้อความใน Header */
+.topbar-left span {
+    color: var(--text-color) !important;
+}
+
+/* Timer Capsule */
+.timer-capsule {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+}
+.timer-label { 
+    color: var(--text-secondary);
+}
+.timer-countdown {
+    /* ตัวเลขให้คงสีแดงไว้เพื่อความเด่น หรือจะปรับตามธีมก็ได้ */
+}
+
+/* User Profile */
+.profile-name { 
+    color: var(--text-color);
+}
+.profile-role { 
+    color: var(--text-muted);
+}
+.profile-separator {
+    background: var(--border-color);
+}
+.profile-icon-box {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+}
+
+/* Scrollbar สวยงาม */
+.content-scrollable-area::-webkit-scrollbar {
+  width: 8px;
+}
+.content-scrollable-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.content-scrollable-area::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+.content-scrollable-area::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+body.dark .content-scrollable-area::-webkit-scrollbar-thumb {
+  background: #555;
+}
