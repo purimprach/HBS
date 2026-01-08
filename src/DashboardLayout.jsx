@@ -46,10 +46,9 @@ function DashboardLayout({ timeLeft }) {
             <Link to="/next-step" className={`menu-item ${isActive('/next-step')}`}>
               <FileText size={20} /> <span>บทวิเคราะห์</span>
             </Link>
-
-            <a href="#" className="menu-item">
-              <Target size={20} /> <span>การตัดสินใจ</span>
-            </a>
+            <Link to="/decision" className={`menu-item ${isActive('/decision')}`}>
+                <Target size={20} /> <span>การตัดสินใจ</span>
+            </Link>
             <a href="#" className="menu-item">
               <TrendingUp size={20} /> <span>ตลาดและคู่แข่ง</span>
             </a>
