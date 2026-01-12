@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './DecisionPage.css';
 import { 
-  Banknote, Bed, Users, TrendingUp, Save, 
+  Banknote, Bed, Users, TrendingUp, Save, Check, 
   PieChart, Tag, Megaphone, Wrench 
 } from 'lucide-react';
 
@@ -13,13 +13,12 @@ const DecisionPage = () => {
   const [activeTab, setActiveTab] = useState('allocation');
   const [isSaved, setIsSaved] = useState(false); 
 
-  // ✅ แก้ไข Comma (,) ที่หายไป และสีแดงของงบสำรองจ่าย
   const [budgets, setBudgets] = useState([
     { id: 1, name: 'งบการลงทุนด้านการตลาด', value: 2000000, color: '#00C49F' }, 
     { id: 2, name: 'งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน', value: 2500000, color: '#FFBB28' },
     { id: 3, name: 'งบซ่อมแซมและบำรุงรักษาสถานที่', value: 1000000, color: '#4287f5' },
-    { id: 4, name: 'งบการลงทุนด้านอื่นๆ', value: 1500000, color: '#A020F0' }, // ✅ เติม , ให้แล้ว
-    { id: 5, name: 'งบสำรองจ่าย', value: 1000000, color: '#f22c09' }        // ✅ ใช้สีแดงตามที่ขอ
+    { id: 4, name: 'งบการลงทุนด้านอื่นๆ', value: 1500000, color: '#A020F0' },
+    { id: 5, name: 'งบสำรองจ่าย', value: 1000000, color: '#f22c09' }
   ]);
 
   const [usedBudget, setUsedBudget] = useState(0);
@@ -55,51 +54,48 @@ const DecisionPage = () => {
   return (
     <div className="decision-page">
       
-      {/* --- Top Stats Cards --- */}
+      {/* --- 1. Top Stats Cards (ดีไซน์ใหม่) --- */}
       <div className="stats-grid">
-        <div className="stat-card accent-green">
-          <div className="card-left">
-             <div className="card-title">เงินสดปัจจุบัน</div>
-             <div className="card-sub">เงินหมุนเวียน : 3-4 ไตรมาส</div>
+        <div className="stat-card">
+          <div className="stat-header">
+             <span className="stat-title">เงินสดปัจจุบัน</span>
+             <div className="stat-icon-box"><Banknote size={20} /></div>
           </div>
-          <div className="card-right">
-            <div className="card-icon-wrapper icon-green"><Banknote size={28} /></div>
-            <div className="card-value">{formatMoney(TOTAL_BUDGET)} </div>
-          </div>
+          <div className="stat-value">{formatMoney(TOTAL_BUDGET)}</div>
+          <div className="stat-sub">ระยะเวลาหมุนเวียน : 3-4 ไตรมาส</div>
         </div>
-        <div className="stat-card accent-green">
-          <div className="card-left">
-             <div className="card-title">จำนวนห้องที่ใช้งานได้</div>
-             <div className="card-sub">สภาพห้อง : 100%</div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+             <span className="stat-title">ส่วนแบ่งการตลาด</span>
+             <div className="stat-icon-box"><Users size={20} /></div>
           </div>
-          <div className="card-right">
-            <div className="card-icon-wrapper icon-green"><Bed size={28} /></div>
-            <div className="card-value">110 ห้อง </div>
-          </div>
+          <div className="stat-value">12%</div>
+          <div className="stat-sub">อยู่อันดับ 3 จาก 6</div>
         </div>
-        <div className="stat-card accent-green">
-          <div className="card-left">
-             <div className="card-title">ผู้เข้าพักเฉลี่ยไตรมาสที่แล้ว</div>
-             <div className="card-sub">อยู่ในเกณฑ์ : ดี</div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+             <span className="stat-title">ความพึงพอใจลูกค้า</span>
+             <div className="stat-icon-box"><Bed size={20} /></div>
           </div>
-          <div className="card-right">
-            <div className="card-icon-wrapper icon-green"><Users size={28} /></div>
-            <div className="card-value">72%</div>
-          </div>
+          <div className="stat-value">3.5/5</div>
+          <div className="stat-sub">อยู่ในเกณฑ์ : พอใช้</div>
         </div>
-        <div className="stat-card accent-green">
-          <div className="card-left">
-             <div className="card-title">รายได้ไตรมาสที่แล้ว</div>
-             <div className="card-sub">สถานะ : ดี</div>
+
+        <div className="stat-card">
+          <div className="stat-header">
+             <span className="stat-title">ความสมบูรณ์ทรัพย์สิน</span>
+             <div className="stat-icon-box">
+                <span style={{fontWeight:'bold', fontSize:'1.2rem'}}>฿</span> 
+             </div>
           </div>
-          <div className="card-right">
-            <div className="card-icon-wrapper icon-green"><TrendingUp size={28} /></div>
-            <div className="card-value">4,816,800 </div>
-          </div>
+          <div className="stat-value">95%</div>
+          <div className="stat-sub">อยู่ในเกณฑ์ : ดีมาก</div>
         </div>
       </div>
 
-      {/* --- Tabs --- */}
+      {/* --- 2. Tabs Navigation (แถบเมนู) --- */}
       <div className="decision-tabs">
         <button className={`tab-btn ${activeTab === 'allocation' ? 'active' : ''}`} onClick={() => setActiveTab('allocation')}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
@@ -121,13 +117,12 @@ const DecisionPage = () => {
         </button>
       </div>
 
-      {/* --- Content --- */}
+      {/* --- 3. Main Content --- */}
       <div className="decision-content">
         
         {activeTab === 'allocation' ? (
           <>
             <div className="left-column">
-                
                 <div className="budget-form-section">
                   <div className="section-header">
                       <h3>จัดสรรงบประมาณ รอบที่ 1</h3>
@@ -152,13 +147,9 @@ const DecisionPage = () => {
                                 onChange={(e) => handleBudgetChange(item.id, Number(e.target.value))}
                                 className="range-slider"
                                 style={{ 
-                                // 1. ส่งค่าสีเข้าไปเป็นตัวแปร เพื่อให้ CSS เอาไปใช้ทำสีปุ่ม
                                      '--thumb-color': item.color,
-       
-                                // 2. สร้างแถบสีด้วยตัวเอง (ซ้ายสีเข้ม-ขวาสีเทา) จะได้ไม่ติดดำ
-                                background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`
+                                     background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`
                                  }} 
-    /* ------------------------------------------------ */
                                 disabled={isSaved}
                               />
                           </div>
@@ -188,11 +179,10 @@ const DecisionPage = () => {
                                           onClick={() => handlePercentClick(item.id, pct)} 
                                           disabled={isSaved}
                                           className={isActive ? 'active' : ''}
-                                          // ✅ เพิ่มตรงนี้: สั่งเปลี่ยนสีปุ่มตามสีของ item.color
                                           style={isActive ? { 
                                             backgroundColor: item.color, 
                                             borderColor: item.color,
-                                            color: '#fff' // ตัวหนังสือสีขาว
+                                            color: '#fff' 
                                           } : {}}
                                         >
                                           {pct}%
@@ -206,10 +196,6 @@ const DecisionPage = () => {
                       })}
                   </div>
                 </div>
-
-                <div className="max-spending-card">
-                    รายจ่ายสูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย): <strong>6,450,000 บาท/เดือน</strong>
-                </div>
             </div>
 
             <div className="summary-section">
@@ -222,7 +208,6 @@ const DecisionPage = () => {
                       {((usedBudget / TOTAL_BUDGET) * 100).toFixed(0)}%
                     </span>
                   </div>
-                  
                   <svg viewBox="0 0 100 100" className="donut-chart">
                     {budgets.reduce((acc, item, index) => {
                       const totalValue = budgets.reduce((sum, b) => sum + b.value, 0);
@@ -289,22 +274,18 @@ const DecisionPage = () => {
                         {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
                      </span>
                    </div>
-                </div>
 
-                <button 
-                  className="confirm-btn" 
-                  onClick={handleSave}
-                  disabled={isSaved || usedBudget > TOTAL_BUDGET}
-                >
-                   <Save size={18} /> 
-                   {isSaved ? 'บันทึกเรียบร้อยแล้ว' : 'บันทึกการตัดสินใจรอบที่ 1'}
-                </button>
-                
-                <p className="warning-text">
-                  {isSaved 
-                    ? '✅ การตัดสินใจถูกบันทึกแล้ว ไม่สามารถแก้ไขได้' 
-                    : '* หากบันทึกแล้วจะไม่สามารถแก้ไขได้อีกในรอบนี้'}
-                </p>
+                   <p style={{ 
+                      color: '#EF4444', 
+                      fontSize: '0.75rem', 
+                      textAlign: 'right', 
+                      marginTop: '8px',
+                      marginBottom: '0',
+                      fontWeight: '500'
+                   }}>
+                      * ควรสำรองเงินสดเพื่อรักษาสภาพคล่อง ในการดำเนินงานรอบถัดไป
+                   </p>
+                </div>
               </div>
             </div>
           </>
@@ -314,8 +295,32 @@ const DecisionPage = () => {
             <p>เนื้อหาจะปรากฏที่นี่เมื่อคุณเลือกเมนูนี้</p>
           </div>
         )}
-
       </div>
+
+      {/* --- 4. Bottom Action Bar (แถบบันทึก วางล่างสุดตามปกติ ไม่ Sticky) --- */}
+      {activeTab === 'allocation' && (
+        <div className="bottom-action-bar">
+           <div className="break-even-section">
+              <div className="be-title">จุดคุ้มทุน (Break-even point)</div>
+              <div className="be-value">3,500,000 บาท/เดือน</div>
+           </div>
+           
+           <div className="action-section">
+              <button 
+                className="confirm-btn-large" 
+                onClick={handleSave}
+                disabled={isSaved || usedBudget > TOTAL_BUDGET}
+              >
+                 <div className="btn-icon-circle"><Check size={16} strokeWidth={3} /></div>
+                 {isSaved ? 'บันทึกเรียบร้อย' : 'บันทึกการจัดสรรเงิน'}
+              </button>
+              <div className="action-remark">
+                * หากบันทึกแล้วจะไม่สามารถแก้ไขได้
+              </div>
+           </div>
+        </div>
+      )}
+
     </div>
   );
 };
