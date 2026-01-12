@@ -7,19 +7,19 @@ import {
 
 const TOTAL_BUDGET = 10000000; 
 
-// ✅ รายการปุ่มเปอร์เซ็นต์ (0 - 50%)
 const PERCENT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
 const DecisionPage = () => {
   const [activeTab, setActiveTab] = useState('allocation');
   const [isSaved, setIsSaved] = useState(false); 
 
-  // ✅ รายการงบประมาณที่คุณแก้ไขมาล่าสุด (4 รายการ)
+  // ✅ แก้ไข Comma (,) ที่หายไป และสีแดงของงบสำรองจ่าย
   const [budgets, setBudgets] = useState([
-    { id: 1, name: 'จำนวนเงินเพื่อการลงทุนด้านการตลาด', value: 2000000, color: '#00C49F' }, 
-    { id: 2, name: 'จำนวนเงินเพื่อการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน', value: 2500000, color: '#FFBB28' },
-    { id: 3, name: 'ซ่อมแซมและบำรุงรักษาสถานที่', value: 1000000, color: '#4287f5' },
-    { id: 4, name: 'จำนวนเงินเพื่อการลงทุนด้านอื่นๆ', value: 1500000, color: '#A020F0' }
+    { id: 1, name: 'งบการลงทุนด้านการตลาด', value: 2000000, color: '#00C49F' }, 
+    { id: 2, name: 'งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน', value: 2500000, color: '#FFBB28' },
+    { id: 3, name: 'งบซ่อมแซมและบำรุงรักษาสถานที่', value: 1000000, color: '#4287f5' },
+    { id: 4, name: 'งบการลงทุนด้านอื่นๆ', value: 1500000, color: '#A020F0' }, // ✅ เติม , ให้แล้ว
+    { id: 5, name: 'งบสำรองจ่าย', value: 1000000, color: '#f22c09' }        // ✅ ใช้สีแดงตามที่ขอ
   ]);
 
   const [usedBudget, setUsedBudget] = useState(0);
@@ -64,7 +64,7 @@ const DecisionPage = () => {
           </div>
           <div className="card-right">
             <div className="card-icon-wrapper icon-green"><Banknote size={28} /></div>
-            <div className="card-value">{formatMoney(TOTAL_BUDGET)}</div>
+            <div className="card-value">{formatMoney(TOTAL_BUDGET)} </div>
           </div>
         </div>
         <div className="stat-card accent-green">
@@ -74,7 +74,7 @@ const DecisionPage = () => {
           </div>
           <div className="card-right">
             <div className="card-icon-wrapper icon-green"><Bed size={28} /></div>
-            <div className="card-value">85% <span className="trend-indicator positive">+5%</span></div>
+            <div className="card-value">110 ห้อง </div>
           </div>
         </div>
         <div className="stat-card accent-green">
@@ -94,7 +94,7 @@ const DecisionPage = () => {
           </div>
           <div className="card-right">
             <div className="card-icon-wrapper icon-green"><TrendingUp size={28} /></div>
-            <div className="card-value">4,816,800</div>
+            <div className="card-value">4,816,800 </div>
           </div>
         </div>
       </div>
@@ -126,84 +126,92 @@ const DecisionPage = () => {
         
         {activeTab === 'allocation' ? (
           <>
-            {/* ✅ Wrapper สำหรับฝั่งซ้าย (เพื่อแยกกล่อง Form กับ Max Spending) */}
             <div className="left-column">
                 
-                {/* กล่องที่ 1: Form Sliders */}
                 <div className="budget-form-section">
-                <div className="section-header">
-                    <h3>จัดสรรงบประมาณ รอบที่ 1</h3>
-                    <span className="budget-limit">งบประมาณทั้งหมด: {formatMoney(TOTAL_BUDGET)} บาท</span>
-                </div>
+                  <div className="section-header">
+                      <h3>จัดสรรงบประมาณ รอบที่ 1</h3>
+                      <span className="budget-limit">งบประมาณทั้งหมด: {formatMoney(TOTAL_BUDGET)} บาท</span>
+                  </div>
 
-                <div className="sliders-container">
-                    {budgets.map((item) => {
-                    const percent = ((item.value / TOTAL_BUDGET) * 100).toFixed(1);
-                    return (
-                        <div key={item.id} className="budget-item">
-                        <div className="item-label">
-                            <span className="dot" style={{ backgroundColor: item.color }}></span>
-                            <span>{item.name}</span>
-                            <span className="percent-badge">{percent}%</span>
-                        </div>
-                        
-                        <div className="slider-row">
-                            <input 
-                            type="range" min="0" max={TOTAL_BUDGET} step="10000"
-                            value={item.value} 
-                            onChange={(e) => handleBudgetChange(item.id, Number(e.target.value))}
-                            className="range-slider"
-                            style={{ accentColor: item.color }} 
-                            disabled={isSaved}
-                            />
-                        </div>
-
-                        <div className="controls-row">
-                            <div className="number-input-wrapper">
-                            <input 
-                                type="text" 
-                                value={item.value.toLocaleString()} 
-                                onChange={(e) => {
-                                const rawValue = e.target.value.replace(/,/g, '');
-                                const numValue = Number(rawValue);
-                                if (!isNaN(numValue)) handleBudgetChange(item.id, numValue);
-                                }}
+                  <div className="sliders-container">
+                      {budgets.map((item) => {
+                      const percent = ((item.value / TOTAL_BUDGET) * 100).toFixed(1);
+                      return (
+                          <div key={item.id} className="budget-item">
+                          <div className="item-label">
+                              <span className="dot" style={{ backgroundColor: item.color }}></span>
+                              <span>{item.name}</span>
+                              <span className="percent-badge">{percent}%</span>
+                          </div>
+                          
+                          <div className="slider-row">
+                              <input 
+                                type="range" min="0" max={TOTAL_BUDGET} step="10000"
+                                value={item.value} 
+                                onChange={(e) => handleBudgetChange(item.id, Number(e.target.value))}
+                                className="range-slider"
+                                style={{ 
+                                // 1. ส่งค่าสีเข้าไปเป็นตัวแปร เพื่อให้ CSS เอาไปใช้ทำสีปุ่ม
+                                     '--thumb-color': item.color,
+       
+                                // 2. สร้างแถบสีด้วยตัวเอง (ซ้ายสีเข้ม-ขวาสีเทา) จะได้ไม่ติดดำ
+                                background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`
+                                 }} 
+    /* ------------------------------------------------ */
                                 disabled={isSaved}
-                            />
-                            <span className="unit">บาท</span>
-                            </div>
+                              />
+                          </div>
 
-                            <div className="percent-buttons">
-                                {PERCENT_OPTIONS.map((pct) => {
-                                // คำนวณเพื่อ Highlight ปุ่ม
-                                const targetValue = (TOTAL_BUDGET * pct) / 100;
-                                const isActive = item.value === targetValue;
-                                return (
-                                    <button 
-                                    key={pct} 
-                                    onClick={() => handlePercentClick(item.id, pct)} 
+                          <div className="controls-row">
+                              <div className="number-input-wrapper">
+                                <input 
+                                    type="text" 
+                                    value={item.value.toLocaleString()} 
+                                    onChange={(e) => {
+                                      const rawValue = e.target.value.replace(/,/g, '');
+                                      const numValue = Number(rawValue);
+                                      if (!isNaN(numValue)) handleBudgetChange(item.id, numValue);
+                                    }}
                                     disabled={isSaved}
-                                    className={isActive ? 'active' : ''}
-                                    >
-                                    {pct}%
-                                    </button>
-                                );
-                                })}
-                            </div>
-                        </div>
-                        </div>
-                    );
-                    })}
-                </div>
+                                />
+                                <span className="unit">บาท</span>
+                              </div>
+
+                              <div className="percent-buttons">
+                                  {PERCENT_OPTIONS.map((pct) => {
+                                    const targetValue = (TOTAL_BUDGET * pct) / 100;
+                                    const isActive = item.value === targetValue;
+                                    return (
+                                        <button 
+                                          key={pct} 
+                                          onClick={() => handlePercentClick(item.id, pct)} 
+                                          disabled={isSaved}
+                                          className={isActive ? 'active' : ''}
+                                          // ✅ เพิ่มตรงนี้: สั่งเปลี่ยนสีปุ่มตามสีของ item.color
+                                          style={isActive ? { 
+                                            backgroundColor: item.color, 
+                                            borderColor: item.color,
+                                            color: '#fff' // ตัวหนังสือสีขาว
+                                          } : {}}
+                                        >
+                                          {pct}%
+                                        </button>
+                                    );
+                                  })}
+                              </div>
+                          </div>
+                          </div>
+                      );
+                      })}
+                  </div>
                 </div>
 
-                {/* ✅ กล่องที่ 2: Max Spending (แยกออกมาแล้วตามที่ขอ) */}
                 <div className="max-spending-card">
                     รายจ่ายสูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย): <strong>6,450,000 บาท/เดือน</strong>
                 </div>
             </div>
 
-            {/* ฝั่งขวา: Summary Section */}
             <div className="summary-section">
               <h3>สัดส่วนการจัดสรร</h3>
 
