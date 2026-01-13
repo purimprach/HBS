@@ -54,7 +54,7 @@ const DecisionPage = () => {
   return (
     <div className="decision-page">
       
-      {/* --- 1. Top Stats Cards (ดีไซน์ใหม่) --- */}
+      {/* --- 1. Top Stats Cards --- */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-header">
@@ -95,7 +95,7 @@ const DecisionPage = () => {
         </div>
       </div>
 
-      {/* --- 2. Tabs Navigation (แถบเมนู) --- */}
+      {/* --- 2. Tabs Navigation --- */}
       <div className="decision-tabs">
         <button className={`tab-btn ${activeTab === 'allocation' ? 'active' : ''}`} onClick={() => setActiveTab('allocation')}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
@@ -196,6 +196,10 @@ const DecisionPage = () => {
                       })}
                   </div>
                 </div>
+
+                <div className="max-spending-card">
+                    รายได้สูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย): <strong>6,450,000 บาท/เดือน</strong>
+                </div>
             </div>
 
             <div className="summary-section">
@@ -208,27 +212,55 @@ const DecisionPage = () => {
                       {((usedBudget / TOTAL_BUDGET) * 100).toFixed(0)}%
                     </span>
                   </div>
+                  
+                  {/* ✅✅✅ แก้ไขกราฟ: เพิ่มส่วน Remaining Budget ✅✅✅ */}
                   <svg viewBox="0 0 100 100" className="donut-chart">
-                    {budgets.reduce((acc, item, index) => {
-                      const totalValue = budgets.reduce((sum, b) => sum + b.value, 0);
-                      const percentage = totalValue === 0 ? 0 : item.value / totalValue;
-                      const dashArray = percentage * 100; 
-                      const offset = acc.currentOffset;
-                      acc.currentOffset -= dashArray; 
-                      acc.elements.push(
-                        <circle 
-                          key={item.id} cx="50" cy="50" r="40" 
-                          fill="transparent" 
-                          stroke={item.color} 
-                          strokeWidth="10" 
-                          strokeDasharray={`${dashArray} ${100 - dashArray}`} 
-                          strokeDashoffset={offset + 25} 
-                          strokeLinecap="round" 
-                        />
-                      );
-                      return acc;
-                    }, { elements: [], currentOffset: 0 }).elements}
+                    {(() => {
+                      let currentOffset = 25; // เริ่มที่ 12 นาฬิกา
+                      const elements = [];
+
+                      // 1. วาดส่วนที่จัดสรรแล้ว
+                      budgets.forEach((item) => {
+                        const percentage = (item.value / TOTAL_BUDGET) * 100;
+                        if (percentage > 0) {
+                          elements.push(
+                            <circle 
+                              key={item.id} cx="50" cy="50" r="40" 
+                              fill="transparent" 
+                              stroke={item.color} 
+                              strokeWidth="10" 
+                              pathLength="100"
+                              strokeDasharray={`${percentage} ${100 - percentage}`} 
+                              strokeDashoffset={currentOffset} 
+                              strokeLinecap="butt" // ใช้ butt เพื่อให้วงกลมต่อกันสนิทเหมือนในรูป
+                            />
+                          );
+                          currentOffset -= percentage;
+                        }
+                      });
+
+                      // 2. วาดส่วนที่เหลือ (สีเทา)
+                      const remainingBudget = TOTAL_BUDGET - usedBudget;
+                      if (remainingBudget > 0) {
+                        const remainingPercent = (remainingBudget / TOTAL_BUDGET) * 100;
+                        elements.push(
+                          <circle 
+                            key="remaining" cx="50" cy="50" r="40" 
+                            fill="transparent" 
+                            stroke="#E5E7EB" // สีเทาอ่อน
+                            strokeWidth="10" 
+                            pathLength="100"
+                            strokeDasharray={`${remainingPercent} ${100 - remainingPercent}`} 
+                            strokeDashoffset={currentOffset} 
+                            strokeLinecap="butt"
+                          />
+                        );
+                      }
+
+                      return elements;
+                    })()}
                   </svg>
+                  {/* ------------------------------------------------ */}
               </div>
 
               <div className="legend-list">
@@ -241,6 +273,17 @@ const DecisionPage = () => {
                       <span className="legend-val">{((item.value/TOTAL_BUDGET)*100).toFixed(0)}%</span>
                     </div>
                   ))}
+                  
+                  {/* ✅ เพิ่ม Legend สำหรับงบคงเหลือ */}
+                  <div className="legend-item">
+                      <div className="legend-left">
+                        <span className="legend-dot" style={{backgroundColor: '#E5E7EB'}}></span>
+                        <span className="legend-name" style={{color: '#6B7280'}}>งบประมาณคงเหลือ</span>
+                      </div>
+                      <span className="legend-val" style={{color: '#6B7280'}}>
+                        {(((TOTAL_BUDGET - usedBudget)/TOTAL_BUDGET)*100).toFixed(0)}%
+                      </span>
+                  </div>
               </div>
 
               <div className="budget-status">
@@ -297,7 +340,7 @@ const DecisionPage = () => {
         )}
       </div>
 
-      {/* --- 4. Bottom Action Bar (แถบบันทึก วางล่างสุดตามปกติ ไม่ Sticky) --- */}
+      {/* --- 4. Bottom Action Bar --- */}
       {activeTab === 'allocation' && (
         <div className="bottom-action-bar">
            <div className="break-even-section">
@@ -320,6 +363,13 @@ const DecisionPage = () => {
            </div>
         </div>
       )}
+
+      {/* --- 5. Footer --- */}
+      <footer className="decision-footer">
+         <div className="footer-text">
+            © 2026 Hotel Business Simulation Game. All rights reserved.
+         </div>
+      </footer>
 
     </div>
   );
