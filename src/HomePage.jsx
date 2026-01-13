@@ -42,7 +42,7 @@ function HomePage() {
   ];
 
   return (
-    <div className="content-body"> {/* ✅ ใช้ content-body เพื่อให้เข้ากับ Layout */}
+    <div className="content-body" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}> {/* ✅ เพิ่ม style เพื่อดัน footer */}
       
       {/* Hero Section */}
       <header className="hero-section" style={{ marginBottom: '30px' }}>
@@ -69,7 +69,7 @@ function HomePage() {
       </div>
 
       {/* SECTION 2: ส่วนเนื้อหาหลัก */}
-      <div className="main-layout layout-content">
+      <div className="main-layout layout-content" style={{ flex: 1 }}> {/* ✅ ให้เนื้อหาขยายเต็มพื้นที่ที่เหลือ */}
         
         {/* --- Left Column (ซ้าย) --- */}
         <div className="left-column">
@@ -407,7 +407,7 @@ function HomePage() {
                     margin: '0 0 20px 0',
                     textShadow: '0 1px 1px rgba(0,0,0,0.05)'
                 }}>
-                    กรุณากดดูข้อมูลเบื้องต้นก่อนการตัดสินใจ
+                    กดดูข้อมูลเบื้องต้นก่อนการตัดสินใจ
                 </p>
 
                 <button 
@@ -419,7 +419,7 @@ function HomePage() {
                         borderRadius: '12px', 
                         padding: '12px 20px', 
                         width: '100%',
-                        fontSize: '1.3rem', 
+                        fontSize: '1.1rem', 
                         fontWeight: '700', 
                         cursor: 'pointer',
                         boxShadow: '0 6px 0 #1B5E20, 0 10px 10px rgba(0,0,0,0.15)',
@@ -436,7 +436,7 @@ function HomePage() {
                         e.target.style.boxShadow = '0 6px 0 #1B5E20, 0 10px 10px rgba(0,0,0,0.15)';
                     }}
                 >
-                    ข้อมูลเพิ่มเติม
+                    บทวิเคราะห์จากหนังสือพิมพ์
                 </button>
            </div>
 
@@ -446,7 +446,7 @@ function HomePage() {
              style={{ 
                background: 'white', 
                borderRadius: '16px', 
-               padding: '15px', 
+               padding: '20px', 
                boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
              }}
            >
@@ -604,6 +604,21 @@ function HomePage() {
            </div>
       </div>
       
+      {/* ✅✅✅ Added Footer ✅✅✅ */}
+      <footer style={{
+        marginTop: 'auto',
+        padding: '20px 40px',
+        borderTop: '1px solid #E5E7EB',
+        color: '#9CA3AF',
+        fontSize: '0.85rem',
+        textAlign: 'right', 
+        backgroundColor: 'transparent'
+      }}>
+         <div>
+            © 2026 Hotel Business Simulation Game. All rights reserved.
+         </div>
+      </footer>
+
     </div>
   );
 }
