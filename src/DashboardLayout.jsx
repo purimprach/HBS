@@ -7,9 +7,8 @@ import {
   FileBarChart, Users, BookOpen, Settings, LogOut, Clock, User
 } from 'lucide-react';
 
-// รับ timeLeft มาจาก App.js เพื่อแสดงผลที่ Header
 function DashboardLayout({ timeLeft }) {
-  const location = useLocation(); // เช็คว่าอยู่หน้าไหนเพื่อทำเมนู Active
+  const location = useLocation(); 
 
   const formatTime = (seconds) => {
     if (seconds === undefined || seconds === null) return "00:00";
@@ -24,8 +23,14 @@ function DashboardLayout({ timeLeft }) {
       return 'normal';                       
   };
 
-  // ฟังก์ชันเช็คว่าเมนูไหน Active
-  const isActive = (path) => location.pathname === path ? 'active' : '';
+  // ✅✅✅ แก้ไขฟังก์ชัน isActive ให้รองรับการเช็คหลายหน้า ✅✅✅
+  // ถ้าส่ง path เป็น Array เช่น ['/decision', '/pricing'] ก็จะเช็คให้ครบ
+  const isActive = (path) => {
+    if (Array.isArray(path)) {
+      return path.includes(location.pathname) ? 'active' : '';
+    }
+    return location.pathname === path ? 'active' : '';
+  };
 
   return (
     <div className="dashboard-layout">
@@ -46,9 +51,12 @@ function DashboardLayout({ timeLeft }) {
             <Link to="/next-step" className={`menu-item ${isActive('/next-step')}`}>
               <FileText size={20} /> <span>บทวิเคราะห์</span>
             </Link>
-            <Link to="/decision" className={`menu-item ${isActive('/decision')}`}>
+
+            {/* ✅✅✅ แก้ไขบรรทัดนี้: ให้ Active ทั้งหน้า decision และ pricing ✅✅✅ */}
+            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing'])}`}>
                 <Target size={20} /> <span>การตัดสินใจ</span>
             </Link>
+
             <a href="#" className="menu-item">
               <TrendingUp size={20} /> <span>ตลาดและคู่แข่ง</span>
             </a>

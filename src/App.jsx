@@ -16,6 +16,7 @@ import LoginAdminPage from './LoginAdminPage';
 import EventPage from './EventPage'; 
 import SettingPageGame from './SettingPageGame';
 import DecisionPage from './DecisionPage';
+import PricingPage from './PricingPage';
 
 function App() {
   // 1. สร้าง State เวลาที่นี่ (จุดศูนย์กลาง)
@@ -52,6 +53,7 @@ function App() {
         <Route path="/next-step" element={<EventPage />} />
         <Route path="/game-settings" element={<SettingPageGame />} />
         <Route path="/decision" element={<DecisionPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
         
       </Route>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './DecisionPage.css';
 import { 
   Banknote, Bed, Users, TrendingUp, Save, Check, 
@@ -10,6 +11,7 @@ const TOTAL_BUDGET = 10000000;
 const PERCENT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
 const DecisionPage = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('allocation');
   const [isSaved, setIsSaved] = useState(false); 
 
@@ -100,9 +102,9 @@ const DecisionPage = () => {
         <button className={`tab-btn ${activeTab === 'allocation' ? 'active' : ''}`} onClick={() => setActiveTab('allocation')}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
         </button>
-        <button className={`tab-btn ${activeTab === 'pricing' ? 'active' : ''}`} onClick={() => setActiveTab('pricing')}>
-          <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
-        </button>
+       <button className="tab-btn" onClick={() => navigate('/pricing')}>
+        <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
+       </button>
         <button className={`tab-btn ${activeTab === 'marketing' ? 'active' : ''}`} onClick={() => setActiveTab('marketing')}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>

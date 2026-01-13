@@ -23,24 +23,19 @@
 }
 
 /* ดีไซน์การ์ดแบบใหม่ */
+/* ✅✅✅ ดีไซน์การ์ดแบบใหม่ (ขอบเขียว, มุมมน, พื้นขาว) ✅✅✅ */
 .stat-card {
   background: white;
-  border: 1px solid #15803d; /* เส้นขอบสีเขียวเข้ม */
-  border-radius: 12px;
-  padding: 16px 20px;
+  border: 1px solid #16A34A; /* เส้นขอบสีเขียวตามรูป */
+  border-radius: 16px;       /* มุมมนกว่าเดิมนิดหน่อย */
+  padding: 20px 24px;        /* เพิ่มพื้นที่ภายใน */
   
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   
   min-height: 140px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s;
-}
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* เงาบางๆ */
 }
 
 .stat-header {
@@ -50,36 +45,40 @@
 }
 
 .stat-title {
-  color: #16A34A; /* สีเขียว */
+  color: #166534; /* สีเขียวเข้มของหัวข้อ */
   font-size: 1rem;
   font-weight: 600;
 }
 
+/* ปรับไอคอนให้พื้นหลังเขียวอ่อนแบบในรูป */
 .stat-icon-box {
-  background-color: #DCFCE7; /* พื้นหลังไอคอนสีเขียวอ่อน */
-  color: #15803d;            /* ไอคอนสีเขียวเข้ม */
-  width: 30px;
-  height: 30px;
-  border-radius: 20px; /* สี่เหลี่ยมมน */
+  background-color: #DCFCE7; 
+  color: #15803d;            
+  width: 32px;
+  height: 32px;
+  border-radius: 8px; /* สี่เหลี่ยมมุมมน (ไม่ใช่กลม) */
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+/* ปรับตัวเลขให้ใหญ่และชิดขวาตามรูป */
 .stat-value {
-  font-size: 1.5rem; /*ปรับขนาดของค่า ในกลางช่อง 4 ช่อง เช่น 1,000,000 หรือ 12%*/
+  font-size: 1.8rem;
   font-weight: 700;
-  color: #111827; 
+  color: #1F2937; 
   text-align: right;
-  margin-top: 10px;
-  margin-bottom: 10px;
-  line-height: 1.2;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  line-height: 1;
 }
 
+/* ปรับตัวหนังสือข้างล่างเป็นสีเทา */
 .stat-sub {
   font-size: 0.85rem;
-  color: #9CA3AF;
+  color: #6B7280;
   font-weight: 400;
+  text-align: left; /* หรือ right ตามชอบ ในรูปดูเหมือนอยู่ซ้ายล่าง */
 }
 
 /* --- Tabs Navigation --- */
@@ -569,4 +568,421 @@ input:disabled, button:disabled {
   font-size: 0.85rem;
 }
 
-/* ลบ .footer-links และ .divider ของเดิมทิ้งได้เลยครับ ไม่ได้ใช้แล้ว */
+/* ================================================= */
+/* ✅ CSS สำหรับหน้า Pricing UI ใหม่ (แบบที่ต้องการ) */
+/* ================================================= */
+
+.pricing-wrapper {
+  padding-bottom: 20px;
+}
+
+.pricing-page-header {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.pricing-page-header h2 {
+  font-size: 1.5rem;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.pricing-page-header p {
+  color: #6B7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.pricing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ตัวการ์ดห้องพัก */
+.room-pricing-card-custom {
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  gap: 24px;
+}
+
+/* ฝั่งซ้าย */
+.card-left-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.room-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.room-name {
+  margin: 0;
+  font-size: 1rem;
+  color: #1F2937;
+  font-weight: 600;
+}
+
+.room-limit-text {
+  font-size: 0.85rem;
+  color: #9CA3AF;
+}
+
+.price-control-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* ปุ่ม + - */
+/* ✅✅✅ ปรับแต่งปุ่ม + - ใหม่ (พื้นหลังเขียวอ่อน + มีมิติ) ✅✅✅ */
+.adjust-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px; /* เพิ่มความโค้งมนอีกนิด */
+  
+  /* สไตล์สีเขียวอ่อน */
+  background-color: #ECFDF5; 
+  border: 1px solid #6EE7B7; /* เส้นขอบเขียวสดใส */
+  color: #059669;            /* ไอคอนสีเขียวเข้ม */
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* เพิ่มเงาเพื่อให้ดูมีมิติ */
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.15); 
+}
+
+.adjust-btn:hover:not(:disabled) {
+  background-color: #D1FAE5; /* เข้มขึ้นเมื่อเอาเมาส์ชี้ */
+  border-color: #34D399;
+  color: #047857;
+  transform: translateY(-2px); /* ลอยขึ้นเล็กน้อย */
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.25); /* เงาชัดขึ้น */
+}
+
+.adjust-btn:active:not(:disabled) {
+  transform: translateY(0); /* ยุบลงเมื่อคลิก */
+  box-shadow: 0 1px 2px rgba(16, 185, 129, 0.1);
+  background-color: #A7F3D0;
+}
+
+.adjust-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #F3F4F6; /* สีเทาเมื่อกดไม่ได้ */
+  border-color: #E5E7EB;
+  color: #9CA3AF;
+  box-shadow: none;
+  transform: none;
+}
+
+/* เพิ่มระยะห่างให้ไอคอน + - ตรงกลางชัดเจนขึ้น */
+.adjust-btn svg {
+  stroke-width: 2.5px;
+}
+
+/* เส้นกั้นกลาง */
+.vertical-divider {
+  width: 2px;
+  height: 140px;
+  background-color: #E5E7EB;
+}
+
+/* ฝั่งขวา (เปรียบเทียบราคา) */
+.card-right-section {
+  width: 250px;
+  flex-shrink: 0;
+}
+
+.compare-box {
+  background: #F9FAFB;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #F3F4F6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.compare-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #6B7280;
+}
+
+.compare-row.highlight .value {
+  font-weight: 700;
+  color: #111827;
+}
+
+/* ป้าย % การเปลี่ยนแปลง */
+.percent-badge {
+  margin-top: 4px;
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.percent-badge.up {
+  background: #DCFCE7;
+  color: #16A34A;
+}
+
+.percent-badge.down {
+  background: #FEE2E2;
+  color: #EF4444;
+}
+
+.percent-badge.neutral {
+  background: #F3F4F6;
+  color: #6B7280;
+}
+/* ... CSS เดิม ... */
+
+/* ✅✅✅ เพิ่มสไตล์สำหรับแคปซูลบอกจำนวนห้อง ✅✅✅ */
+.room-count-capsule {
+  /* ลบ position: absolute ออก เพื่อให้อยู่ใน flow เดียวกับชื่อห้อง */
+  /* position: absolute; */
+  /* top: 16px; right: 16px; */
+  
+  background-color: #ECFDF5; 
+  color: #047857;            
+  border: 1px solid #10B981; 
+  
+  padding: 4px 12px;
+  border-radius: 9999px; 
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap; /* ห้ามตัดบรรทัด */
+  
+  /* ดันไปชิดขวาสุดของส่วนซ้าย (Left Section) ถ้าต้องการ */
+  margin-left: auto; 
+}
+
+
+.current-price-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 120px;       /* ล็อกความกว้าง */
+  flex-shrink: 0;
+  text-align: center;
+  gap: 6px;           /* เว้นระยะห่าง 6px (ปรับเพิ่มลดได้ตามชอบ) */
+}
+
+
+/* ✅✅✅ CSS ใหม่สำหรับกล่องขวา (Graphic Style) ✅✅✅ */
+
+.compare-graphic-box {
+  background: #F9FAFB;
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
+}
+
+.compare-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.compare-title {
+  font-size: 0.85rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.status-badge.up { background: #DCFCE7; color: #16A34A; }
+.status-badge.down { background: #FEE2E2; color: #EF4444; }
+.status-badge.neutral { background: #F3F4F6; color: #9CA3AF; }
+
+.compare-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.price-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.price-item .lbl {
+  font-size: 0.75rem;
+  color: #9CA3AF;
+  margin-bottom: 2px;
+}
+
+.price-item .val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+.price-item.curr .val {
+  font-size: 1.25rem; /* ราคาปัจจุบันใหญ่กว่า */
+  color: #111827;
+}
+
+.arrow-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 12px; /* ดันลงมาให้ตรงกับตัวเลข */
+}
+
+/* ส่วน Footer ของกล่องขวา (กราฟแท่ง) */
+.compare-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.percent-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4B5563;
+  width: 45px; /* ล็อกความกว้างตัวเลข */
+  text-align: right;
+}
+
+.mini-progress-bg {
+  flex: 1;
+  height: 6px;
+  background: #E5E7EB;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.mini-progress-fill.up { background: #10B981; }
+.mini-progress-fill.down { background: #EF4444; }
+.mini-progress-fill.neutral { background: transparent; }
+
+/* Utility Colors for text */
+.text-green { color: #10B981 !important; }
+.text-red { color: #EF4444 !important; }
+
+/* ✅✅✅ CSS สำหรับกล่องกราฟแนวตั้ง (Vertical Chart Box) ✅✅✅ */
+
+.compare-vertical-box {
+  background: #F9FAFB;
+  border-radius: 12px;
+  padding: 20px 16px 16px; /* เพิ่ม padding ด้านบนสำหรับ badge */
+  border: 1px solid #E5E7EB;
+  height: 100%;
+  position: relative; /* เพื่อให้ badge ลอยเทียบกับกล่องนี้ */
+  display: flex;
+  align-items: flex-end; /* ดันกราฟลงด้านล่าง */
+}
+
+/* Badge % ลอยอยู่ด้านบน กล่องแสดง % ขึ้น ลง คงที่ */
+.diff-badge-floating {
+  position: absolute;
+  /*border: 1px solid #010815; /* เส้นหนา 1px, แบบทึบ, สีเทา */
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.diff-badge-floating.up { background: #DCFCE7; color: #16A34A; border: 1px solid #036c32;}
+.diff-badge-floating.down { background: #FEE2E2; color: #EF4444; border: 1px solid #af2904;}
+.diff-badge-floating.neutral { background: #F3F4F6; color: #6B7280; border: 1px solid #5f6267;}
+
+/* พื้นที่กราฟ */
+.chart-area {
+  display: flex;
+  gap: 24px; /* ระยะห่างระหว่างแท่ง */
+  width: 100%;
+  justify-content: center;
+  padding-top: 20px; /* เว้นที่ให้ badge */
+}
+
+.bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* กรอบของแท่งกราฟ */
+.bar-wrapper {
+  height: 80px; /* ความสูงสูงสุดของกราฟ */
+  width: 24px;
+  background-color: #E5E7EB; /* สีพื้นหลังรางกราฟ */
+  border-radius: 12px;
+  display: flex;
+  align-items: flex-end; /* ให้แท่งกราฟงอกจากด้านล่าง */
+  overflow: hidden; /* ซ่อนส่วนที่เกิน */
+}
+
+/* ตัวแท่งกราฟ */
+.v-bar {
+  width: 100%;
+  border-radius: 12px;
+  transition: height 0.3s ease, background-color 0.3s ease;
+}
+
+.v-bar.prev { background-color: #9CA3AF; opacity: 0.5; } /* แท่งก่อนหน้า สีเทาจางๆ */
+.v-bar.curr.up { background-color: #10B981; } /* แท่งปัจจุบัน ขึ้น=เขียว */
+.v-bar.curr.down { background-color: #EF4444; } /* แท่งปัจจุบัน ลง=แดง */
+.v-bar.curr.neutral { background-color: #6B7280; } /* แท่งปัจจุบัน เท่าเดิม=เทา */
+
+/* ป้ายกำกับและตัวเลขใต้กราฟ */
+.bar-label {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.bar-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #374151;
+}
+
+/* Utility Colors used in JSX */
+.text-green { color: #10B981 !important; }
+.text-red { color: #EF4444 !important; }
