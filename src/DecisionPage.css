@@ -64,13 +64,13 @@
 
 /* ปรับตัวเลขให้ใหญ่และชิดขวาตามรูป */
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: #1F2937; 
   text-align: right;
   margin-top: 12px;
   margin-bottom: 4px;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 /* ปรับตัวหนังสือข้างล่างเป็นสีเทา */
@@ -208,18 +208,22 @@
 .range-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
+
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--thumb-color); 
-  border: 3px solid white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  margin-top: -4.5px;
-  transition: transform 0.1s;
+
+  background: #10B981;      /* ✅ เขียว */
+  border: 1px solid #059669; /* ขอบเขียวเข้ม */
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);
+
+  margin-top: -4px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .range-slider:active::-webkit-slider-thumb {
-  transform: scale(1.1);
+  transform: scale(1.15);
+  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.6);
 }
 
 .range-slider::-webkit-slider-runnable-track {
@@ -604,20 +608,20 @@ input:disabled, button:disabled {
   background: white;
   border: 1px solid #E5E7EB;
   border-radius: 12px;
-  padding: 24px;
+  padding: 10px 32px 14px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  gap: 24px;
+  gap: 12px;
 }
 
 /* ฝั่งซ้าย */
 .card-left-section {
-  flex: 1;
+  flex: 3;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
 .room-title-row {
@@ -641,7 +645,7 @@ input:disabled, button:disabled {
 .price-control-area {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
 }
 
 /* ปุ่ม + - */
@@ -700,12 +704,6 @@ input:disabled, button:disabled {
   width: 2px;
   height: 140px;
   background-color: #E5E7EB;
-}
-
-/* ฝั่งขวา (เปรียบเทียบราคา) */
-.card-right-section {
-  width: 250px;
-  flex-shrink: 0;
 }
 
 .compare-box {
@@ -900,76 +898,97 @@ input:disabled, button:disabled {
 .text-green { color: #10B981 !important; }
 .text-red { color: #EF4444 !important; }
 
-/* ✅✅✅ CSS สำหรับกล่องกราฟแนวตั้ง (Vertical Chart Box) ✅✅✅ */
 
-.compare-vertical-box {
-  background: #F9FAFB;
-  border-radius: 12px;
-  padding: 20px 16px 16px; /* เพิ่ม padding ด้านบนสำหรับ badge */
-  border: 1px solid #E5E7EB;
-  height: 100%;
-  position: relative; /* เพื่อให้ badge ลอยเทียบกับกล่องนี้ */
-  display: flex;
-  align-items: flex-end; /* ดันกราฟลงด้านล่าง */
-}
+/* ======================================================= */
+/* ✅✅✅ 3. ส่วนกราฟแท่งแบบใหม่ (ตัวเลขอยู่ในแท่ง) ✅✅✅ */
+/* ======================================================= */
 
-/* Badge % ลอยอยู่ด้านบน กล่องแสดง % ขึ้น ลง คงที่ */
-.diff-badge-floating {
-  position: absolute;
-  /*border: 1px solid #010815; /* เส้นหนา 1px, แบบทึบ, สีเทา */
-  top: 12px;
-  right: 12px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-.diff-badge-floating.up { background: #DCFCE7; color: #16A34A; border: 1px solid #036c32;}
-.diff-badge-floating.down { background: #FEE2E2; color: #EF4444; border: 1px solid #af2904;}
-.diff-badge-floating.neutral { background: #F3F4F6; color: #6B7280; border: 1px solid #5f6267;}
-
-/* พื้นที่กราฟ */
-.chart-area {
-  display: flex;
-  gap: 24px; /* ระยะห่างระหว่างแท่ง */
-  width: 100%;
-  justify-content: center;
-  padding-top: 20px; /* เว้นที่ให้ badge */
-}
-
-.bar-col {
+.card-right-section {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end; /* ดันกราฟลงล่าง */
+  position: relative;
+  padding-top: 40px; /* เผื่อที่ให้ Badge ด้านบน */
+  padding-left: 20px;
+  /* ฝั่งขวา (เปรียบเทียบราคา) */
+   padding-left: 0;      /* (ถ้าไม่อยากให้มันเยื้องจากซ้าย) */
+   padding-right: 100px;
 }
 
-/* กรอบของแท่งกราฟ */
-.bar-wrapper {
-  height: 80px; /* ความสูงสูงสุดของกราฟ */
-  width: 24px;
-  background-color: #E5E7EB; /* สีพื้นหลังรางกราฟ */
-  border-radius: 12px;
+/* Badge เปอร์เซ็นต์ (ลอยมุมซ้ายบนของกรอบขวา) */
+.floating-percent-badge {
+  position: absolute;
+  top: 0; 
+  right: 0; /* หรือ left: 0 ถ้าชอบมุมซ้าย */
+  background-color: #DCFCE7; /* สีเขียวอ่อน */
+  color: #166534;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex; 
+  align-items: center; 
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.floating-percent-badge.down {
+  background-color: #FEE2E2; 
+  color: #991B1B;
+}
+
+/* Container ของแท่งกราฟ */
+.chart-bars-container {
   display: flex;
-  align-items: flex-end; /* ให้แท่งกราฟงอกจากด้านล่าง */
-  overflow: hidden; /* ซ่อนส่วนที่เกิน */
-}
-
-/* ตัวแท่งกราฟ */
-.v-bar {
+  align-items: flex-end; /* ให้แท่งกราฟงอกขึ้นจากด้านล่าง */
+  justify-content: flex-end;
+  gap: 24px; /* ระยะห่างระหว่างแท่งเหลือง-เขียว */
+  height: 140px; /* ความสูงพื้นที่กราฟ */
   width: 100%;
-  border-radius: 12px;
-  transition: height 0.3s ease, background-color 0.3s ease;
 }
 
-.v-bar.prev { background-color: #9CA3AF; opacity: 0.5; } /* แท่งก่อนหน้า สีเทาจางๆ */
-.v-bar.curr.up { background-color: #10B981; } /* แท่งปัจจุบัน ขึ้น=เขียว */
-.v-bar.curr.down { background-color: #EF4444; } /* แท่งปัจจุบัน ลง=แดง */
-.v-bar.curr.neutral { background-color: #6B7280; } /* แท่งปัจจุบัน เท่าเดิม=เทา */
+.chart-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+  flex: 1; 
+  max-width: 80px;
+}
+
+/* ตัวแท่งกราฟ (Bar Visual) */
+.bar-visual {
+  width: 100%;
+  border-radius: 8px 8px 0 0; /* มนเฉพาะด้านบน */
+  
+  /* จัดตัวเลขให้อยู่ตรงกลางแท่ง */
+  display: flex;
+  align-items: flex-start; /* ตัวเลขอยู่ด้านบนของแท่ง */
+  justify-content: center;
+  padding-top: 8px; 
+  
+  color: white; /* ตัวเลขสีขาว */
+  font-weight: 700;
+  font-size: 1rem;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  
+  transition: height 0.3s ease;
+  min-height: 40px; /* ความสูงขั้นต่ำเพื่อให้เห็นตัวเลขเสมอ */
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* สีแท่งกราฟ */
+.bar-yellow { background-color: #EAB308; } /* สีเหลือง (ราคาเดิม) */
+.bar-green { background-color: #10B981; }  /* สีเขียว (ราคาใหม่) */
+
+/* ข้อความใต้กราฟ (Label) */
+.bar-label-bottom {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #6B7280;
+  font-weight: 500;
+}
 
 /* ป้ายกำกับและตัวเลขใต้กราฟ */
 .bar-label {
