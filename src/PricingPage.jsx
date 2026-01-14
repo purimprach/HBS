@@ -98,7 +98,7 @@ const PricingPage = () => {
         <button className="tab-btn active">
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
-        <button className="tab-btn" onClick={() => alert('กำลังพัฒนา')}>
+        <button className="tab-btn" onClick={() => navigate('/marketing')}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
         <button className="tab-btn" onClick={() => alert('กำลังพัฒนา')}>

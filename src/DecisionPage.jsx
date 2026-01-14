@@ -105,7 +105,7 @@ const DecisionPage = () => {
        <button className="tab-btn" onClick={() => navigate('/pricing')}>
         <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
        </button>
-        <button className={`tab-btn ${activeTab === 'marketing' ? 'active' : ''}`} onClick={() => setActiveTab('marketing')}>
+        <button className="tab-btn" onClick={() => navigate('/marketing')}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
         <button className={`tab-btn ${activeTab === 'hr' ? 'active' : ''}`} onClick={() => setActiveTab('hr')}>
