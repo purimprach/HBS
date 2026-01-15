@@ -105,9 +105,24 @@ const DecisionPage = () => {
        <button className="tab-btn" onClick={() => navigate('/pricing')}>
         <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
        </button>
-        <button className="tab-btn" onClick={() => navigate('/marketing')}>
-          <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
-        </button>
+        <button
+  className="tab-btn"
+  onClick={() => {
+    const marketingBudget = budgets.find((b) => b.id === 1)?.value ?? 0; // ✅ งบการตลาดจาก CEO
+    navigate("/marketing", {
+      state: {
+        ceoMarketingBudget: marketingBudget,
+        ceoCash: TOTAL_BUDGET,
+        ceoMarketSharePrev: 12,
+        ceoSatisfaction: 3.5,
+        ceoAssetHealth: 95,
+      },
+    });
+  }}
+>
+  <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
+</button>
+
         <button className={`tab-btn ${activeTab === 'hr' ? 'active' : ''}`} onClick={() => setActiveTab('hr')}>
           <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
