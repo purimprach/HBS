@@ -6,22 +6,43 @@ import {
   PieChart, Tag, Megaphone, Wrench 
 } from 'lucide-react';
 
-const TOTAL_BUDGET = 10000000; 
+const TOTAL_BUDGET = 10000000;
+const STORAGE_KEY = "hbs_round1_decision_budgets";
 
 const PERCENT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
 const DecisionPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('allocation');
-  const [isSaved, setIsSaved] = useState(false); 
+  const [isSaved, setIsSaved] = useState(() => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      return !!parsed.isSaved;
+    } catch (e) {}
+  }
+  return false;
+});
 
-  const [budgets, setBudgets] = useState([
-    { id: 1, name: 'งบการลงทุนด้านการตลาด', value: 2000000, color: '#00C49F' }, 
-    { id: 2, name: 'งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน', value: 2500000, color: '#FFBB28' },
-    { id: 3, name: 'งบซ่อมแซมและบำรุงรักษาสถานที่', value: 1000000, color: '#4287f5' },
-    { id: 4, name: 'งบการลงทุนด้านอื่นๆ', value: 1500000, color: '#A020F0' },
-    { id: 5, name: 'งบสำรองจ่าย', value: 1000000, color: '#f22c09' }
-  ]);
+
+  const [budgets, setBudgets] = useState(() => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed.budgets)) return parsed.budgets;
+    } catch (e) {}
+  }
+  return [
+    { id: 1, name: "งบการลงทุนด้านการตลาด", value: 2000000, color: "#00C49F" },
+    { id: 2, name: "งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน", value: 2500000, color: "#FFBB28" },
+    { id: 3, name: "งบซ่อมแซมและบำรุงรักษาสถานที่", value: 1000000, color: "#4287f5" },
+    { id: 4, name: "งบการลงทุนด้านอื่นๆ", value: 1500000, color: "#A020F0" },
+    { id: 5, name: "งบสำรองจ่าย", value: 1000000, color: "#f22c09" },
+  ];
+});
+
 
   const [usedBudget, setUsedBudget] = useState(0);
 
@@ -29,6 +50,14 @@ const DecisionPage = () => {
     const total = budgets.reduce((acc, item) => acc + item.value, 0);
     setUsedBudget(total);
   }, [budgets]);
+
+  useEffect(() => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ budgets, isSaved })
+  );
+}, [budgets, isSaved]);
+
 
   const handleBudgetChange = (id, newValue) => {
     if (isSaved) return; 
@@ -52,6 +81,24 @@ const DecisionPage = () => {
   };
 
   const formatMoney = (num) => num.toLocaleString();
+
+  // ✅✅✅ ฟังก์ชันสำหรับไปหน้า Marketing พร้อมส่งข้อมูล
+  const goToMarketing = () => {
+  const marketingBudget = budgets.find(b => b.id === 1)?.value || 0;
+  const hrBudget = budgets.find(b => b.id === 2)?.value || 0; // ✅ เพิ่มบรรทัดนี้
+
+  navigate('/marketing', { 
+    state: {
+      ceoHRBudget: hrBudget,
+      ceoMarketingBudget: marketingBudget,
+      ceoCash: TOTAL_BUDGET,
+      ceoMarketSharePrev: 12,
+      ceoSatisfaction: 3.5,
+      ceoAssetHealth: 95,
+    },
+  });
+};
+
 
   return (
     <div className="decision-page">
@@ -102,30 +149,36 @@ const DecisionPage = () => {
         <button className={`tab-btn ${activeTab === 'allocation' ? 'active' : ''}`} onClick={() => setActiveTab('allocation')}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
         </button>
-       <button className="tab-btn" onClick={() => navigate('/pricing')}>
-        <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
-       </button>
-        <button
-  className="tab-btn"
-  onClick={() => {
-    const marketingBudget = budgets.find((b) => b.id === 1)?.value ?? 0; // ✅ งบการตลาดจาก CEO
-    navigate("/marketing", {
-      state: {
-        ceoMarketingBudget: marketingBudget,
-        ceoCash: TOTAL_BUDGET,
-        ceoMarketSharePrev: 12,
-        ceoSatisfaction: 3.5,
-        ceoAssetHealth: 95,
-      },
-    });
-  }}
->
-  <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
-</button>
-
-        <button className={`tab-btn ${activeTab === 'hr' ? 'active' : ''}`} onClick={() => setActiveTab('hr')}>
-          <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
+        <button className="tab-btn" onClick={() => navigate('/pricing')}>
+          <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
+        
+        {/* ✅✅✅ แก้ไขปุ่ม Marketing ให้เรียกใช้ฟังก์ชัน goToMarketing ✅✅✅ */}
+        <button className="tab-btn" onClick={goToMarketing}>
+          <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
+        </button>
+
+       <button
+        className="tab-btn"
+        onClick={() => {
+          const marketingBudget = budgets.find((b) => b.id === 1)?.value ?? 0;
+          const hrBudget = budgets.find((b) => b.id === 2)?.value ?? 0;
+
+          navigate("/personnel", {
+            state: {
+              ceoHRBudget: hrBudget,
+              ceoMarketingBudget: marketingBudget,
+              ceoCash: TOTAL_BUDGET,
+              ceoMarketSharePrev: 12,
+              ceoSatisfaction: 3.5,
+              ceoAssetHealth: 95,
+            },
+          });
+        }}>
+        <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
+      </button>
+
+
         <button className={`tab-btn ${activeTab === 'maintenance' ? 'active' : ''}`} onClick={() => setActiveTab('maintenance')}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
@@ -230,7 +283,6 @@ const DecisionPage = () => {
                     </span>
                   </div>
                   
-                  {/* ✅✅✅ แก้ไขกราฟ: เพิ่มส่วน Remaining Budget ✅✅✅ */}
                   <svg viewBox="0 0 100 100" className="donut-chart">
                     {(() => {
                       let currentOffset = 25; // เริ่มที่ 12 นาฬิกา
@@ -331,17 +383,17 @@ const DecisionPage = () => {
                    <div className="summary-row highlight">
                      <span>คงเหลือ:</span>
                      <span className={`val ${usedBudget > TOTAL_BUDGET ? 'text-red' : 'text-green'}`}>
-                        {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
+                       {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
                      </span>
                    </div>
 
                    <p style={{ 
-                      color: '#EF4444', 
-                      fontSize: '0.75rem', 
-                      textAlign: 'right', 
-                      marginTop: '8px',
-                      marginBottom: '0',
-                      fontWeight: '500'
+                     color: '#EF4444', 
+                     fontSize: '0.75rem', 
+                     textAlign: 'right', 
+                     marginTop: '8px',
+                     marginBottom: '0',
+                     fontWeight: '500'
                    }}>
                       * ควรสำรองเงินสดเพื่อรักษาสภาพคล่อง ในการดำเนินงานรอบถัดไป
                    </p>

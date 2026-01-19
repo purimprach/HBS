@@ -23,14 +23,17 @@ function DashboardLayout({ timeLeft }) {
       return 'normal';                       
   };
 
-  // ✅✅✅ แก้ไขฟังก์ชัน isActive ให้รองรับการเช็คหลายหน้า ✅✅✅
-  // ถ้าส่ง path เป็น Array เช่น ['/decision', '/pricing'] ก็จะเช็คให้ครบ
+  // ✅✅✅ รองรับหลายหน้า + รองรับ sub-route ✅✅✅
   const isActive = (path) => {
+    const matchOne = (p) =>
+      location.pathname === p || location.pathname.startsWith(p + "/");
+
     if (Array.isArray(path)) {
-      return path.includes(location.pathname) ? 'active' : '';
+      return path.some(matchOne) ? "active" : "";
     }
-    return location.pathname === path ? 'active' : '';
+    return matchOne(path) ? "active" : "";
   };
+
 
   return (
     <div className="dashboard-layout">
@@ -53,7 +56,7 @@ function DashboardLayout({ timeLeft }) {
             </Link>
 
             {/* ✅✅✅ แก้ไขบรรทัดนี้: ให้ Active ทั้งหน้า decision และ pricing ✅✅✅ */}
-            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing'])}`}>
+            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing','/personnel'])}`}>
                 <Target size={20} /> <span>การตัดสินใจ</span>
             </Link>
 

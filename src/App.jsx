@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-// ✅ Import Layout ที่สร้างไว้ (ถ้ายังไม่สร้าง ต้องสร้างไฟล์ DashboardLayout.jsx ก่อนนะครับ)
+// ✅ 1. Import ScrollToTop เข้ามา
+import ScrollToTop from './ScrollToTop';
+
 import DashboardLayout from './DashboardLayout';
 
+// Pages Import
 import FirstLoginPage from './FirstLoginPage';
 import LoginPlayerPage from './LoginPlayerPage';
 import CreateAccountPage from './CreateAccountPage';
@@ -17,7 +20,8 @@ import EventPage from './EventPage';
 import SettingPageGame from './SettingPageGame';
 import DecisionPage from './DecisionPage';
 import PricingPage from './PricingPage';
-import MarketingPage from './MarketingPage';
+import MarketingPage from './MarketingPage'; 
+import PersonnelPage from "./PersonnelPage";
 
 function App() {
   // 1. สร้าง State เวลาที่นี่ (จุดศูนย์กลาง)
@@ -34,32 +38,38 @@ function App() {
   }, [timeLeft]);
 
   return (
-    <Routes>
-      {/* --- กลุ่มหน้าที่ "ไม่มี" Sidebar/Header (Login, Register ฯลฯ) --- */}
-      <Route path="/" element={<FirstLoginPage />} />
-      <Route path="/login" element={<LoginPlayerPage />} />
-      <Route path="/signup" element={<CreateAccountPage />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/account" element={<AccountPage />} />
-      <Route path="/waiting-room" element={<WaitingListPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/admin-login" element={<LoginAdminPage />} />
+    <> 
+      {/* ✅ 2. ใส่ ScrollToTop ไว้ตรงนี้ (เหนือ Routes เพื่อให้ทำงานทุกหน้า) */}
+      <ScrollToTop />
 
-      {/* --- ✅✅ กลุ่มหน้าที่ "ใช้" DashboardLayout ร่วมกัน (Sidebar/Header จะนิ่ง) --- */}
-      {/* ส่ง timeLeft ให้ Layout จัดการแสดงผลที่ Header ครั้งเดียวจบ */}
-      <Route element={<DashboardLayout timeLeft={timeLeft} />}>
-        
-        {/* หน้าลูกๆ ไม่ต้องรับ timeLeft แล้ว และให้ลบ Sidebar/Header ในไฟล์ลูกออกด้วย */}
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/next-step" element={<EventPage />} />
-        <Route path="/game-settings" element={<SettingPageGame />} />
-        <Route path="/decision" element={<DecisionPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/marketing" element={<MarketingPage />} />
-        
-      </Route>
+      <Routes>
+        {/* --- กลุ่มหน้าที่ "ไม่มี" Sidebar/Header (Login, Register ฯลฯ) --- */}
+        <Route path="/" element={<FirstLoginPage />} />
+        <Route path="/login" element={<LoginPlayerPage />} />
+        <Route path="/signup" element={<CreateAccountPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/waiting-room" element={<WaitingListPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin-login" element={<LoginAdminPage />} />
 
-    </Routes>
+        {/* --- ✅✅ กลุ่มหน้าที่ "ใช้" DashboardLayout ร่วมกัน (Sidebar/Header จะนิ่ง) --- */}
+        {/* ส่ง timeLeft ให้ Layout จัดการแสดงผลที่ Header ครั้งเดียวจบ */}
+        <Route element={<DashboardLayout timeLeft={timeLeft} />}>
+          
+          {/* หน้าลูกๆ ไม่ต้องรับ timeLeft แล้ว และให้ลบ Sidebar/Header ในไฟล์ลูกออกด้วย */}
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/next-step" element={<EventPage />} />
+          <Route path="/game-settings" element={<SettingPageGame />} />
+          <Route path="/decision" element={<DecisionPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/marketing" element={<MarketingPage />} /> {/* ✅ Route สำหรับหน้าการตลาด */}
+          <Route path="/personnel" element={<PersonnelPage />} />
+          
+        </Route>
+
+      </Routes>
+    </>
   );
 }
 
