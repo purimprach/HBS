@@ -56,7 +56,7 @@ function DashboardLayout({ timeLeft }) {
             </Link>
 
             {/* ✅✅✅ แก้ไขบรรทัดนี้: ให้ Active ทั้งหน้า decision และ pricing ✅✅✅ */}
-            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing','/personnel'])}`}>
+            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing','/personnel','/maintenance'])}`}> {/*ทำแถบการตัดสินใจให้เป็นสีเขียวอ่อน*/} 
                 <Target size={20} /> <span>การตัดสินใจ</span>
             </Link>
 

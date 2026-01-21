@@ -342,7 +342,7 @@ export default function MarketingPage() {
           <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
 
-        <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
+        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
         <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>

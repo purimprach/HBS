@@ -1,0 +1,160 @@
+/* MaintenancePage.css - Final Green Theme */
+
+.maint-page-wrapper {
+  /* ใช้ร่วมกับ DecisionPage.css */
+}
+
+.maint-group-section { margin-bottom: 24px; }
+
+.maint-group-header {
+  font-size: 1.15rem; font-weight: 800; color: #1F2937; margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 2px solid #E5E7EB;
+}
+
+/* Card Row */
+.maint-card-row {
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
+  overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  margin-bottom: 16px; display: flex; height: 140px; transition: all 0.2s;
+}
+.maint-card-row:hover { border-color: #D1FAE5; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+/* Left */
+.maint-col-left {
+  flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;
+}
+.maint-title { font-size: 1.1rem; font-weight: 800; color: #111827; }
+.maint-desc-wrapper { display: flex; align-items: center; gap: 6px; color: #9CA3AF; font-size: 0.85rem; }
+.maint-info-icon { min-width: 14px; }
+
+/* Center */
+.maint-col-center {
+  flex: 0 0 300px; display: flex; flex-direction: column; justify-content: center;
+  align-items: flex-end; padding: 20px; border-right: 1px solid #F3F4F6;
+}
+
+.maint-control-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+
+/* ✅✅✅ ปุ่มแยก (Separated) ธีมเขียว ✅✅✅ */
+.maint-separated-control {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* ระยะห่าง */
+}
+
+/* ปุ่มวงกลม/มน (Default: เขียวอ่อน) */
+.maint-btn-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  
+  /* สีเริ่มต้น: เขียวอ่อน */
+  background: #F0FDF4; 
+  border: 1px solid #BBF7D0; 
+  color: #166534; /* ไอคอนเขียวเข้ม */
+  
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+/* Hover: เขียวเข้มขึ้นนิดนึง */
+.maint-btn-circle:hover:not(:disabled) { 
+  background: #DCFCE7; /* พื้นหลังเข้มขึ้น */
+  border-color: #86EFAC; /* ขอบชัดขึ้น */
+  color: #14532D; /* ไอคอนเข้มสุด */
+  transform: translateY(-1px);
+}
+
+.maint-btn-circle:active:not(:disabled) { transform: translateY(0); }
+
+/* ปุ่ม Disabled (เทาจางๆ) */
+.maint-btn-circle:disabled { 
+  opacity: 0.6; 
+  cursor: not-allowed; 
+  background: #F3F4F6;
+  border-color: #E5E7EB;
+  color: #9CA3AF;
+}
+
+/* กล่องกรอกเงิน (สีขาวเหมือนเดิม เพื่อให้อ่านง่าย) */
+.maint-input-box-separated {
+  width: 200px;
+  height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+}
+
+.maint-input-box-separated:focus-within {
+  border-color: #10B981;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.maint-input-field-sep {
+  width: 100%; border: none; outline: none;
+  text-align: center; font-size: 1.1rem; font-weight: 700; color: #1F2937;
+  background: transparent;
+  padding: 0 8px;
+}
+/* ✅✅✅ จบส่วนแก้ ✅✅✅ */
+
+/* Percentage Badge */
+.maint-pct {
+  font-size: 0.9rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 110px; /* จองพื้นที่ไว้เลย 110px (กว้างพอสำหรับเลข 4 หลัก + เครื่องหมาย) */
+  justify-content: flex-start; /* ให้ตัวเลขเริ่มชิดซ้ายของกล่อง พื้นที่เหลือช่างมัน */
+  
+  /* (ทางเลือก) ถ้าอยากให้ตัวเลขชิดขวา ให้ใช้ justify-content: flex-end; */
+}
+.maint-pct.down { color: #DC2626; }
+.maint-pct.up { color: #16A34A; }
+
+.maint-prev-val { font-size: 0.8rem; color: #9CA3AF; font-weight: 500; margin-right: 90px; }
+
+/* Right */
+.maint-col-right { flex: 0 0 350px; background: #F3F4F6; }
+.maint-col-right img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* Bottom Summary */
+.maint-bottom-wrap { margin-top: 30px; }
+.maint-bottom-card {
+  background: #ECFDF5; border: 1px solid #D1FAE5; border-radius: 16px; padding: 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.maint-bottom-title { font-weight: 800; color: #064E3B; font-size: 0.95rem; }
+.maint-bottom-value { font-weight: 900; color: #059669; font-size: 1.4rem; }
+.maint-bottom-sub { color: #047857; font-size: 0.9rem; margin-top: 4px; }
+.maint-bottom-alert { color: #DC2626; font-weight: 700; margin-top: 4px; }
+
+.maint-bottom-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.maint-bottom-confirm {
+  background: #059669; color: white; border: none; padding: 12px 20px;
+  border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: all 0.2s;
+}
+.maint-bottom-confirm:hover:not(:disabled) { background: #047857; transform: translateY(-1px); }
+.maint-bottom-confirm:disabled { background: #9CA3AF; cursor: not-allowed; }
+.maint-bottom-check { background: rgba(255,255,255,0.2); border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; }
+.maint-bottom-note { font-size: 0.8rem; color: #6B7280; }
+.maint-bottom-reserve { border: 1px solid #FCA5A5; background: #fff; color: #DC2626; padding: 8px 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .maint-card-row { height: auto; flex-direction: column; }
+  .maint-col-right { height: 200px; width: 100%; order: -1; }
+  .maint-col-center { border-right: none; align-items: flex-start; width: 100%; }
+  .maint-control-row { width: 100%; justify-content: space-between; }
+  .maint-bottom-card { flex-direction: column; align-items: stretch; gap: 16px; }
+  .maint-bottom-right { align-items: stretch; }
+  .maint-bottom-confirm { justify-content: center; }
+}

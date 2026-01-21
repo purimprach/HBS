@@ -179,8 +179,8 @@ const DecisionPage = () => {
       </button>
 
 
-        <button className={`tab-btn ${activeTab === 'maintenance' ? 'active' : ''}`} onClick={() => setActiveTab('maintenance')}>
-          <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
+                    <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
         <button className={`tab-btn ${activeTab === 'others' ? 'active' : ''}`} onClick={() => setActiveTab('others')}>
           <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>

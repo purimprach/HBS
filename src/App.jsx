@@ -22,6 +22,7 @@ import DecisionPage from './DecisionPage';
 import PricingPage from './PricingPage';
 import MarketingPage from './MarketingPage'; 
 import PersonnelPage from "./PersonnelPage";
+import MaintenancePage from "./MaintenancePage";
 
 function App() {
   // 1. สร้าง State เวลาที่นี่ (จุดศูนย์กลาง)
@@ -65,6 +66,7 @@ function App() {
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/marketing" element={<MarketingPage />} /> {/* ✅ Route สำหรับหน้าการตลาด */}
           <Route path="/personnel" element={<PersonnelPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
           
         </Route>
 

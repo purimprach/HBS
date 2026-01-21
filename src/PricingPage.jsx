@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./DecisionPage.css";
+import "./PricingPage.css";
+
 import {
-  Banknote,Bed,Users,Check,
-  PieChart,Tag,Megaphone,Wrench,
-  Plus,Minus,TrendingUp,TrendingDown,
+  Banknote, Bed, Users, Check,
+  PieChart, Tag, Megaphone, Wrench,
+  Plus, Minus, TrendingUp, TrendingDown,
 } from "lucide-react";
 
 const TOTAL_BUDGET = 10_000_000;
-const STORAGE_KEY = "hbs_round1_pricing_rooms";
+const STORAGE_KEY_BUDGETS = "hbs_round1_decision_budgets"; 
+const STORAGE_KEY_PRICING = "hbs_round1_pricing_rooms";
 
 const DEFAULT_ROOMS = [
   {
@@ -20,7 +23,6 @@ const DEFAULT_ROOMS = [
     max: 1100,
     step: 50,
     count: 40,
-    color: "#00C49F",
   },
   {
     id: 2,
@@ -31,7 +33,6 @@ const DEFAULT_ROOMS = [
     max: 1600,
     step: 50,
     count: 30,
-    color: "#14B8A6",
   },
   {
     id: 3,
@@ -42,7 +43,6 @@ const DEFAULT_ROOMS = [
     max: 3200,
     step: 100,
     count: 20,
-    color: "#FFBB28",
   },
   {
     id: 4,
@@ -53,7 +53,6 @@ const DEFAULT_ROOMS = [
     max: 5800,
     step: 100,
     count: 10,
-    color: "#4287f5",
   },
   {
     id: 5,
@@ -64,16 +63,35 @@ const DEFAULT_ROOMS = [
     max: 7800,
     step: 100,
     count: 10,
-    color: "#A020F0",
   },
 ];
 
+const formatMoney = (num) => (Number(num) || 0).toLocaleString();
+
+const getChangePercent = (current, prev) => {
+  if (!prev) return current === 0 ? 0 : 100;
+  return ((current - prev) / prev) * 100;
+};
+
 export default function PricingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // ✅ โหลด isSaved จาก localStorage
+  const getBudgetFromStorage = (id) => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_BUDGETS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.budgets?.find((b) => b.id === id)?.value || 0;
+      }
+    } catch (e) {
+      console.error("Error loading budget", e);
+    }
+    return 0;
+  };
+
   const [isSaved, setIsSaved] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY_PRICING);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -83,9 +101,8 @@ export default function PricingPage() {
     return false;
   });
 
-  // ✅ โหลด rooms จาก localStorage (ถ้าไม่มีค่อย fallback)
   const [rooms, setRooms] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY_PRICING);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -95,9 +112,8 @@ export default function PricingPage() {
     return DEFAULT_ROOMS;
   });
 
-  // ✅✅✅ บันทึกทุกครั้งที่ rooms / isSaved เปลี่ยน
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ rooms, isSaved }));
+    localStorage.setItem(STORAGE_KEY_PRICING, JSON.stringify({ rooms, isSaved }));
   }, [rooms, isSaved]);
 
   const adjustPrice = (id, amount) => {
@@ -105,7 +121,7 @@ export default function PricingPage() {
     setRooms((prev) =>
       prev.map((room) => {
         if (room.id !== id) return room;
-        const next = room.price + amount;
+        const next = (room.price || 0) + amount;
         const clamped = Math.min(room.max, Math.max(room.min, next));
         return { ...room, price: clamped };
       })
@@ -129,220 +145,176 @@ export default function PricingPage() {
     if (window.confirm("ยืนยันการบันทึกราคาห้องพัก?")) setIsSaved(true);
   };
 
-  const formatMoney = (num) => (Number(num) || 0).toLocaleString();
-
-  const getChangePercent = (current, prev) => {
-    if (!prev) return current === 0 ? 0 : 100;
-    return ((current - prev) / prev) * 100;
+  const commonState = {
+    ceoCash: location.state?.ceoCash ?? TOTAL_BUDGET,
+    ceoMarketSharePrev: location.state?.ceoMarketSharePrev ?? 12,
+    ceoSatisfaction: location.state?.ceoSatisfaction ?? 3.5,
+    ceoAssetHealth: location.state?.ceoAssetHealth ?? 95,
   };
 
   return (
-    <div className="decision-page">
-      {/* 1. Header Stats */}
+    <div className="decision-page pricing-page">
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">จำนวนห้องที่ใช้งานได้</span>
-            <div className="stat-icon-box">
-              <Bed size={20} strokeWidth={2} />
-            </div>
+            <div className="stat-icon-box"><Bed size={20} strokeWidth={2} /></div>
           </div>
           <div className="stat-value">110</div>
           <div className="stat-sub">สภาพห้อง : 100%</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ผู้เข้าพักเฉลี่ยไตรมาสที่แล้ว</span>
-            <div className="stat-icon-box">
-              <Users size={20} strokeWidth={2} />
-            </div>
+            <div className="stat-icon-box"><Users size={20} strokeWidth={2} /></div>
           </div>
           <div className="stat-value">72%</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : ดี</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">รายได้ไตรมาสที่แล้ว</span>
-            <div className="stat-icon-box">
-              <span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>฿</span>
-            </div>
+            <div className="stat-icon-box"><span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>฿</span></div>
           </div>
           <div className="stat-value">4,816,800</div>
           <div className="stat-sub">สถานะ : ดี</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ความต้องการในการตลาด</span>
-            <div className="stat-icon-box">
-              <Megaphone size={18} strokeWidth={2} />
-            </div>
+            <div className="stat-icon-box"><Megaphone size={18} strokeWidth={2} /></div>
           </div>
-          <div className="stat-value" style={{ fontSize: "1.6rem" }}>
-            ระดับกลาง
-          </div>
+          <div className="stat-value" style={{ fontSize: "1.6rem" }}>ระดับกลาง</div>
           <div className="stat-sub">ในช่วงไตรมาสที่ 1</div>
         </div>
       </div>
 
-      {/* 2. Tabs */}
       <div className="decision-tabs">
         <button className="tab-btn" onClick={() => navigate("/decision")}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
         </button>
-
         <button className="tab-btn active">
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
-
-        <button className="tab-btn" onClick={() => navigate("/marketing")}>
+        <button className="tab-btn" onClick={() => {
+            const mktBudget = getBudgetFromStorage(1);
+            const hrBudget = getBudgetFromStorage(2);
+            navigate("/marketing", { state: { ...commonState, ceoMarketingBudget: mktBudget, ceoHRBudget: hrBudget } });
+          }}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
-
-        <button className="tab-btn" onClick={() => navigate("/personnel")}>
+        <button className="tab-btn" onClick={() => {
+            const mktBudget = getBudgetFromStorage(1);
+            const hrBudget = getBudgetFromStorage(2);
+            navigate("/personnel", { state: { ...commonState, ceoHRBudget: hrBudget, ceoMarketingBudget: mktBudget } });
+          }}>
           <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
-
-        <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
+        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
-
         <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
           <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
 
-      {/* 3. Main Content */}
       <div className="decision-content">
-        <div className="pricing-wrapper" style={{ gridColumn: "1 / -1" }}>
+        <div style={{ gridColumn: "1 / -1" }}>
           <div className="pricing-page-header">
-            <h2>กำหนดราคาห้องพัก</h2>
-            <p>กำหนดราคาห้องพักให้เหมาะสมกับตลาดและกลยุทธ์ของคุณ</p>
+            <h2>ตั้งราคาห้องพัก</h2>
+            <p>กำหนดราคาควรเหมาะสมกับตลาดและกลยุทธ์ของคุณ</p>
           </div>
 
-          <div className="pricing-list">
+          <div className="price-overview-card">
+            <div className="price-overview-title">ภาพรวมโครงสร้างราคา</div>
+
             {rooms.map((room) => {
-              const percentChange = getChangePercent(room.price, room.prevPrice);
-              const isUp = percentChange > 0;
-              const isDown = percentChange < 0;
+              const pct = getChangePercent(room.price, room.prevPrice);
+              const isDown = pct < 0;
+              const isUp = pct > 0;
 
               const range = room.max - room.min;
-              const percent = range ? ((room.price - room.min) / range) * 100 : 0;
-
-              const maxVal = Math.max(room.price, room.prevPrice) * 1.2 || 1;
-              const hPrev = (room.prevPrice / maxVal) * 100;
-              const hCurr = (room.price / maxVal) * 100;
+              const progress = range ? ((room.price - room.min) / range) * 100 : 0;
+              const markerLeft = Math.max(0, Math.min(100, progress));
 
               return (
-                <div key={room.id} className="room-pricing-card-custom">
-                  <div className="card-left-section">
-                    <div className="room-title-row">
-                      <div
-                        className="room-icon-wrapper"
-                        style={{
-                          background: "#F3F4F6",
-                          padding: "8px",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        <Bed size={24} color="#374151" />
-                      </div>
-
-                      <div>
-                        <h3 className="room-name">{room.name}</h3>
-                        <span className="room-limit-text">
-                          (ต่ำสุด {formatMoney(room.min)} - สูงสุด{" "}
-                          {formatMoney(room.max)})
-                        </span>
-                      </div>
-
-                      <div className="room-count-capsule">{room.count} ห้อง</div>
+                <div key={room.id} className="price-row">
+                  {/* LEFT SECTION */}
+                  <div className="price-left">
+                    <div className="price-room-head">
+                      <div><span className="price-room-title">{room.name}</span></div>
+                      <span className="price-pill">{room.count} ห้อง</span>
                     </div>
 
-                    <div style={{ padding: "0 4px", margin: "4px 0" }}>
-                      <input
-                        type="range"
-                        min={room.min}
-                        max={room.max}
-                        step={room.step}
-                        value={room.price}
-                        onChange={(e) =>
-                          setPriceExact(room.id, Number(e.target.value))
-                        }
-                        className="range-slider"
-                        style={{
-                          background: `linear-gradient(to right, #10B981 0%, #10B981 ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`,
-                        }}
-                        disabled={isSaved}
-                      />
-                    </div>
+                    <div className="price-track-wrap">
+                      {/* ✅ FIX: จัดกลุ่ม Labels กับ Track ให้อยู่ด้วยกันเป็นก้อนเดียว */}
+                      <div className="price-slider-group">
+                        <div className="price-track-labels">
+                          <span>{formatMoney(room.min)}</span>
+                          <span>{formatMoney(room.prevPrice)}</span>
+                          <span>{formatMoney(room.max)}</span>
+                        </div>
 
-                    <div className="price-control-area">
-                      <button
-                        className="adjust-btn minus"
-                        onClick={() => adjustPrice(room.id, -room.step)}
-                        disabled={isSaved || room.price <= room.min}
-                      >
-                        <Minus size={18} />
-                      </button>
-
-                      <div className="current-price-display">
-                        <span className="price-number">
-                          {formatMoney(room.price)}
-                        </span>
-                        <span className="price-unit">บาท</span>
+                        <div className="price-track">
+                          <div className="price-track-inner">
+                            <div className="price-track-fill" style={{ width: `${markerLeft}%` }} />
+                          </div>
+                          <div className="price-marker" style={{ left: `clamp(18px, ${markerLeft}%, calc(100% - 18px))` }}>
+                            <div className="price-marker-dot" />
+                            <div className="price-marker-badge">{formatMoney(room.price)}</div>
+                          </div>
+                          <input
+                            className="price-range"
+                            type="range"
+                            min={room.min}
+                            max={room.max}
+                            step={room.step}
+                            value={room.price}
+                            disabled={isSaved}
+                            onChange={(e) => setPriceExact(room.id, Number(e.target.value))}
+                          />
+                        </div>
                       </div>
 
-                      <button
-                        className="adjust-btn plus"
-                        onClick={() => adjustPrice(room.id, room.step)}
-                        disabled={isSaved || room.price >= room.max}
-                      >
-                        <Plus size={18} />
-                      </button>
+                      {/* ✅ ปุ่มแยกออกมาอยู่นอกกลุ่ม Labels/Track */}
+                      <div className="price-controls-inline">
+                        <button
+                          className="price-mini-btn"
+                          onClick={() => adjustPrice(room.id, -room.step)}
+                          disabled={isSaved || room.price <= room.min}
+                          title={`ลดครั้งละ ${room.step}`}
+                        >
+                          <Minus size={18} />
+                        </button>
+                        <button
+                          className="price-mini-btn"
+                          onClick={() => adjustPrice(room.id, room.step)}
+                          disabled={isSaved || room.price >= room.max}
+                          title={`เพิ่มครั้งละ ${room.step}`}
+                        >
+                          <Plus size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="vertical-divider"></div>
-
-                  <div className="card-right-section">
-                    {percentChange !== 0 && (
-                      <div
-                        className={`floating-percent-badge ${
-                          isDown ? "down" : ""
-                        }`}
-                      >
-                        {isUp ? (
-                          <TrendingUp size={16} />
-                        ) : (
-                          <TrendingDown size={16} />
-                        )}
-                        {percentChange > 0 ? "+" : ""}
-                        {percentChange.toFixed(1)}%
+                  {/* RIGHT SECTION (Graph) */}
+                  <div className="price-right">
+                    <div className="price-right-top">
+                      <div className={`price-pct ${isDown ? "down" : ""}`}>
+                        {isUp ? <TrendingUp size={16} /> : isDown ? <TrendingDown size={16} /> : null}
+                        {pct > 0 ? "+" : ""}{pct.toFixed(2)}%
                       </div>
-                    )}
+                    </div>
 
-                    <div className="chart-bars-container">
-                      <div className="chart-col">
-                        <div
-                          className="bar-visual bar-yellow"
-                          style={{ height: `${hPrev}%` }}
-                        >
-                          {formatMoney(room.prevPrice)}
-                        </div>
-                        <div className="bar-label-bottom">ราคาเดิม</div>
+                    <div className="price-boxes">
+                      <div className="price-box prev">
+                        <div className="price-box-value">{formatMoney(room.prevPrice)}</div>
+                        <div className="price-box-label">ราคาปัจจุบัน</div>
                       </div>
-
-                      <div className="chart-col">
-                        <div
-                          className="bar-visual bar-green"
-                          style={{ height: `${hCurr}%` }}
-                        >
-                          {formatMoney(room.price)}
-                        </div>
-                        <div className="bar-label-bottom">ราคาใหม่</div>
+                      <div className="price-box curr">
+                        <div className="price-box-value">{formatMoney(room.price)}</div>
+                        <div className="price-box-label">ราคาใหม่</div>
                       </div>
                     </div>
                   </div>
@@ -353,32 +325,16 @@ export default function PricingPage() {
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
       <div className="bottom-action-bar">
         <div className="break-even-section">
-          <div className="be-title">
-            คาดการณ์รายได้ (เฉลี่ย) โดยคิดแค่ 60% ของจำนวนห้องพัก
-          </div>
+          <div className="be-title">คาดการณ์รายได้ (เฉลี่ย) โดยคิดแค่ 60% ของจำนวนห้องพัก</div>
           <div className="be-value">
-            {formatMoney(
-              rooms.reduce(
-                (acc, r) => acc + r.price * r.count * 30 * 0.6,
-                0
-              )
-            )}{" "}
-            บาท
+            {formatMoney(rooms.reduce((acc, r) => acc + r.price * r.count * 30 * 0.6, 0))} บาท
           </div>
         </div>
-
         <div className="action-section">
-          <button
-            className="confirm-btn-large"
-            onClick={handleSave}
-            disabled={isSaved}
-          >
-            <div className="btn-icon-circle">
-              <Check size={16} strokeWidth={3} />
-            </div>
+          <button className="confirm-btn-large" onClick={handleSave} disabled={isSaved}>
+            <div className="btn-icon-circle"><Check size={16} strokeWidth={3} /></div>
             {isSaved ? "บันทึกเรียบร้อย" : "บันทึกราคาห้องพัก"}
           </button>
           <div className="action-remark">* หากบันทึกแล้วจะไม่สามารถแก้ไขได้</div>
@@ -386,9 +342,7 @@ export default function PricingPage() {
       </div>
 
       <footer className="decision-footer">
-        <div className="footer-text">
-          © 2026 Hotel Business Simulation Game. All rights reserved.
-        </div>
+        <div className="footer-text">© 2026 Hotel Business Simulation Game. All rights reserved.</div>
       </footer>
     </div>
   );

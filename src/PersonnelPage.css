@@ -290,3 +290,92 @@
     text-align: left;
   }
 }
+
+/* ✅ ปรับปรุงส่วน Bottom Summary ให้เหมือน MaintenancePage */
+
+.hr-bottom-wrap {
+  margin-top: 24px;
+}
+
+.hr-bottom-card {
+  background: #ECFDF5; /* สีเขียวอ่อนแบบใหม่ */
+  border: 1px solid #D1FAE5;
+  border-radius: 16px;
+  padding: 24px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08); /* เพิ่มเงาให้ดูลอย */
+}
+
+.hr-bottom-title {
+  font-weight: 800;
+  color: #0F172A; /* สีเข้มขึ้นให้อ่านง่าย */
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.hr-bottom-value {
+  font-weight: 900;
+  color: #16A34A;
+  font-size: 1.4rem; /* ตัวเลขใหญ่ขึ้น */
+}
+
+.hr-bottom-sub {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #15803D;
+  font-weight: 600;
+}
+
+/* ปุ่ม Confirm ปรับให้ดูพรีเมียม */
+.hr-confirm {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  background: #15803D; /* เขียวเข้ม */
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  min-width: 240px;
+  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.3); /* เงาสีเขียว */
+  transition: all 0.2s;
+}
+
+.hr-confirm:hover:not(:disabled) {
+  background: #166534;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(21, 128, 61, 0.4);
+}
+
+.hr-check {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ปุ่มเบิกงบสำรอง */
+.hr-reserve {
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #FECACA;
+  background: #FFF;
+  color: #DC2626;
+  font-weight: 800;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hr-reserve:hover {
+  background: #FEF2F2;
+  border-color: #FCA5A5;
+}

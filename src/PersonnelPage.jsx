@@ -1,7 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import "./DecisionPage.css"; 
+// ✅ Import CSS ของ Maintenance มาใช้ร่วมกันเพื่อความสวยงาม (หรือจะ copy class ไปใส่ PersonnelPage.css ก็ได้)
+import "./MaintenancePage.css"; 
 import "./PersonnelPage.css";
-import "./DecisionPage.css";
 
 import {
   Banknote,
@@ -14,11 +16,11 @@ import {
   TrendingUp,
   Plus,
   Minus,
+  Camera,
 } from "lucide-react";
 
 const TOTAL_BUDGET = 10_000_000;
-
-// ✅✅✅ เพิ่ม key สำหรับเก็บค่าหน้านี้
+const STORAGE_KEY_BUDGETS = "hbs_round1_decision_budgets";
 const HR_STORAGE_KEY = "hbs_round1_personnel_decisions";
 
 const INITIAL_STAFF_GROUPS = [
@@ -26,70 +28,22 @@ const INITIAL_STAFF_GROUPS = [
     id: "housekeeping",
     label: "แม่บ้าน",
     countLabel: "19 คน",
-    bannerImg: "/PersonalPic/Maid.png", // ปรับ path ให้ตรง public ของคุณ
+    bannerImg: "/PersonalPic/Maid.png",
     items: [
-      {
-        id: "hk_training",
-        title: "พัฒนาและอบรม",
-        subtitle: "อบรมมาตรฐานงานแม่บ้าน เพิ่มคุณภาพการบริการ",
-        budget: 50000,
-        prev: 45000,
-        min: 0,
-        step: 5000,
-      },
-      {
-        id: "hk_bonus",
-        title: "โบนัสประจำไตรมาส",
-        subtitle: "เพิ่มแรงจูงใจและลดอัตราการลาออก",
-        budget: 25000,
-        prev: 30000,
-        min: 0,
-        step: 5000,
-      },
-      {
-        id: "hk_welfare",
-        title: "สวัสดิการประจำไตรมาส",
-        subtitle: "เช่น อาหาร/ค่าเดินทาง/สุขภาพ",
-        budget: 20000,
-        prev: 25000,
-        min: 0,
-        step: 5000,
-      },
+      { id: "hk_training", title: "พัฒนาและอบรม", subtitle: "อบรมมาตรฐานงานแม่บ้าน", budget: 50000, prev: 45000, min: 0, step: 5000 },
+      { id: "hk_bonus", title: "โบนัสประจำไตรมาส", subtitle: "เพิ่มแรงจูงใจ", budget: 25000, prev: 30000, min: 0, step: 5000 },
+      { id: "hk_welfare", title: "สวัสดิการประจำไตรมาส", subtitle: "ค่าเดินทาง/สุขภาพ", budget: 20000, prev: 25000, min: 0, step: 5000 },
     ],
   },
   {
     id: "staff",
     label: "พนักงาน",
     countLabel: "40 คน",
-    bannerImg: "/PersonalPic/Employee.png", // ปรับ path ให้ตรง public ของคุณ
+    bannerImg: "/PersonalPic/Employee.png",
     items: [
-      {
-        id: "st_training",
-        title: "พัฒนาและอบรม",
-        subtitle: "อบรมงานบริการ/การขาย/การแก้ปัญหา",
-        budget: 80000,
-        prev: 70000,
-        min: 0,
-        step: 5000,
-      },
-      {
-        id: "st_bonus",
-        title: "โบนัสประจำไตรมาส",
-        subtitle: "เพิ่มแรงจูงใจทีมหน้าบ้าน",
-        budget: 60000,
-        prev: 65000,
-        min: 0,
-        step: 5000,
-      },
-      {
-        id: "st_welfare",
-        title: "สวัสดิการประจำไตรมาส",
-        subtitle: "เช่น ยูนิฟอร์ม/อาหาร/ประกัน",
-        budget: 50000,
-        prev: 45000,
-        min: 0,
-        step: 5000,
-      },
+      { id: "st_training", title: "พัฒนาและอบรม", subtitle: "งานบริการ/การขาย", budget: 80000, prev: 70000, min: 0, step: 5000 },
+      { id: "st_bonus", title: "โบนัสประจำไตรมาส", subtitle: "เพิ่มแรงจูงใจทีมหน้าบ้าน", budget: 60000, prev: 65000, min: 0, step: 5000 },
+      { id: "st_welfare", title: "สวัสดิการประจำไตรมาส", subtitle: "ยูนิฟอร์ม/ประกัน", budget: 50000, prev: 45000, min: 0, step: 5000 },
     ],
   },
 ];
@@ -105,26 +59,33 @@ export default function PersonnelPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ รับค่าคงที่จาก CEO (ส่งมาจาก Decision)
-  const ceoHRBudget = location.state?.ceoHRBudget ?? 0;
-  const ceoCash = location.state?.ceoCash ?? TOTAL_BUDGET;
-  const ceoMarketSharePrev = location.state?.ceoMarketSharePrev ?? 12;
-  const ceoSatisfaction = location.state?.ceoSatisfaction ?? 3.5;
-  const ceoAssetHealth = location.state?.ceoAssetHealth ?? 95;
+  const getBudgetFromStorage = (id) => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_BUDGETS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.budgets?.find((b) => b.id === id)?.value || 0;
+      }
+    } catch (e) { console.error(e); }
+    return 0;
+  };
 
-  // ✅✅✅ โหลด isSaved จาก localStorage
+  const ceoHRBudget = location.state?.ceoHRBudget ?? getBudgetFromStorage(2);
+  const commonState = {
+    ceoCash: location.state?.ceoCash ?? TOTAL_BUDGET,
+    ceoMarketSharePrev: location.state?.ceoMarketSharePrev ?? 12,
+    ceoSatisfaction: location.state?.ceoSatisfaction ?? 3.5,
+    ceoAssetHealth: location.state?.ceoAssetHealth ?? 95,
+  };
+
   const [isSaved, setIsSaved] = useState(() => {
     const saved = localStorage.getItem(HR_STORAGE_KEY);
     if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return !!parsed.isSaved;
-      } catch (e) {}
+      try { return JSON.parse(saved).isSaved; } catch (e) {}
     }
     return false;
   });
 
-  // ✅✅✅ โหลด groups จาก localStorage (ถ้ามี)
   const [groups, setGroups] = useState(() => {
     const saved = localStorage.getItem(HR_STORAGE_KEY);
     if (saved) {
@@ -136,26 +97,19 @@ export default function PersonnelPage() {
     return INITIAL_STAFF_GROUPS;
   });
 
-  // ✅✅✅ บันทึกทุกครั้งที่ groups/isSaved เปลี่ยน → กลับมาแล้วไม่ reset
   useEffect(() => {
-    localStorage.setItem(
-      HR_STORAGE_KEY,
-      JSON.stringify({ groups, isSaved })
-    );
+    localStorage.setItem(HR_STORAGE_KEY, JSON.stringify({ groups, isSaved }));
   }, [groups, isSaved]);
 
   const updateItemBudget = (groupId, itemId, nextValue) => {
     if (isSaved) return;
     const safe = Math.max(0, Number(nextValue) || 0);
-
     setGroups((prev) =>
       prev.map((g) => {
         if (g.id !== groupId) return g;
         return {
           ...g,
-          items: g.items.map((it) =>
-            it.id === itemId ? { ...it, budget: safe } : it
-          ),
+          items: g.items.map((it) => (it.id === itemId ? { ...it, budget: safe } : it)),
         };
       })
     );
@@ -169,9 +123,7 @@ export default function PersonnelPage() {
         return {
           ...g,
           items: g.items.map((it) =>
-            it.id === itemId
-              ? { ...it, budget: Math.max(0, (it.budget || 0) + delta) }
-              : it
+            it.id === itemId ? { ...it, budget: Math.max(0, (it.budget || 0) + delta) } : it
           ),
         };
       })
@@ -180,8 +132,7 @@ export default function PersonnelPage() {
 
   const totalSpend = useMemo(() => {
     return groups.reduce((acc, g) => {
-      const s = g.items.reduce((a, it) => a + (it.budget || 0), 0);
-      return acc + s;
+      return acc + g.items.reduce((a, it) => a + (it.budget || 0), 0);
     }, 0);
   }, [groups]);
 
@@ -196,49 +147,41 @@ export default function PersonnelPage() {
 
   return (
     <div className="decision-page">
-      {/* ====== TOP STATS (คงที่จาก CEO) ====== */}
-        <div className="stats-grid">
-        {/* 1) งบการพัฒนาบุคคล */}
+      {/* ====== TOP STATS ====== */}
+      <div className="stats-grid">
         <div className="stat-card">
-            <div className="stat-header">
+          <div className="stat-header">
             <span className="stat-title">งบการพัฒนาบุคคล</span>
             <div className="stat-icon-box"><Banknote size={18} /></div>
-            </div>
-            <div className="stat-value">{fmt(ceoHRBudget)}</div>
-            <div className="stat-sub">งบไตรมาสก่อน : {fmt(1_800_000)}</div>
+          </div>
+          <div className="stat-value">{fmt(ceoHRBudget)}</div>
+          <div className="stat-sub">งบไตรมาสก่อน : {fmt(1_800_000)}</div>
         </div>
-
-        {/* 2) จำนวนพนักงาน */}
         <div className="stat-card">
-            <div className="stat-header">
+          <div className="stat-header">
             <span className="stat-title">จำนวนพนักงาน</span>
             <div className="stat-icon-box"><Users size={18} /></div>
-            </div>
-            <div className="stat-value">59 คน</div>
-            <div className="stat-sub">ประสิทธิภาพ : 85%</div>
+          </div>
+          <div className="stat-value">59 คน</div>
+          <div className="stat-sub">ประสิทธิภาพ : 85%</div>
         </div>
-
-        {/* 3) ความพึงพอใจพนักงาน */}
         <div className="stat-card">
-            <div className="stat-header">
+          <div className="stat-header">
             <span className="stat-title">ความพึงพอใจพนักงาน</span>
             <div className="stat-icon-box"><span style={{ fontWeight: 900 }}>☺</span></div>
-            </div>
-            <div className="stat-value">78%</div>
-            <div className="stat-sub">อยู่ในเกณฑ์ : ดี</div>
+          </div>
+          <div className="stat-value">78%</div>
+          <div className="stat-sub">อยู่ในเกณฑ์ : ดี</div>
         </div>
-
-        {/* 4) จำนวนคนลาออก */}
         <div className="stat-card">
-            <div className="stat-header">
+          <div className="stat-header">
             <span className="stat-title">จำนวนคนลาออก</span>
             <div className="stat-icon-box"><span style={{ fontWeight: 900 }}>↪</span></div>
-            </div>
-            <div className="stat-value">0 คน</div>
-            <div className="stat-sub">สถานะ : ดีมาก</div>
+          </div>
+          <div className="stat-value">0 คน</div>
+          <div className="stat-sub">สถานะ : ดีมาก</div>
         </div>
-        </div>
-
+      </div>
 
       {/* ====== MAIN TABS ====== */}
       <div className="decision-tabs">
@@ -248,23 +191,20 @@ export default function PersonnelPage() {
         <button className="tab-btn" onClick={() => navigate("/pricing")}>
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
-        <button
-          className="tab-btn"
-          onClick={() => navigate("/marketing", { state: location.state })}
-        >
+        <button className="tab-btn" onClick={() => {
+             const mkt = getBudgetFromStorage(1);
+             navigate("/marketing", { state: { ...location.state, ceoMarketingBudget: mkt, ceoHRBudget: ceoHRBudget } });
+        }}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
-
-        {/* ✅ แท็บนี้เป็น active */}
         <button className="tab-btn active">
           <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
-
-        <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
-          <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
+            <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
         <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
-          <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
+          <Camera size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
 
@@ -277,11 +217,9 @@ export default function PersonnelPage() {
                 <h3 className="hr-group-title">{g.label}</h3>
                 <span className="hr-pill">{g.countLabel}</span>
               </div>
-
               <div className="hr-banner">
                 <img src={g.bannerImg} alt={g.label} />
               </div>
-
               <div className="hr-items">
                 {g.items.map((it) => {
                   const pct = pctChange(it.budget, it.prev);
@@ -295,18 +233,15 @@ export default function PersonnelPage() {
                         <div className="hr-item-title">{it.title}</div>
                         <div className="hr-item-sub">{it.subtitle}</div>
                       </div>
-
                       <div className="hr-item-right">
                         <div className="hr-controls">
                           <button
                             className={`hr-mini-btn ${hitMin ? "limit" : ""}`}
                             onClick={() => adjustItem(g.id, it.id, -(it.step || 0))}
                             disabled={isSaved || hitMin}
-                            title={`ลด ${fmt(it.step)}`}
                           >
                             <Minus size={16} />
                           </button>
-
                           <input
                             className="hr-input"
                             type="text"
@@ -318,17 +253,14 @@ export default function PersonnelPage() {
                               if (!Number.isNaN(num)) updateItemBudget(g.id, it.id, num);
                             }}
                           />
-
                           <button
                             className="hr-mini-btn"
                             onClick={() => adjustItem(g.id, it.id, it.step || 0)}
                             disabled={isSaved}
-                            title={`เพิ่ม ${fmt(it.step)}`}
                           >
                             <Plus size={16} />
                           </button>
                         </div>
-
                         <div className="hr-meta">
                           <span>งบก่อนหน้า : {fmt(it.prev)}</span>
                           <span className={`hr-pct ${down ? "down" : up ? "up" : ""}`}>
@@ -343,44 +275,44 @@ export default function PersonnelPage() {
             </div>
           ))}
 
-          {/* ===== BOTTOM SUMMARY (แบบ figma) ===== */}
-          <div className="hr-bottom-wrap">
-            <div className="hr-bottom-card">
-              <div className="hr-bottom-left">
-                <div className="hr-bottom-title">
+          {/* ✅✅✅ ปรับส่วน Bottom Summary ให้ใช้ Class ของ MaintenancePage ✅✅✅ */}
+          <div className="maint-bottom-wrap">
+            <div className="maint-bottom-card">
+              <div className="maint-bottom-left">
+                <div className="maint-bottom-title">
                   ต้นทุนรวมด้านการลงทุนบุคลากรในไตรมาสที่ 1
                 </div>
-                <div className="hr-bottom-value">{fmt(totalSpend)} บาท/ไตรมาส</div>
-                <div className="hr-bottom-sub">
+                <div className="maint-bottom-value">{fmt(totalSpend)} บาท/ไตรมาส</div>
+                <div className="maint-bottom-sub">
                   งบคงเหลือ : <b>{fmt(Math.max(0, remaining))}</b>
                 </div>
 
                 {isOver && (
-                  <div className="hr-bottom-alert">
+                  <div className="maint-bottom-alert">
                     งบการลงทุนบุคลากรเกินไป <b>{fmt(over)}</b> บาท
                   </div>
                 )}
               </div>
 
-              <div className="hr-bottom-right">
+              <div className="maint-bottom-right">
                 <button
-                  className={`hr-confirm ${isOver ? "is-disabled" : ""}`}
+                  className={`maint-bottom-confirm ${isOver ? "is-disabled" : ""}`}
                   onClick={handleSave}
                   disabled={isSaved || isOver}
                   title={isOver ? "งบเกิน กรุณาลดงบหรือเบิกงบสำรอง" : "ยืนยันการตัดสินใจ"}
                 >
-                  <span className="hr-check">
+                  <span className="maint-bottom-check">
                     <Check size={16} strokeWidth={3} />
                   </span>
                   ยืนยันการตัดสินใจรอบที่ 1
                 </button>
 
-                <div className="hr-note">กรุณาตรวจสอบการตัดสินใจทั้งหมดก่อนยืนยัน</div>
+                <div className="maint-bottom-note">กรุณาตรวจสอบการตัดสินใจทั้งหมดก่อนยืนยัน</div>
 
                 {isOver && (
                   <button
                     type="button"
-                    className="hr-reserve"
+                    className="maint-bottom-reserve"
                     onClick={() =>
                       alert(`ต้องการเบิกงบสำรองเพิ่มหรือไม่? (เกิน ${fmt(over)} บาท)`)
                     }
