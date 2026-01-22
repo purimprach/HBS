@@ -214,7 +214,7 @@ export default function PersonnelPage() {
         <button className="tab-btn" onClick={() => navigate("/maintenance", { state: commonState })}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
-        <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
+        <button className={`tab-btn ${location.pathname === '/other' ? 'active' : ''}`} onClick={() => navigate('/other')}>
           <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>

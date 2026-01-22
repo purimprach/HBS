@@ -1,0 +1,292 @@
+/* =========================================================
+   OtherInvestmentsPage.css
+   - ใช้สไตล์เดียวกับระบบ decision-page
+   ========================================================= */
+
+.other-page .other-page-header h2{
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #111827;
+}
+
+/* ===== Section ===== */
+.other-section{
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.06);
+}
+
+.other-section-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.other-section-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.other-section-icon{
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  color: #166534;
+}
+
+/* ===== Cards layout ===== */
+.other-cards{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+/* ===== Card ===== */
+.other-card{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #EEF2F7;
+  background: #F9FAFB;
+}
+
+.other-card:hover{
+  background: #fff;
+  border-color: #D9E6FF;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.other-card-left{
+  min-width: 280px;
+}
+
+.other-card-top{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.other-card-title{
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #111827;
+}
+
+.other-card-sub{
+  color: #6B7280;
+  font-size: 0.95rem;
+}
+
+/* pill เล็ก ๆ */
+.other-pill{
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #EEF2FF;
+  color: #3730A3;
+  border: 1px solid rgba(99,102,241,0.20);
+}
+
+/* ===== Right controls ===== */
+.other-card-right{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.other-controls{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.other-mini-btn{
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid #B8F3D6;
+  background: #ECFDF5;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.other-mini-btn:hover{
+  filter: brightness(0.98);
+}
+
+.other-mini-btn.limit,
+.other-mini-btn:disabled{
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.other-input{
+  width: 220px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 900;
+
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.other-meta{
+  display: flex;
+  gap: 14px;
+  font-size: 0.85rem;
+  color: #94A3B8;
+}
+
+.other-pct{
+  font-weight: 900;
+}
+.other-pct.up{ color: #16A34A; }
+.other-pct.down{ color: #EF4444; }
+
+/* ===== Accent per card ===== */
+.other-card.accent-blue { border-left: 6px solid #60A5FA; }
+.other-card.accent-purple { border-left: 6px solid #A78BFA; }
+.other-card.accent-green { border-left: 6px solid #34D399; }
+.other-card.accent-yellow { border-left: 6px solid #FBBF24; }
+
+/* ===== Bottom summary ===== */
+.other-bottom-wrap{
+  margin-top: 18px;
+}
+
+.other-bottom-card{
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  border-radius: 16px;
+  padding: 22px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08);
+}
+
+.other-bottom-title{
+  font-weight: 900;
+  color: #0F172A;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.other-bottom-value{
+  font-weight: 900;
+  color: #16A34A;
+  font-size: 1.4rem;
+}
+
+.other-bottom-sub{
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #15803D;
+  font-weight: 600;
+}
+
+.other-bottom-sub .is-over{
+  color: #EF4444;
+}
+
+.other-bottom-alert{
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #EF4444;
+}
+
+/* confirm */
+.other-confirm{
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  background: #15803D;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+  min-width: 260px;
+  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.3);
+  transition: all 0.2s;
+}
+
+.other-confirm:hover:not(:disabled){
+  background: #166534;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(21, 128, 61, 0.4);
+}
+
+.other-confirm.is-disabled,
+.other-confirm:disabled{
+  background: #9CA3AF;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.other-check{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.other-note{
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* responsive */
+@media (max-width: 980px){
+  .other-card{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .other-card-right{
+    align-items: flex-start;
+  }
+  .other-meta{
+    justify-content: flex-start;
+  }
+  .other-bottom-card{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .other-note{
+    text-align: left;
+  }
+}

@@ -1,71 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import './DecisionPage.css';
-import { 
-  Banknote, Bed, Users, TrendingUp, Save, Check, 
-  PieChart, Tag, Megaphone, Wrench 
-} from 'lucide-react';
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import "./DecisionPage.css";
+import {
+  Banknote,
+  Bed,
+  Users,
+  Check,
+  PieChart,
+  Tag,
+  Megaphone,
+  Wrench,
+} from "lucide-react";
 
-const TOTAL_BUDGET = 10000000;
+const TOTAL_BUDGET = 10_000_000;
 const STORAGE_KEY = "hbs_round1_decision_budgets";
-
 const PERCENT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
-const DecisionPage = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('allocation');
-  const [isSaved, setIsSaved] = useState(() => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      return !!parsed.isSaved;
-    } catch (e) {}
-  }
-  return false;
-});
+const DEFAULT_BUDGETS = [
+  { id: 1, name: "งบการลงทุนด้านการตลาด", value: 2_000_000, color: "#00C49F" },
+  { id: 2, name: "งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน", value: 2_500_000, color: "#FFBB28" },
+  { id: 3, name: "งบซ่อมแซมและบำรุงรักษาสถานที่", value: 1_000_000, color: "#4287f5" },
+  { id: 4, name: "งบการลงทุนด้านอื่นๆ", value: 1_500_000, color: "#A020F0" },
+  { id: 5, name: "งบสำรองจ่าย", value: 1_000_000, color: "#f22c09" },
+];
 
+const formatMoney = (n) => (Number(n) || 0).toLocaleString();
+
+export default function DecisionPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // ===== Load/Save state =====
+  const [isSaved, setIsSaved] = useState(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return false;
+    try {
+      return !!JSON.parse(saved).isSaved;
+    } catch {
+      return false;
+    }
+  });
 
   const [budgets, setBudgets] = useState(() => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return DEFAULT_BUDGETS;
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed.budgets)) return parsed.budgets;
-    } catch (e) {}
-  }
-  return [
-    { id: 1, name: "งบการลงทุนด้านการตลาด", value: 2000000, color: "#00C49F" },
-    { id: 2, name: "งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน", value: 2500000, color: "#FFBB28" },
-    { id: 3, name: "งบซ่อมแซมและบำรุงรักษาสถานที่", value: 1000000, color: "#4287f5" },
-    { id: 4, name: "งบการลงทุนด้านอื่นๆ", value: 1500000, color: "#A020F0" },
-    { id: 5, name: "งบสำรองจ่าย", value: 1000000, color: "#f22c09" },
-  ];
-});
-
-
-  const [usedBudget, setUsedBudget] = useState(0);
+    } catch {}
+    return DEFAULT_BUDGETS;
+  });
 
   useEffect(() => {
-    const total = budgets.reduce((acc, item) => acc + item.value, 0);
-    setUsedBudget(total);
-  }, [budgets]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ budgets, isSaved }));
+  }, [budgets, isSaved]);
 
-  useEffect(() => {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ budgets, isSaved })
+  // ===== Derived values =====
+  const usedBudget = useMemo(
+    () => budgets.reduce((acc, b) => acc + (Number(b.value) || 0), 0),
+    [budgets]
   );
-}, [budgets, isSaved]);
 
+  // ===== Helpers =====
+  const getBudget = useCallback(
+    (id) => budgets.find((b) => b.id === id)?.value ?? 0,
+    [budgets]
+  );
 
+  /**
+   * สร้าง state กลางที่ทุกหน้าควรได้รับเหมือนกัน
+   * - ceoCash: (ตอนนี้ยังใช้ TOTAL_BUDGET) ถ้าวันหลังอยากให้เป็นเงินสดคงเหลือจริง ๆ ค่อยเปลี่ยนจุดนี้จุดเดียว
+   */
+  const buildCommonState = useCallback(() => {
+    const marketingBudget = getBudget(1);
+    const hrBudget = getBudget(2);
+    const maintenanceBudget = getBudget(3);
+    const otherBudget = getBudget(4);
+    const reserveBudget = getBudget(5);
+
+    return {
+      ceoCash: TOTAL_BUDGET,
+      ceoMarketSharePrev: 12,
+      ceoSatisfaction: 3.5,
+      ceoAssetHealth: 95,
+
+      // ส่งงบแยกหมวดไปด้วย เผื่อหน้าอื่นใช้
+      ceoMarketingBudget: marketingBudget,
+      ceoHRBudget: hrBudget,
+      ceoMaintenanceBudget: maintenanceBudget,
+      ceoOtherBudget: otherBudget,
+      ceoReserveBudget: reserveBudget,
+    };
+  }, [getBudget]);
+
+  /**
+   * go(path): ไปหน้าไหนก็ส่ง commonState ชุดเดียวกัน
+   */
+  const go = useCallback(
+    (path) => navigate(path, { state: buildCommonState() }),
+    [navigate, buildCommonState]
+  );
+
+  // ===== Actions =====
   const handleBudgetChange = (id, newValue) => {
-    if (isSaved) return; 
-    const otherBudgetsTotal = budgets.filter(b => b.id !== id).reduce((acc, b) => acc + b.value, 0);
-    if (otherBudgetsTotal + newValue > TOTAL_BUDGET) {
-      newValue = TOTAL_BUDGET - otherBudgetsTotal; 
-    }
-    setBudgets(prev => prev.map(item => item.id === id ? { ...item, value: newValue } : item));
+    if (isSaved) return;
+
+    let v = Number(newValue) || 0;
+    if (v < 0) v = 0;
+
+    const otherTotal = budgets
+      .filter((b) => b.id !== id)
+      .reduce((acc, b) => acc + (Number(b.value) || 0), 0);
+
+    // clamp ไม่ให้เกิน TOTAL
+    if (otherTotal + v > TOTAL_BUDGET) v = TOTAL_BUDGET - otherTotal;
+
+    setBudgets((prev) => prev.map((b) => (b.id === id ? { ...b, value: v } : b)));
   };
 
   const handlePercentClick = (id, percent) => {
@@ -75,40 +125,31 @@ const DecisionPage = () => {
   };
 
   const handleSave = () => {
-    if (window.confirm('คุณต้องการยืนยันการจัดสรรงบประมาณใช่หรือไม่? \n(เมื่อยืนยันแล้วจะไม่สามารถแก้ไขได้)')) {
+    if (isSaved) return;
+    if (
+      window.confirm(
+        "คุณต้องการยืนยันการจัดสรรงบประมาณใช่หรือไม่?\n(เมื่อยืนยันแล้วจะไม่สามารถแก้ไขได้)"
+      )
+    ) {
       setIsSaved(true);
     }
   };
 
-  const formatMoney = (num) => num.toLocaleString();
-
-  // ✅✅✅ ฟังก์ชันสำหรับไปหน้า Marketing พร้อมส่งข้อมูล
-  const goToMarketing = () => {
-  const marketingBudget = budgets.find(b => b.id === 1)?.value || 0;
-  const hrBudget = budgets.find(b => b.id === 2)?.value || 0; // ✅ เพิ่มบรรทัดนี้
-
-  navigate('/marketing', { 
-    state: {
-      ceoHRBudget: hrBudget,
-      ceoMarketingBudget: marketingBudget,
-      ceoCash: TOTAL_BUDGET,
-      ceoMarketSharePrev: 12,
-      ceoSatisfaction: 3.5,
-      ceoAssetHealth: 95,
-    },
-  });
-};
-
+  // ===== Tab button class helper =====
+  const tabClass = ({ isActive }) => `tab-btn ${isActive ? "active" : ""}`;
 
   return (
     <div className="decision-page">
-      
-      {/* --- 1. Top Stats Cards --- */}
+      {/* =========================
+          1) TOP STATS
+         ========================= */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-header">
-             <span className="stat-title">เงินสดปัจจุบัน</span>
-             <div className="stat-icon-box"><Banknote size={20} /></div>
+            <span className="stat-title">เงินสดปัจจุบัน</span>
+            <div className="stat-icon-box">
+              <Banknote size={20} />
+            </div>
           </div>
           <div className="stat-value">{formatMoney(TOTAL_BUDGET)}</div>
           <div className="stat-sub">ระยะเวลาหมุนเวียน : 3-4 ไตรมาส</div>
@@ -116,8 +157,10 @@ const DecisionPage = () => {
 
         <div className="stat-card">
           <div className="stat-header">
-             <span className="stat-title">ส่วนแบ่งการตลาด</span>
-             <div className="stat-icon-box"><Users size={20} /></div>
+            <span className="stat-title">ส่วนแบ่งการตลาด</span>
+            <div className="stat-icon-box">
+              <Users size={20} />
+            </div>
           </div>
           <div className="stat-value">12%</div>
           <div className="stat-sub">อยู่อันดับ 3 จาก 6</div>
@@ -125,8 +168,10 @@ const DecisionPage = () => {
 
         <div className="stat-card">
           <div className="stat-header">
-             <span className="stat-title">ความพึงพอใจลูกค้า</span>
-             <div className="stat-icon-box"><Bed size={20} /></div>
+            <span className="stat-title">ความพึงพอใจลูกค้า</span>
+            <div className="stat-icon-box">
+              <Bed size={20} />
+            </div>
           </div>
           <div className="stat-value">3.5/5</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : พอใช้</div>
@@ -134,314 +179,305 @@ const DecisionPage = () => {
 
         <div className="stat-card">
           <div className="stat-header">
-             <span className="stat-title">ความสมบูรณ์ทรัพย์สิน</span>
-             <div className="stat-icon-box">
-                <span style={{fontWeight:'bold', fontSize:'1.2rem'}}>฿</span> 
-             </div>
+            <span className="stat-title">ความสมบูรณ์ทรัพย์สิน</span>
+            <div className="stat-icon-box">
+              <span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>฿</span>
+            </div>
           </div>
           <div className="stat-value">95%</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : ดีมาก</div>
         </div>
       </div>
 
-      {/* --- 2. Tabs Navigation --- */}
+      {/* =========================
+          2) TABS (ใช้ NavLink ทั้งหมด)
+          - active ไม่ต้องใช้ state แล้ว
+         ========================= */}
       <div className="decision-tabs">
-        <button className={`tab-btn ${activeTab === 'allocation' ? 'active' : ''}`} onClick={() => setActiveTab('allocation')}>
+        <NavLink to="/decision" className={tabClass}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
-        </button>
-        <button className="tab-btn" onClick={() => navigate('/pricing')}>
+        </NavLink>
+
+        <button className="tab-btn" onClick={() => go("/pricing")}>
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
-        
-        {/* ✅✅✅ แก้ไขปุ่ม Marketing ให้เรียกใช้ฟังก์ชัน goToMarketing ✅✅✅ */}
-        <button className="tab-btn" onClick={goToMarketing}>
+
+        <button className="tab-btn" onClick={() => go("/marketing")}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
 
-       <button
-        className="tab-btn"
-        onClick={() => {
-          const marketingBudget = budgets.find((b) => b.id === 1)?.value ?? 0;
-          const hrBudget = budgets.find((b) => b.id === 2)?.value ?? 0;
-
-          navigate("/personnel", {
-            state: {
-              ceoHRBudget: hrBudget,
-              ceoMarketingBudget: marketingBudget,
-              ceoCash: TOTAL_BUDGET,
-              ceoMarketSharePrev: 12,
-              ceoSatisfaction: 3.5,
-              ceoAssetHealth: 95,
-            },
-          });
-        }}>
-        <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
-      </button>
-
-
-        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
-                    <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        <button className="tab-btn" onClick={() => go("/personnel")}>
+          <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
-        <button className={`tab-btn ${activeTab === 'others' ? 'active' : ''}`} onClick={() => setActiveTab('others')}>
+
+        <button className="tab-btn" onClick={() => go("/maintenance")}>
+          <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        </button>
+
+        <button className="tab-btn" onClick={() => go("/other")}>
           <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
 
-      {/* --- 3. Main Content --- */}
+      {/* =========================
+          3) MAIN CONTENT (allocation)
+         ========================= */}
       <div className="decision-content">
-        
-        {activeTab === 'allocation' ? (
-          <>
-            <div className="left-column">
-                <div className="budget-form-section">
-                  <div className="section-header">
-                      <h3>จัดสรรงบประมาณ รอบที่ 1</h3>
-                      <span className="budget-limit">งบประมาณทั้งหมด: {formatMoney(TOTAL_BUDGET)} บาท</span>
-                  </div>
-
-                  <div className="sliders-container">
-                      {budgets.map((item) => {
-                      const percent = ((item.value / TOTAL_BUDGET) * 100).toFixed(1);
-                      return (
-                          <div key={item.id} className="budget-item">
-                          <div className="item-label">
-                              <span className="dot" style={{ backgroundColor: item.color }}></span>
-                              <span>{item.name}</span>
-                              <span className="percent-badge">{percent}%</span>
-                          </div>
-                          
-                          <div className="slider-row">
-                              <input 
-                                type="range" min="0" max={TOTAL_BUDGET} step="10000"
-                                value={item.value} 
-                                onChange={(e) => handleBudgetChange(item.id, Number(e.target.value))}
-                                className="range-slider"
-                                style={{ 
-                                     '--thumb-color': item.color,
-                                     background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`
-                                 }} 
-                                disabled={isSaved}
-                              />
-                          </div>
-
-                          <div className="controls-row">
-                              <div className="number-input-wrapper">
-                                <input 
-                                    type="text" 
-                                    value={item.value.toLocaleString()} 
-                                    onChange={(e) => {
-                                      const rawValue = e.target.value.replace(/,/g, '');
-                                      const numValue = Number(rawValue);
-                                      if (!isNaN(numValue)) handleBudgetChange(item.id, numValue);
-                                    }}
-                                    disabled={isSaved}
-                                />
-                                <span className="unit">บาท</span>
-                              </div>
-
-                              <div className="percent-buttons">
-                                  {PERCENT_OPTIONS.map((pct) => {
-                                    const targetValue = (TOTAL_BUDGET * pct) / 100;
-                                    const isActive = item.value === targetValue;
-                                    return (
-                                        <button 
-                                          key={pct} 
-                                          onClick={() => handlePercentClick(item.id, pct)} 
-                                          disabled={isSaved}
-                                          className={isActive ? 'active' : ''}
-                                          style={isActive ? { 
-                                            backgroundColor: item.color, 
-                                            borderColor: item.color,
-                                            color: '#fff' 
-                                          } : {}}
-                                        >
-                                          {pct}%
-                                        </button>
-                                    );
-                                  })}
-                              </div>
-                          </div>
-                          </div>
-                      );
-                      })}
-                  </div>
-                </div>
-
-                <div className="max-spending-card">
-                    รายได้สูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย): <strong>6,450,000 บาท/เดือน</strong>
-                </div>
+        <div className="left-column">
+          <div className="budget-form-section">
+            <div className="section-header">
+              <h3>จัดสรรงบประมาณ รอบที่ 1</h3>
+              <span className="budget-limit">
+                งบประมาณทั้งหมด: {formatMoney(TOTAL_BUDGET)} บาท
+              </span>
             </div>
 
-            <div className="summary-section">
-              <h3>สัดส่วนการจัดสรร</h3>
+            <div className="sliders-container">
+              {budgets.map((item) => {
+                const percent = ((item.value / TOTAL_BUDGET) * 100).toFixed(1);
 
-              <div className="donut-chart-wrapper">
-                  <div className="chart-center-info">
-                    <span className="chart-label-text">ใช้ไป</span>
-                    <span className="chart-percent-text">
-                      {((usedBudget / TOTAL_BUDGET) * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  
-                  <svg viewBox="0 0 100 100" className="donut-chart">
-                    {(() => {
-                      let currentOffset = 25; // เริ่มที่ 12 นาฬิกา
-                      const elements = [];
-
-                      // 1. วาดส่วนที่จัดสรรแล้ว
-                      budgets.forEach((item) => {
-                        const percentage = (item.value / TOTAL_BUDGET) * 100;
-                        if (percentage > 0) {
-                          elements.push(
-                            <circle 
-                              key={item.id} cx="50" cy="50" r="40" 
-                              fill="transparent" 
-                              stroke={item.color} 
-                              strokeWidth="10" 
-                              pathLength="100"
-                              strokeDasharray={`${percentage} ${100 - percentage}`} 
-                              strokeDashoffset={currentOffset} 
-                              strokeLinecap="butt" // ใช้ butt เพื่อให้วงกลมต่อกันสนิทเหมือนในรูป
-                            />
-                          );
-                          currentOffset -= percentage;
-                        }
-                      });
-
-                      // 2. วาดส่วนที่เหลือ (สีเทา)
-                      const remainingBudget = TOTAL_BUDGET - usedBudget;
-                      if (remainingBudget > 0) {
-                        const remainingPercent = (remainingBudget / TOTAL_BUDGET) * 100;
-                        elements.push(
-                          <circle 
-                            key="remaining" cx="50" cy="50" r="40" 
-                            fill="transparent" 
-                            stroke="#E5E7EB" // สีเทาอ่อน
-                            strokeWidth="10" 
-                            pathLength="100"
-                            strokeDasharray={`${remainingPercent} ${100 - remainingPercent}`} 
-                            strokeDashoffset={currentOffset} 
-                            strokeLinecap="butt"
-                          />
-                        );
-                      }
-
-                      return elements;
-                    })()}
-                  </svg>
-                  {/* ------------------------------------------------ */}
-              </div>
-
-              <div className="legend-list">
-                  {budgets.map(item => (
-                    <div key={item.id} className="legend-item">
-                      <div className="legend-left">
-                        <span className="legend-dot" style={{backgroundColor: item.color}}></span>
-                        <span className="legend-name">{item.name}</span>
-                      </div>
-                      <span className="legend-val">{((item.value/TOTAL_BUDGET)*100).toFixed(0)}%</span>
+                return (
+                  <div key={item.id} className="budget-item">
+                    <div className="item-label">
+                      <span className="dot" style={{ backgroundColor: item.color }} />
+                      <span>{item.name}</span>
+                      <span className="percent-badge">{percent}%</span>
                     </div>
-                  ))}
-                  
-                  {/* ✅ เพิ่ม Legend สำหรับงบคงเหลือ */}
-                  <div className="legend-item">
-                      <div className="legend-left">
-                        <span className="legend-dot" style={{backgroundColor: '#E5E7EB'}}></span>
-                        <span className="legend-name" style={{color: '#6B7280'}}>งบประมาณคงเหลือ</span>
+
+                    <div className="slider-row">
+                      <input
+                        type="range"
+                        min="0"
+                        max={TOTAL_BUDGET}
+                        step="10000"
+                        value={item.value}
+                        onChange={(e) => handleBudgetChange(item.id, Number(e.target.value))}
+                        className="range-slider"
+                        style={{
+                          "--thumb-color": item.color,
+                          background: `linear-gradient(to right, ${item.color} 0%, ${item.color} ${percent}%, #E5E7EB ${percent}%, #E5E7EB 100%)`,
+                        }}
+                        disabled={isSaved}
+                      />
+                    </div>
+
+                    <div className="controls-row">
+                      <div className="number-input-wrapper">
+                        <input
+                          type="text"
+                          value={formatMoney(item.value)}
+                          onChange={(e) => {
+                            const raw = e.target.value.replace(/,/g, "");
+                            const num = Number(raw);
+                            if (!Number.isNaN(num)) handleBudgetChange(item.id, num);
+                          }}
+                          disabled={isSaved}
+                        />
+                        <span className="unit">บาท</span>
                       </div>
-                      <span className="legend-val" style={{color: '#6B7280'}}>
-                        {(((TOTAL_BUDGET - usedBudget)/TOTAL_BUDGET)*100).toFixed(0)}%
-                      </span>
+
+                      <div className="percent-buttons">
+                        {PERCENT_OPTIONS.map((pct) => {
+                          const targetValue = (TOTAL_BUDGET * pct) / 100;
+                          const isActive = item.value === targetValue;
+                          return (
+                            <button
+                              key={pct}
+                              onClick={() => handlePercentClick(item.id, pct)}
+                              disabled={isSaved}
+                              className={isActive ? "active" : ""}
+                              style={
+                                isActive
+                                  ? { backgroundColor: item.color, borderColor: item.color, color: "#fff" }
+                                  : {}
+                              }
+                            >
+                              {pct}%
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
-              </div>
-
-              <div className="budget-status">
-                <div className="status-header">
-                   <span>ใช้ไปแล้ว</span>
-                   <span className="status-percent">{((usedBudget / TOTAL_BUDGET) * 100).toFixed(1)}%</span>
-                </div>
-
-                <div className="progress-bar">
-                   <div 
-                     className="progress-fill" 
-                     style={{ 
-                       width: `${Math.min((usedBudget / TOTAL_BUDGET) * 100, 100)}%`, 
-                       backgroundColor: usedBudget > TOTAL_BUDGET ? '#EF4444' : '#10B981' 
-                     }}
-                   ></div>
-                </div>
-                
-                <div className="summary-text-group">
-                   <div className="summary-row">
-                     <span>งบประมาณทั้งหมด:</span>
-                     <span className="val">{formatMoney(TOTAL_BUDGET)} บาท</span>
-                   </div>
-                   <div className="summary-row">
-                     <span>จัดสรรแล้ว:</span>
-                     <span className="val">{formatMoney(usedBudget)} บาท</span>
-                   </div>
-                   <div className="summary-row highlight">
-                     <span>คงเหลือ:</span>
-                     <span className={`val ${usedBudget > TOTAL_BUDGET ? 'text-red' : 'text-green'}`}>
-                       {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
-                     </span>
-                   </div>
-
-                   <p style={{ 
-                     color: '#EF4444', 
-                     fontSize: '0.75rem', 
-                     textAlign: 'right', 
-                     marginTop: '8px',
-                     marginBottom: '0',
-                     fontWeight: '500'
-                   }}>
-                      * ควรสำรองเงินสดเพื่อรักษาสภาพคล่อง ในการดำเนินงานรอบถัดไป
-                   </p>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          </>
-        ) : (
-          <div style={{ padding: '40px', textAlign: 'center', width: '100%', gridColumn: '1 / -1', background: 'white', borderRadius: '12px' }}>
-            <h2>กำลังพัฒนาระบบส่วนของ: {activeTab}</h2>
-            <p>เนื้อหาจะปรากฏที่นี่เมื่อคุณเลือกเมนูนี้</p>
           </div>
-        )}
+
+          <div className="max-spending-card">
+            รายได้สูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย):{" "}
+            <strong>6,450,000 บาท/เดือน</strong>
+          </div>
+        </div>
+
+        {/* ===== Summary ด้านขวา (ของเดิม) ===== */}
+        <div className="summary-section">
+          <h3>สัดส่วนการจัดสรร</h3>
+
+          <div className="donut-chart-wrapper">
+            <div className="chart-center-info">
+              <span className="chart-label-text">ใช้ไป</span>
+              <span className="chart-percent-text">
+                {((usedBudget / TOTAL_BUDGET) * 100).toFixed(0)}%
+              </span>
+            </div>
+
+            <svg viewBox="0 0 100 100" className="donut-chart">
+              {(() => {
+                let currentOffset = 25;
+                const elements = [];
+
+                budgets.forEach((item) => {
+                  const p = (item.value / TOTAL_BUDGET) * 100;
+                  if (p > 0) {
+                    elements.push(
+                      <circle
+                        key={item.id}
+                        cx="50"
+                        cy="50"
+                        r="40"
+                        fill="transparent"
+                        stroke={item.color}
+                        strokeWidth="10"
+                        pathLength="100"
+                        strokeDasharray={`${p} ${100 - p}`}
+                        strokeDashoffset={currentOffset}
+                        strokeLinecap="butt"
+                      />
+                    );
+                    currentOffset -= p;
+                  }
+                });
+
+                const remainingBudget = TOTAL_BUDGET - usedBudget;
+                if (remainingBudget > 0) {
+                  const rp = (remainingBudget / TOTAL_BUDGET) * 100;
+                  elements.push(
+                    <circle
+                      key="remaining"
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="transparent"
+                      stroke="#E5E7EB"
+                      strokeWidth="10"
+                      pathLength="100"
+                      strokeDasharray={`${rp} ${100 - rp}`}
+                      strokeDashoffset={currentOffset}
+                      strokeLinecap="butt"
+                    />
+                  );
+                }
+
+                return elements;
+              })()}
+            </svg>
+          </div>
+
+          <div className="legend-list">
+            {budgets.map((item) => (
+              <div key={item.id} className="legend-item">
+                <div className="legend-left">
+                  <span className="legend-dot" style={{ backgroundColor: item.color }} />
+                  <span className="legend-name">{item.name}</span>
+                </div>
+                <span className="legend-val">
+                  {((item.value / TOTAL_BUDGET) * 100).toFixed(0)}%
+                </span>
+              </div>
+            ))}
+
+            <div className="legend-item">
+              <div className="legend-left">
+                <span className="legend-dot" style={{ backgroundColor: "#E5E7EB" }} />
+                <span className="legend-name" style={{ color: "#6B7280" }}>
+                  งบประมาณคงเหลือ
+                </span>
+              </div>
+              <span className="legend-val" style={{ color: "#6B7280" }}>
+                {(((TOTAL_BUDGET - usedBudget) / TOTAL_BUDGET) * 100).toFixed(0)}%
+              </span>
+            </div>
+          </div>
+
+          <div className="budget-status">
+            <div className="status-header">
+              <span>ใช้ไปแล้ว</span>
+              <span className="status-percent">
+                {((usedBudget / TOTAL_BUDGET) * 100).toFixed(1)}%
+              </span>
+            </div>
+
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{
+                  width: `${Math.min((usedBudget / TOTAL_BUDGET) * 100, 100)}%`,
+                  backgroundColor: usedBudget > TOTAL_BUDGET ? "#EF4444" : "#10B981",
+                }}
+              />
+            </div>
+
+            <div className="summary-text-group">
+              <div className="summary-row">
+                <span>งบประมาณทั้งหมด:</span>
+                <span className="val">{formatMoney(TOTAL_BUDGET)} บาท</span>
+              </div>
+              <div className="summary-row">
+                <span>จัดสรรแล้ว:</span>
+                <span className="val">{formatMoney(usedBudget)} บาท</span>
+              </div>
+              <div className="summary-row highlight">
+                <span>คงเหลือ:</span>
+                <span className={`val ${usedBudget > TOTAL_BUDGET ? "text-red" : "text-green"}`}>
+                  {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
+                </span>
+              </div>
+
+              <p
+                style={{
+                  color: "#EF4444",
+                  fontSize: "0.75rem",
+                  textAlign: "right",
+                  marginTop: "8px",
+                  marginBottom: "0",
+                  fontWeight: "500",
+                }}
+              >
+                * ควรสำรองเงินสดเพื่อรักษาสภาพคล่อง ในการดำเนินงานรอบถัดไป
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* --- 4. Bottom Action Bar --- */}
-      {activeTab === 'allocation' && (
-        <div className="bottom-action-bar">
-           <div className="break-even-section">
-              <div className="be-title">จุดคุ้มทุน (Break-even point)</div>
-              <div className="be-value">3,500,000 บาท/เดือน</div>
-           </div>
-           
-           <div className="action-section">
-              <button 
-                className="confirm-btn-large" 
-                onClick={handleSave}
-                disabled={isSaved || usedBudget > TOTAL_BUDGET}
-              >
-                 <div className="btn-icon-circle"><Check size={16} strokeWidth={3} /></div>
-                 {isSaved ? 'บันทึกเรียบร้อย' : 'บันทึกการจัดสรรเงิน'}
-              </button>
-              <div className="action-remark">
-                * หากบันทึกแล้วจะไม่สามารถแก้ไขได้
-              </div>
-           </div>
+      {/* =========================
+          4) Bottom Action Bar (เหมือนเดิม)
+         ========================= */}
+      <div className="bottom-action-bar">
+        <div className="break-even-section">
+          <div className="be-title">จุดคุ้มทุน (Break-even point)</div>
+          <div className="be-value">3,500,000 บาท/เดือน</div>
         </div>
-      )}
 
-      {/* --- 5. Footer --- */}
+        <div className="action-section">
+          <button
+            className="confirm-btn-large"
+            onClick={handleSave}
+            disabled={isSaved || usedBudget > TOTAL_BUDGET}
+          >
+            <div className="btn-icon-circle">
+              <Check size={16} strokeWidth={3} />
+            </div>
+            {isSaved ? "บันทึกเรียบร้อย" : "บันทึกการจัดสรรเงิน"}
+          </button>
+          <div className="action-remark">* หากบันทึกแล้วจะไม่สามารถแก้ไขได้</div>
+        </div>
+      </div>
+
       <footer className="decision-footer">
-         <div className="footer-text">
-            © 2026 Hotel Business Simulation Game. All rights reserved.
-         </div>
+        <div className="footer-text">© 2026 Hotel Business Simulation Game. All rights reserved.</div>
       </footer>
-
     </div>
   );
-};
-
-export default DecisionPage;
+}
