@@ -1,8 +1,7 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import "./DecisionPage.css"; 
-// ✅ Import CSS ของ Maintenance มาใช้ร่วมกันเพื่อความสวยงาม (หรือจะ copy class ไปใส่ PersonnelPage.css ก็ได้)
-import "./MaintenancePage.css"; 
+import "./DecisionPage.css";
+import "./MaintenancePage.css";
 import "./PersonnelPage.css";
 
 import {
@@ -13,10 +12,12 @@ import {
   Tag,
   Megaphone,
   Wrench,
-  TrendingUp,
   Plus,
   Minus,
   Camera,
+  Star,
+  Smile,
+  LogOut,
 } from "lucide-react";
 
 const TOTAL_BUDGET = 10_000_000;
@@ -66,22 +67,28 @@ export default function PersonnelPage() {
         const parsed = JSON.parse(saved);
         return parsed.budgets?.find((b) => b.id === id)?.value || 0;
       }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
     return 0;
   };
 
   const ceoHRBudget = location.state?.ceoHRBudget ?? getBudgetFromStorage(2);
+
   const commonState = {
     ceoCash: location.state?.ceoCash ?? TOTAL_BUDGET,
     ceoMarketSharePrev: location.state?.ceoMarketSharePrev ?? 12,
     ceoSatisfaction: location.state?.ceoSatisfaction ?? 3.5,
     ceoAssetHealth: location.state?.ceoAssetHealth ?? 95,
+    ceoHRBudget,
   };
 
   const [isSaved, setIsSaved] = useState(() => {
     const saved = localStorage.getItem(HR_STORAGE_KEY);
     if (saved) {
-      try { return JSON.parse(saved).isSaved; } catch (e) {}
+      try {
+        return !!JSON.parse(saved).isSaved;
+      } catch (e) {}
     }
     return false;
   });
@@ -131,9 +138,7 @@ export default function PersonnelPage() {
   };
 
   const totalSpend = useMemo(() => {
-    return groups.reduce((acc, g) => {
-      return acc + g.items.reduce((a, it) => a + (it.budget || 0), 0);
-    }, 0);
+    return groups.reduce((acc, g) => acc + g.items.reduce((a, it) => a + (it.budget || 0), 0), 0);
   }, [groups]);
 
   const remaining = ceoHRBudget - totalSpend;
@@ -146,7 +151,7 @@ export default function PersonnelPage() {
   };
 
   return (
-    <div className="decision-page">
+    <div className="decision-page personnel-page">
       {/* ====== TOP STATS ====== */}
       <div className="stats-grid">
         <div className="stat-card">
@@ -157,26 +162,29 @@ export default function PersonnelPage() {
           <div className="stat-value">{fmt(ceoHRBudget)}</div>
           <div className="stat-sub">งบไตรมาสก่อน : {fmt(1_800_000)}</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-header">
-            <span className="stat-title">จำนวนพนักงาน</span>
-            <div className="stat-icon-box"><Users size={18} /></div>
+            <span className="stat-title">ความพึงพอใจต่อส่วนบริการ</span>
+            <div className="stat-icon-box"><Star size={18} /></div>
           </div>
-          <div className="stat-value">59 คน</div>
-          <div className="stat-sub">ประสิทธิภาพ : 85%</div>
+          <div className="stat-value">3.5 /5</div>
+          <div className="stat-sub">ความพึงพอใจโดยรวม : พอใช้</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ความพึงพอใจพนักงาน</span>
-            <div className="stat-icon-box"><span style={{ fontWeight: 900 }}>☺</span></div>
+            <div className="stat-icon-box"><Smile size={18} /></div>
           </div>
           <div className="stat-value">78%</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : ดี</div>
         </div>
+
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">จำนวนคนลาออก</span>
-            <div className="stat-icon-box"><span style={{ fontWeight: 900 }}>↪</span></div>
+            <div className="stat-icon-box"><LogOut size={18} /></div>
           </div>
           <div className="stat-value">0 คน</div>
           <div className="stat-sub">สถานะ : ดีมาก</div>
@@ -188,142 +196,160 @@ export default function PersonnelPage() {
         <button className="tab-btn" onClick={() => navigate("/decision")}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
         </button>
-        <button className="tab-btn" onClick={() => navigate("/pricing")}>
+        <button className="tab-btn" onClick={() => navigate("/pricing", { state: commonState })}>
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
-        <button className="tab-btn" onClick={() => {
-             const mkt = getBudgetFromStorage(1);
-             navigate("/marketing", { state: { ...location.state, ceoMarketingBudget: mkt, ceoHRBudget: ceoHRBudget } });
-        }}>
+        <button
+          className="tab-btn"
+          onClick={() => {
+            const mkt = getBudgetFromStorage(1);
+            navigate("/marketing", { state: { ...commonState, ceoMarketingBudget: mkt } });
+          }}
+        >
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
         <button className="tab-btn active">
-          <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
+          <Users size={15} /> <span>การลงทุนด้านบุคคลกร</span>
         </button>
-        <button className="tab-btn" onClick={() => navigate("/maintenance")}>
-            <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        <button className="tab-btn" onClick={() => navigate("/maintenance", { state: commonState })}>
+          <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
         <button className="tab-btn" onClick={() => alert("กำลังพัฒนา")}>
-          <Camera size={15} /> <span>การลงทุนด้านอื่นๆ</span>
+          <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
 
       {/* ====== CONTENT ====== */}
       <div className="decision-content">
-        <div className="hr-wrapper" style={{ gridColumn: "1 / -1" }}>
-          {groups.map((g) => (
-            <div key={g.id} className="hr-group">
-              <div className="hr-group-head">
-                <h3 className="hr-group-title">{g.label}</h3>
-                <span className="hr-pill">{g.countLabel}</span>
-              </div>
-              <div className="hr-banner">
-                <img src={g.bannerImg} alt={g.label} />
-              </div>
-              <div className="hr-items">
-                {g.items.map((it) => {
-                  const pct = pctChange(it.budget, it.prev);
-                  const up = pct > 0;
-                  const down = pct < 0;
-                  const hitMin = (it.budget || 0) <= (it.min || 0);
+        <div style={{ gridColumn: "1 / -1" }}>
+          <div className="personnel-page-header">
+            <h2>การลงทุนด้านการพัฒนาบุคคล</h2>
+          </div>
 
-                  return (
-                    <div key={it.id} className="hr-item">
-                      <div className="hr-item-left">
-                        <div className="hr-item-title">{it.title}</div>
-                        <div className="hr-item-sub">{it.subtitle}</div>
-                      </div>
-                      <div className="hr-item-right">
-                        <div className="hr-controls">
-                          <button
-                            className={`hr-mini-btn ${hitMin ? "limit" : ""}`}
-                            onClick={() => adjustItem(g.id, it.id, -(it.step || 0))}
-                            disabled={isSaved || hitMin}
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <input
-                            className="hr-input"
-                            type="text"
-                            value={fmt(it.budget)}
-                            disabled={isSaved}
-                            onChange={(e) => {
-                              const raw = e.target.value.replace(/,/g, "");
-                              const num = Number(raw || 0);
-                              if (!Number.isNaN(num)) updateItemBudget(g.id, it.id, num);
-                            }}
-                          />
-                          <button
-                            className="hr-mini-btn"
-                            onClick={() => adjustItem(g.id, it.id, it.step || 0)}
-                            disabled={isSaved}
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                        <div className="hr-meta">
-                          <span>งบก่อนหน้า : {fmt(it.prev)}</span>
-                          <span className={`hr-pct ${down ? "down" : up ? "up" : ""}`}>
-                            {pct === 0 ? "0.00%" : `${up ? "+" : ""}${pct.toFixed(2)}%`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-
-          {/* ✅✅✅ ปรับส่วน Bottom Summary ให้ใช้ Class ของ MaintenancePage ✅✅✅ */}
-          <div className="maint-bottom-wrap">
-            <div className="maint-bottom-card">
-              <div className="maint-bottom-left">
-                <div className="maint-bottom-title">
-                  ต้นทุนรวมด้านการลงทุนบุคลากรในไตรมาสที่ 1
-                </div>
-                <div className="maint-bottom-value">{fmt(totalSpend)} บาท/ไตรมาส</div>
-                <div className="maint-bottom-sub">
-                  งบคงเหลือ : <b>{fmt(Math.max(0, remaining))}</b>
+          {/* ✅ กล่องใหญ่ครอบทั้งหมด (เหมือนรูป) */}
+          <div className="hr-wrapper hr-wrapper-card">
+            {groups.map((g) => (
+              <div key={g.id} className="hr-group hr-group-card">
+                {/* หัวกลุ่ม (แม่บ้าน + pill) */}
+                <div className="hr-group-head">
+                  <h3 className="hr-group-title">{g.label}</h3>
+                  <span className="hr-pill">{g.countLabel}</span>
                 </div>
 
-                {isOver && (
-                  <div className="maint-bottom-alert">
-                    งบการลงทุนบุคลากรเกินไป <b>{fmt(over)}</b> บาท
+                {/* banner */}
+                <div className="hr-banner">
+                  <img src={g.bannerImg} alt={g.label} />
+                </div>
+
+                {/* ✅ กล่องเล็กครอบรายการแต่ละอัน */}
+                <div className="hr-items">
+                  {g.items.map((it) => {
+                    const pct = pctChange(it.budget, it.prev);
+                    const up = pct > 0;
+                    const down = pct < 0;
+                    const hitMin = (it.budget || 0) <= (it.min || 0);
+
+                    return (
+                      <div key={it.id} className="hr-item hr-item-card">
+                        <div className="hr-item-left">
+                          <div className="hr-item-title">{it.title}</div>
+                          <div className="hr-item-sub">{it.subtitle}</div>
+                        </div>
+
+                        <div className="hr-item-right">
+                          <div className="hr-controls">
+                            <button
+                              className={`hr-mini-btn ${hitMin ? "limit" : ""}`}
+                              onClick={() => adjustItem(g.id, it.id, -(it.step || 0))}
+                              disabled={isSaved || hitMin}
+                            >
+                              <Minus size={16} />
+                            </button>
+
+                            <input
+                              className="hr-input"
+                              type="text"
+                              value={fmt(it.budget)}
+                              disabled={isSaved}
+                              onChange={(e) => {
+                                const raw = e.target.value.replace(/,/g, "");
+                                const num = Number(raw || 0);
+                                if (!Number.isNaN(num)) updateItemBudget(g.id, it.id, num);
+                              }}
+                            />
+
+                            <button
+                              className="hr-mini-btn"
+                              onClick={() => adjustItem(g.id, it.id, it.step || 0)}
+                              disabled={isSaved}
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+
+                          <div className="hr-meta">
+                            <span>งบก่อนหน้า : {fmt(it.prev)}</span>
+                            <span className={`hr-pct ${down ? "down" : up ? "up" : ""}`}>
+                              {pct === 0 ? "0.00%" : `${up ? "+" : ""}${pct.toFixed(2)}%`}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            {/* Bottom Summary (เหมือนเดิม ใช้ของ MaintenancePage) */}
+            <div className="maint-bottom-wrap">
+              <div className="maint-bottom-card">
+                <div className="maint-bottom-left">
+                  <div className="maint-bottom-title">
+                    ต้นทุนรวมด้านการลงทุนบุคลากรในไตรมาสที่ 1
                   </div>
-                )}
-              </div>
+                  <div className="maint-bottom-value">{fmt(totalSpend)} บาท/ไตรมาส</div>
+                  <div className="maint-bottom-sub">
+                    งบคงเหลือ : <b>{fmt(Math.max(0, remaining))}</b>
+                  </div>
 
-              <div className="maint-bottom-right">
-                <button
-                  className={`maint-bottom-confirm ${isOver ? "is-disabled" : ""}`}
-                  onClick={handleSave}
-                  disabled={isSaved || isOver}
-                  title={isOver ? "งบเกิน กรุณาลดงบหรือเบิกงบสำรอง" : "ยืนยันการตัดสินใจ"}
-                >
-                  <span className="maint-bottom-check">
-                    <Check size={16} strokeWidth={3} />
-                  </span>
-                  ยืนยันการตัดสินใจรอบที่ 1
-                </button>
+                  {isOver && (
+                    <div className="maint-bottom-alert">
+                      งบการลงทุนบุคลากรเกินไป <b>{fmt(over)}</b> บาท
+                    </div>
+                  )}
+                </div>
 
-                <div className="maint-bottom-note">กรุณาตรวจสอบการตัดสินใจทั้งหมดก่อนยืนยัน</div>
-
-                {isOver && (
+                <div className="maint-bottom-right">
                   <button
-                    type="button"
-                    className="maint-bottom-reserve"
-                    onClick={() =>
-                      alert(`ต้องการเบิกงบสำรองเพิ่มหรือไม่? (เกิน ${fmt(over)} บาท)`)
-                    }
-                    disabled={isSaved}
+                    className={`maint-bottom-confirm ${isOver ? "is-disabled" : ""}`}
+                    onClick={handleSave}
+                    disabled={isSaved || isOver}
+                    title={isOver ? "งบเกิน กรุณาลดงบหรือเบิกงบสำรอง" : "ยืนยันการตัดสินใจ"}
                   >
-                    ต้องการเบิกงบสำรองเพิ่มหรือไม่?
+                    <span className="maint-bottom-check">
+                      <Check size={16} strokeWidth={3} />
+                    </span>
+                    ยืนยันการตัดสินใจรอบที่ 1
                   </button>
-                )}
+
+                  <div className="maint-bottom-note">กรุณาตรวจสอบการตัดสินใจทั้งหมดก่อนยืนยัน</div>
+
+                  {isOver && (
+                    <button
+                      type="button"
+                      className="maint-bottom-reserve"
+                      onClick={() => alert(`ต้องการเบิกงบสำรองเพิ่มหรือไม่? (เกิน ${fmt(over)} บาท)`)}
+                      disabled={isSaved}
+                    >
+                      ต้องการเบิกงบสำรองเพิ่มหรือไม่?
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
+          {/* /wrapper */}
         </div>
       </div>
 

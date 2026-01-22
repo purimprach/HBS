@@ -1,14 +1,27 @@
-.hr-wrapper {
+/* =========================================================
+   PersonnelPage.css (CLEAN)
+   - จัดระเบียบ + ตัดซ้ำซ้อน
+   - ทำ “กรอบใหญ่ครอบทั้งกลุ่ม” (หัวข้อ+pill+รูป+รายการ)
+   - เอา “กรอบครอบ 3 กล่อง” ออก (ให้แต่ละ item ลอยแยก)
+   ========================================================= */
+
+/* =========================================================
+   0) Wrapper
+   ========================================================= */
+.hr-wrapper{
   display: block;
 }
 
-.hr-toolbar {
+/* =========================================================
+   1) Toolbar (ถ้าใช้)
+   ========================================================= */
+.hr-toolbar{
   display: flex;
   justify-content: flex-end;
   margin-bottom: 12px;
 }
 
-.hr-add-btn {
+.hr-add-btn{
   border: 1.5px solid #16a34a;
   background: #fff;
   color: #166534;
@@ -17,63 +30,91 @@
   padding: 10px 16px;
   cursor: pointer;
 }
-.hr-add-btn:disabled {
+.hr-add-btn:disabled{
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.hr-group {
-  background: transparent;
+/* =========================================================
+   2) BIG GROUP CARD (กรอบใหญ่ครอบ แม่บ้าน/19คน/รูป/รายการ)
+   ✅ แก้: เพิ่ม background/border/padding/shadow ให้เป็น “การ์ดใหญ่”
+   ✅ แก้: เพิ่ม padding-top ให้หัวข้อไม่โดนเบียด
+   ========================================================= */
+.hr-group{
+  background: #ffffff;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+
+  padding: 20px 16px 16px;   /* ✅ แก้: เพิ่มด้านบนให้หัวข้อไม่ชนขอบ */
   margin-bottom: 18px;
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.06);
 }
 
-.hr-group-head {
+/* =========================================================
+   3) Group Header (แม่บ้าน + 19 คน)
+   ✅ แก้: ลด margin ชนขอบบน และเพิ่ม space ใต้หัว
+   ========================================================= */
+.hr-group-head{
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 8px 0 10px;
+
+  margin: 0 0 12px;          /* ✅ แก้: ไม่ให้ดันชนขอบบน */
 }
 
-.hr-group-title { /*คำว่า แม่บ้าน พนักงาน ก่อนจำนวน*/
+.hr-group-title{
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.25rem;
   font-weight: 900;
   color: #111827;
 }
 
-.hr-pill { /*ปรับแก้ จำนวนคน 19 คน 40 คน*/
-  font-size: 1.2rem;
+.hr-pill{
+  font-size: 0.95rem;
   font-weight: 800;
-  background: #eaf3ff;
-  color: #1d4ed8;
+  background: #EAF3FF;
+  color: #1D4ED8;
   border-radius: 999px;
   padding: 4px 10px;
 }
 
-.hr-banner {
-  position: relative;
+/* =========================================================
+   4) Banner (รูป)
+   ✅ แก้: ใส่กรอบ/โค้ง/กันรูปทะลุ
+   ========================================================= */
+.hr-banner{
   overflow: hidden;
-  border-radius: 16px;
-}
-
-.hr-banner img {
-  width: 100%;
-  height: 250px;
-  object-fit: cover;
-  filter: brightness(0.9) saturate(0.9);
-}
-
-
-.hr-items {
-  background: #F3F4F6;   /* ✅ แก้จาก #fff -> ให้เทาเหมือนพื้นหลัง */
-  border: 1px solid #e5e7eb;
   border-radius: 14px;
-  margin-top: 10px;
-  overflow: hidden;
-  padding: 12px;        /* ✅ เพิ่ม padding กันเห็นพื้นเป็นแถบขาว */
+  border: 1px solid #EEF2F7;
+  background: #fff;
 }
 
-/* กล่องรายการแต่ละบรรทัด */
+.hr-banner img{
+  width: 100%;
+  height: 190px;              /* ✅ แก้: ให้ใกล้ mock */
+  object-fit: cover;
+  display: block;
+  filter: brightness(0.95) saturate(0.95);
+}
+
+/* =========================================================
+   5) Items container
+   ✅ แก้: “เอากล่องครอบ 3 กล่องออก”
+   - ทำให้ hr-items โปร่งใส ไม่มีพื้นหลัง/ไม่มีขอบ/ไม่มี padding
+   ========================================================= */
+.hr-items{
+  background: transparent;    /* ✅ แก้: เอาพื้นหลังเทาออก */
+  border: none;               /* ✅ แก้: เอาเส้นขอบออก */
+  border-radius: 0;           /* ✅ แก้: เอามุมโค้งของ container ออก */
+  margin-top: 12px;
+  padding: 0;                 /* ✅ แก้: ไม่ให้มี padding ครอบ item */
+  overflow: visible;
+}
+
+/* =========================================================
+   6) SMALL ITEM CARD (การ์ดย่อยแต่ละรายการ)
+   ✅ แก้: ให้เป็นการ์ดแยกเหมือนรูป
+   ========================================================= */
 .hr-item{
   display: flex;
   align-items: center;
@@ -83,27 +124,22 @@
   padding: 16px 18px;
   border: 1px solid #EEF2F7;
   border-radius: 14px;
-  background: #FAFBFC;
+  background: #F9FAFB;        /* ✅ แก้: เทาอ่อนเหมือนตัวอย่าง */
   margin-bottom: 12px;
 }
 
-/* ✅ กันช่องว่างท้ายสุด (แถบพื้นหลังโผล่ท้ายลิสต์) */
 .hr-item:last-child{
   margin-bottom: 0;
 }
 
-/* hover ให้รู้สึก interactive */
 .hr-item:hover{
   border-color: #D9E6FF;
   background: #FFFFFF;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
 
-.hr-item:first-child {
-  border-top: none;
-}
-
-.hr-item-title{ /*ปรับชื่อ พัฒนาและฝึกอบรม*/
+/* ซ้าย: title/subtitle */
+.hr-item-title{
   font-size: 1rem;
   font-weight: 800;
   color: #111827;
@@ -116,8 +152,10 @@
   line-height: 1.3;
 }
 
-
-.hr-item-right {
+/* =========================================================
+   7) Right side controls (ปุ่ม - input +)
+   ========================================================= */
+.hr-item-right{
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -149,15 +187,15 @@
   cursor: not-allowed;
 }
 
-.hr-mini-btn:disabled {
+.hr-mini-btn:disabled{
   opacity: 0.55;
   cursor: not-allowed;
 }
 
 .hr-input{
-  width: 200px;              /* เด่นขึ้น */
+  width: 200px;
   text-align: center;
-  font-size: 1.05rem;        /* ตัวเลขใหญ่ขึ้น */
+  font-size: 1.05rem;
   font-weight: 800;
 
   padding: 10px 12px;
@@ -167,173 +205,73 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+/* meta: งบก่อนหน้า + % */
 .hr-meta{
   margin-top: 8px;
   display: flex;
   justify-content: flex-end;
   gap: 14px;
-  font-size: .85rem;
+  font-size: 0.85rem;
   color: #94A3B8;
 }
 
-.hr-pct{
-  font-weight: 800;
-}
-
+.hr-pct{ font-weight: 800; }
 .hr-pct.up{ color: #16A34A; }
 .hr-pct.down{ color: #EF4444; }
 
-
-.hr-bottom-wrap {
-  margin-top: 16px;
+/* =========================================================
+   8) Bottom Summary (เวอร์ชันใหม่รอบเดียว)
+   ✅ แก้: เก็บแค่ชุดเดียว ไม่ซ้ำ
+   ========================================================= */
+.hr-bottom-wrap{
+  margin-top: 24px;
 }
 
-.hr-bottom-card {
-  background: #eef7f2;
-  border: 1px solid #c7f0d9;
-  border-radius: 14px;
-  padding: 14px 16px;
+.hr-bottom-card{
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08);
 }
 
-.hr-bottom-title {
-  font-weight: 900;
-  color: #111827;
-  margin-bottom: 6px;
-}
-.hr-bottom-value {
-  font-weight: 900;
-  color: #166534;
-  font-size: 1.15rem;
-}
-.hr-bottom-sub {
-  margin-top: 6px;
-  font-size: 0.85rem;
-  color: #166534;
-}
-
-.hr-bottom-alert {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #ef4444;
-}
-
-.hr-confirm {
-  border: none;
-  border-radius: 12px;
-  padding: 12px 16px;
-  background: #2e7d32;
-  color: #fff;
-  font-weight: 900;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: center;
-  min-width: 240px;
-}
-.hr-confirm.is-disabled,
-.hr-confirm:disabled {
-  background: #9ca3af;
-  cursor: not-allowed;
-}
-
-.hr-check {
-  width: 26px;
-  height: 26px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hr-note {
-  margin-top: 6px;
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: right;
-}
-
-.hr-reserve {
-  margin-top: 10px;
-  border-radius: 12px;
-  border: 1px solid #fecaca;
-  background: #fff;
-  color: #b91c1c;
-  font-weight: 900;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-.hr-reserve:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* responsive */
-@media (max-width: 980px) {
-  .hr-item {
-    grid-template-columns: 1fr;
-  }
-  .hr-item-right {
-    align-items: flex-start;
-  }
-  .hr-bottom-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .hr-note {
-    text-align: left;
-  }
-}
-
-/* ✅ ปรับปรุงส่วน Bottom Summary ให้เหมือน MaintenancePage */
-
-.hr-bottom-wrap {
-  margin-top: 24px;
-}
-
-.hr-bottom-card {
-  background: #ECFDF5; /* สีเขียวอ่อนแบบใหม่ */
-  border: 1px solid #D1FAE5;
-  border-radius: 16px;
-  padding: 24px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 6px 16px rgba(17, 24, 39, 0.08); /* เพิ่มเงาให้ดูลอย */
-}
-
-.hr-bottom-title {
+.hr-bottom-title{
   font-weight: 800;
-  color: #0F172A; /* สีเข้มขึ้นให้อ่านง่าย */
+  color: #0F172A;
   font-size: 0.95rem;
   margin-bottom: 6px;
 }
 
-.hr-bottom-value {
+.hr-bottom-value{
   font-weight: 900;
   color: #16A34A;
-  font-size: 1.4rem; /* ตัวเลขใหญ่ขึ้น */
+  font-size: 1.4rem;
 }
 
-.hr-bottom-sub {
+.hr-bottom-sub{
   margin-top: 6px;
   font-size: 0.9rem;
   color: #15803D;
   font-weight: 600;
 }
 
-/* ปุ่ม Confirm ปรับให้ดูพรีเมียม */
-.hr-confirm {
+.hr-bottom-alert{
+  margin-top: 8px;
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #ef4444;
+}
+
+/* Confirm */
+.hr-confirm{
   border: none;
   border-radius: 12px;
   padding: 12px 20px;
-  background: #15803D; /* เขียวเข้ม */
+  background: #15803D;
   color: #fff;
   font-weight: 800;
   cursor: pointer;
@@ -342,17 +280,25 @@
   gap: 12px;
   justify-content: center;
   min-width: 240px;
-  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.3); /* เงาสีเขียว */
+  box-shadow: 0 4px 10px rgba(21, 128, 61, 0.3);
   transition: all 0.2s;
 }
 
-.hr-confirm:hover:not(:disabled) {
+.hr-confirm:hover:not(:disabled){
   background: #166534;
   transform: translateY(-2px);
   box-shadow: 0 6px 14px rgba(21, 128, 61, 0.4);
 }
 
-.hr-check {
+.hr-confirm.is-disabled,
+.hr-confirm:disabled{
+  background: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.hr-check{
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -362,8 +308,15 @@
   justify-content: center;
 }
 
-/* ปุ่มเบิกงบสำรอง */
-.hr-reserve {
+.hr-note{
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* Reserve */
+.hr-reserve{
   margin-top: 10px;
   border-radius: 10px;
   border: 1px solid #FECACA;
@@ -375,7 +328,58 @@
   transition: all 0.2s;
 }
 
-.hr-reserve:hover {
+.hr-reserve:hover:not(:disabled){
   background: #FEF2F2;
   border-color: #FCA5A5;
+}
+
+.hr-reserve:disabled{
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   9) Responsive
+   ========================================================= */
+@media (max-width: 980px){
+  .hr-item{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hr-item-right{
+    align-items: flex-start;
+  }
+
+  .hr-meta{
+    justify-content: flex-start;
+  }
+
+  .hr-bottom-card{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hr-note{
+    text-align: left;
+  }
+}
+.personnel-page-header h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #111827;
+  padding: 12px;
+}
+
+.hr-input{
+  width: 200px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
