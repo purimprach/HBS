@@ -1,52 +1,80 @@
-/* ===========================
-   PricingPage.css (Modern Style)
-   =========================== */
+/* =========================================================
+   PricingPage.css
+   - Modern + Figma card feel + Slider marker fix + Figma bars
+   - Cleaned: remove duplicates / keep only used styles
+   ========================================================= */
 
-.pricing-page .price-overview-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+/* =========================================================
+   1) Overview container (ครอบรายการทั้งหมด)
+   ========================================================= */
+.pricing-page .price-overview-card{
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
-.pricing-page .price-overview-title {
+.pricing-page .price-overview-title{
   font-weight: 800;
   color: #111827;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   font-size: 1.1rem;
 }
 
-.pricing-page .price-row {
+/* =========================================================
+   2) Row card (แต่ละห้องเป็นการ์ดแยก มีมิติ)
+   ========================================================= */
+.pricing-page .price-row{
   display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 32px;
-  padding: 24px 0;
-  border-top: 1px solid #f3f4f6;
-  align-items: flex-start;
-}
-.pricing-page .price-row:first-of-type { border-top: none; padding-top: 0; }
+  grid-template-columns: 1fr 340px; /* ซ้าย: slider | ขวา: graph */
+  gap: 28px;
 
-.pricing-page .price-left { 
-  display: flex; 
-  flex-direction: column; 
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border: 1px solid #e8eef6;
+  border-radius: 16px;
+
+  padding: 18px;
+  margin-bottom: 14px;
+
+  box-shadow:
+    0 10px 22px rgba(17,24,39,0.06),
+    0 1px 0 rgba(255,255,255,0.70) inset;
+
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.pricing-page .price-row:hover{
+  transform: translateY(-2px);
+  border-color: #cfe7ff;
+  box-shadow:
+    0 16px 32px rgba(17,24,39,0.10),
+    0 1px 0 rgba(255,255,255,0.75) inset;
+}
+
+/* =========================================================
+   3) LEFT SECTION (ชื่อห้อง + pill + slider)
+   ========================================================= */
+.pricing-page .price-left{
+  display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 
-.pricing-page .price-room-head {
+.pricing-page .price-room-head{
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.pricing-page .price-room-title {
+.pricing-page .price-room-title{
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1f2937;
+  color: #0f172a;
+  letter-spacing: 0.1px;
 }
 
-.pricing-page .price-pill {
+.pricing-page .price-pill{
   font-size: 0.85rem;
   font-weight: 700;
   background: #f0fdf4;
@@ -55,67 +83,66 @@
   border-radius: 20px;
   padding: 4px 12px;
   white-space: nowrap;
+  box-shadow: 0 6px 14px rgba(16,185,129,0.12);
 }
 
-/* =========================================
-   ✅ FIX: LAYOUT ใหม่ จัดกลุ่ม Labels + Track
-   ========================================= */
-
-.pricing-page .price-track-wrap {
+/* =========================================================
+   4) Slider layout (labels+track กลุ่มเดียว, ปุ่ม +/- แยก)
+   ========================================================= */
+.pricing-page .price-track-wrap{
   display: flex;
-  align-items: flex-end; /* ให้ปุ่มอยู่ระนาบเดียวกับสไลด์ (ด้านล่าง) */
-  gap: 20px; /* ระยะห่างระหว่าง [สไลด์] กับ [ปุ่ม] */
+  align-items: flex-end;
+  gap: 20px;
   position: relative;
   padding: 10px 0;
 }
 
-/* กลุ่มก้อนซ้าย: Labels + Track ให้ยืดเต็ม */
-.pricing-page .price-slider-group {
-  flex: 1; /* ✅ ยืดเต็มพื้นที่ที่เหลือ */
+.pricing-page .price-slider-group{
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-/* Labels อยู่ในกลุ่มนี้ จะไม่ล้นไปหาปุ่ม */
-.pricing-page .price-track-labels {
+.pricing-page .price-track-labels{
   display: flex;
   justify-content: space-between;
   font-size: 0.8rem;
   color: #9ca3af;
   font-weight: 500;
+  margin-bottom: 6px;
 }
 
-/* ตัวเส้นสไลด์ */
-.pricing-page .price-track {
+.pricing-page .price-track{
   position: relative;
-  height: 8px;
-  border-radius: 99px;
-  background: #f3f4f6;
+  height: 7px;
   width: 100%;
+  border-radius: 999px;
+  background: #f3f4f6;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.85) inset;
 }
 
-/* ปุ่ม +/- (อยู่นอกกลุ่มสไลด์) */
-.pricing-page .price-controls-inline {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0; /* ห้ามหด */
-  padding-bottom: 0px; /* ปรับให้ตรงกับแนวเส้นสไลด์ */
-}
+/* =========================================================
+   5) Track fill + Range input (ลากจริงแต่ซ่อน)
+   ========================================================= */
+.pricing-page .price-track-fill{
+  /* knob radius สำคัญ: ใช้ร่วมกับ marker */
+  --knob: 10px;
+  --p: 0; /* 0..1 set ผ่าน inline style */
 
-/* ========================================= */
-
-.pricing-page .price-track-fill {
   position: absolute;
-  left: 0; 
+  left: 0;
   top: 0;
   height: 100%;
   background: #10b981;
-  border-radius: 99px;
+  border-radius: 999px;
   z-index: 1;
+
+  /* ความยาว fill เผื่อหัวกลม */
+  width: calc((100% - (var(--knob) * 2)) * var(--p) + var(--knob));
 }
 
-.pricing-page .price-range {
+.pricing-page .price-range{
   position: absolute;
   top: -6px;
   left: 0;
@@ -127,30 +154,45 @@
   margin: 0;
 }
 
-.pricing-page .price-marker {
+/* =========================================================
+   6) Marker (หัวกลม + badge) ไปสุดเส้นได้จริง
+   ========================================================= */
+.pricing-page .price-marker{
+  --knob: 10px;
+  --p: 0;
+
   position: absolute;
-  top: 50%; 
-  transform: translate(-50%, -50%);
+  top: 50%;
+  left: calc(var(--knob) + (100% - (var(--knob) * 2)) * var(--p));
+
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+
   pointer-events: none;
   z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
-.pricing-page .price-marker-dot {
+.pricing-page .price-marker-dot{
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+
   width: 20px;
   height: 20px;
   background: #fff;
   border: 4px solid #10b981;
   border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-top: -1px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.10);
 }
 
-.pricing-page .price-marker-badge {
+.pricing-page .price-marker-badge{
   position: absolute;
-  bottom: 24px;
+  left: 0;
+  top: -16px;
+  transform: translate(-50%, -100%);
+
   background: #065f46;
   color: #fff;
   font-weight: 700;
@@ -161,7 +203,7 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-.pricing-page .price-marker-badge::after {
+.pricing-page .price-marker-badge::after{
   content: "";
   position: absolute;
   bottom: -5px;
@@ -172,67 +214,16 @@
   border-color: #065f46 transparent transparent transparent;
 }
 
-/* RIGHT PANEL */
-.pricing-page .price-right {
+/* =========================================================
+   7) Plus/Minus buttons
+   ========================================================= */
+.pricing-page .price-controls-inline{
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  justify-content: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
-.pricing-page .price-right-top {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.pricing-page .price-pct {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-.pricing-page .price-pct { background: #ecfdf5; color: #15803d; }
-.pricing-page .price-pct.down { background: #fef2f2; color: #b91c1c; }
-
-.pricing-page .price-boxes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.pricing-page .price-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid #e5e7eb;
-}
-
-.pricing-page .price-box-value {
-  width: 100%;
-  padding: 12px 0;
-  text-align: center;
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-.pricing-page .price-box.prev .price-box-value { background: #fbbf24; color: #fff; text-shadow:0 1px 2px rgba(0,0,0,0.1); }
-.pricing-page .price-box.curr .price-box-value { background: #10b981; color: #fff; text-shadow:0 1px 2px rgba(0,0,0,0.1); }
-
-.pricing-page .price-box-label {
-  background: #fff;
-  width: 100%;
-  text-align: center;
-  padding: 8px 0;
-  font-size: 0.8rem;
-  color: #6b7280;
-  font-weight: 600;
-}
-
-.pricing-page .price-mini-btn {
+.pricing-page .price-mini-btn{
   width: 40px;
   height: 40px;
   border-radius: 10px;
@@ -243,22 +234,208 @@
   place-items: center;
   cursor: pointer;
   transition: all 0.2s;
+
+  box-shadow:
+    0 10px 18px rgba(16,185,129,0.10),
+    0 1px 0 rgba(255,255,255,0.75) inset;
 }
-.pricing-page .price-mini-btn:hover:not(:disabled) {
+
+.pricing-page .price-mini-btn:hover:not(:disabled){
   background: #10b981;
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+  box-shadow:
+    0 16px 26px rgba(16,185,129,0.18),
+    0 1px 0 rgba(255,255,255,0.70) inset;
 }
-.pricing-page .price-mini-btn:disabled {
+
+.pricing-page .price-mini-btn:disabled{
   opacity: 0.5;
   cursor: not-allowed;
   background: #f3f4f6;
   border-color: #e5e7eb;
   color: #9ca3af;
+  box-shadow: none;
 }
 
-@media (max-width: 900px) {
-  .pricing-page .price-row { grid-template-columns: 1fr; gap: 20px; }
-  .pricing-page .price-right { border-left: none; padding-left: 0; }
+/* =========================================================
+   8) RIGHT SECTION + divider
+   ========================================================= */
+.pricing-page .price-right{
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: flex-start;
+
+  position: relative;
+  padding-left: 18px;
+}
+
+.pricing-page .price-right::before{
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: #dbeafe;
+  border-radius: 999px;
+}
+
+/* =========================================================
+   9) Top-right chip (2 lines) — ไม่ขยับ
+   ใช้กับ JSX:
+   <div className="price-pct price-pct-2line">
+     <div className="pct-title">...</div>
+     <div className="pct-value">
+       <span className="pct-icon">...</span>
+       <span className="pct-number">+12.34%</span>
+     </div>
+   </div>
+   ========================================================= */
+.pricing-page .price-right-top{
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pricing-page .price-pct{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  background: #ecfdf5;
+  color: #15803d;
+
+  border: 1px solid rgba(16,185,129,0.20);
+  box-shadow: 0 10px 18px rgba(16,185,129,0.08);
+}
+
+.pricing-page .price-pct.down{
+  background: #fef2f2;
+  color: #b91c1c;
+
+  border: 1px solid rgba(185,28,28,0.20);
+  box-shadow: 0 10px 18px rgba(185,28,28,0.06);
+}
+
+.pricing-page .price-pct.price-pct-2line{
+  flex-direction: column;
+  align-items: center;  /* ✅ คุณเลือก “ตรงกลาง” */
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.pricing-page .price-pct.price-pct-2line .pct-title{
+  font-size: 0.8rem;
+  font-weight: 600;
+  opacity: 0.95;
+  line-height: 1;
+  text-align: center;
+}
+
+.pricing-page .price-pct.price-pct-2line .pct-value{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pricing-page .price-pct.price-pct-2line .pct-icon{
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px; /* ✅ จองที่ไว้เสมอ กันขยับ */
+}
+
+/* ✅ กันเลขขยับเวลา % เปลี่ยนจำนวนหลัก */
+.pricing-page .price-pct.price-pct-2line .pct-number{
+  display: inline-block;
+  min-width: 72px;      /* รองรับ -40.00% ถึง +40.00% */
+  text-align: center;   /* ตรงกลางตามที่คุณชอบ */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* =========================================================
+   10) FIGMA BAR CHART
+   ========================================================= */
+.pricing-page .bars-figma{
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+
+  height: 100px;
+  align-items: end;
+  padding-bottom: 8px;
+}
+
+.pricing-page .bar-baseline{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  height: 4px;
+  background: #4b5563;
+  border-radius: 999px;
+}
+
+.pricing-page .bar-figma{
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.2rem;
+  line-height: 1;
+
+  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  box-shadow: 0 14px 22px rgba(17,24,39,0.08);
+  transition: height 220ms ease;
+  z-index: 2;
+}
+
+.pricing-page .bar-figma.prev{ background: #f0c330; }
+.pricing-page .bar-figma.curr{ background: #10b981; }
+
+.pricing-page .bar-num{
+  line-height: 1;
+}
+
+.pricing-page .bar-labels-figma{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 0px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+}
+
+/* =========================================================
+   11) Responsive
+   ========================================================= */
+@media (max-width: 900px){
+  .pricing-page .price-row{
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .pricing-page .price-right{
+    padding-left: 0;
+  }
+  .pricing-page .price-right::before{
+    display: none;
+  }
 }
