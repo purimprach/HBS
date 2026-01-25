@@ -816,3 +816,216 @@
   transform: none;
 }
 
+/* =========================================================
+   9) CEO Other Investments (NEW)
+   - Section: .ceo-other2-wrap
+   - Grid: 5 กล่องย่อย (2 + 2 + 1) แบบในรูป
+   ========================================================= */
+
+.ceo-other2-wrap{
+  margin-top: 14px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 14px;
+  box-shadow: 0 8px 22px rgba(17, 24, 39, 0.06);
+}
+
+.ceo-other2-head{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ceo-other2-title{
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #0F172A;
+}
+
+.ceo-other2-sub{
+  font-size: 0.9rem;
+  color: #64748B;
+  font-weight: 600;
+}
+
+.ceo-other2-sub b{
+  color: #0F172A;
+  font-weight: 900;
+}
+
+.ceo-other2-sub .is-over{
+  color: #EF4444;
+}
+
+.ceo-other2-over{
+  color: #EF4444;
+  font-weight: 900;
+  margin-left: 6px;
+}
+
+/* ===== Grid กล่องย่อย ===== */
+.ceo-other2-grid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* ให้กล่องสุดท้าย (พื้นที่ส่วนกลาง) กินเต็มแถว เพื่อได้ฟีล 2+2+1 */
+.ceo-other2-grid .ceo-other2-box:last-child{
+  grid-column: 1 / -1;
+}
+
+/* ===== กล่องย่อยแต่ละหมวด ===== */
+.ceo-other2-box{
+  border: 1px solid #EEF2F7;
+  background: #F9FAFB;
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.ceo-other2-box-title{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  color: #0F172A;
+  margin-bottom: 10px;
+}
+
+.ceo-other2-ic{
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  color: #166534;
+  flex: 0 0 auto;
+}
+
+/* ===== Options (radio/checkbox list) ===== */
+.ceo-other2-options{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ceo-other2-opt{
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ceo-other2-opt input{
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  accent-color: #15803D; /* modern browsers */
+  cursor: pointer;
+}
+
+.ceo-other2-opt.is-disabled{
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ceo-other2-opt.is-disabled input{
+  cursor: not-allowed;
+}
+
+.ceo-other2-opt-text{
+  color: #334155;
+  font-weight: 600;
+  line-height: 1.3;
+  font-size: 0.92rem;
+}
+
+.ceo-other2-opt-text b{
+  color: #0F172A;
+  font-weight: 900;
+}
+
+/* ===== Footer row (รวม + ปุ่มบันทึก) ===== */
+.ceo-other2-foot{
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ceo-other2-total-pill{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #ECFDF5;
+  border: 1px solid #D1FAE5;
+  color: #166534;
+  font-weight: 900;
+  min-height: 40px;
+}
+
+.ceo-other2-total-pill b{
+  color: #0F172A;
+}
+
+/* ปุ่มบันทึก/แก้ไข (ขวาล่าง section) */
+.ceo-other2-save{
+  border: none;
+  border-radius: 10px;
+  padding: 12px 28px;
+  background: #15803D;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(21, 128, 61, 0.25);
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+
+.ceo-other2-save:hover:not(:disabled){
+  background: #166534;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(21, 128, 61, 0.32);
+}
+
+.ceo-other2-save.is-edit,
+.ceo-other2-save:disabled{
+  background: #9CA3AF;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 980px){
+  .ceo-other2-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .ceo-other2-grid .ceo-other2-box:last-child{
+    grid-column: auto;
+  }
+
+  .ceo-other2-foot{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ceo-other2-save{
+    width: 100%;
+  }
+
+  .ceo-other2-total-pill{
+    width: 100%;
+    justify-content: space-between;
+  }
+}

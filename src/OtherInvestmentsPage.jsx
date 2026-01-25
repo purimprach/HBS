@@ -1103,11 +1103,11 @@ export default function OtherInvestmentsPage() {
                             className={`ceo-other2-opt ${disabled ? "is-disabled" : ""}`}
                           >
                             <input
-                              type={g.type}
-                              name={g.type === "radio" ? g.id : undefined}
-                              checked={picked}
-                              disabled={disabled}
-                              onChange={() => toggleCeoOther2(g.id, o.id, g.type)}
+                                type={g.type === "radio" ? "radio" : "checkbox"}   // ✅ สำคัญ
+                                name={g.type === "radio" ? g.id : undefined}       // ✅ radio ต้องมี name เดียวกัน
+                                checked={picked}
+                                disabled={disabled}
+                                onChange={() => toggleCeoOther2(g.id, o.id, g.type)}
                             />
                             <span className="ceo-other2-opt-text">
                               {o.label} รวม <b>{fmt(o.cost)}</b> บาท
