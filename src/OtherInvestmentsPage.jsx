@@ -150,6 +150,19 @@ const calcMonthly = (principal, annualRate, years) => {
   return (P * r) / (1 - Math.pow(1 + r, -n));
 };
 
+const getCashRemainingFromStorage = () => {
+  try {
+    const saved = localStorage.getItem("hbs_round1_decision_budgets");
+    if (!saved) return null;
+    const parsed = JSON.parse(saved);
+    const v = parsed.ceoCashRemaining;
+    return Number.isFinite(Number(v)) ? Number(v) : null;
+  } catch {
+    return null;
+  }
+};
+
+
 export default function OtherInvestmentsPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -181,10 +194,14 @@ export default function OtherInvestmentsPage() {
      ✅ เงินสดคงเหลือ (จากหน้าแรก)
      - แนะนำ: ส่ง ceoCashRemaining มาจากหน้าแรก
   ========================= */
+  const cashFromStorage = getCashRemainingFromStorage();
+
   const baseCashRemaining =
     location.state?.ceoCashRemaining ??
+    cashFromStorage ??
     location.state?.ceoCash ??
     TOTAL_BUDGET;
+
 
   /* =========================
      ✅ LOAN STATE (ย้ายเข้า component แล้ว)
@@ -540,8 +557,10 @@ export default function OtherInvestmentsPage() {
 
         <button className="tab-btn" onClick={() => navigate("/maintenance")}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
-        </button><button className="tab-btn" onClick={() => navigate("/maintenance", { state: commonState })}>
-          <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
+        </button>
+        
+        <button className={`tab-btn ${location.pathname === '/other' ? 'active' : ''}`} onClick={() => navigate('/other')}>
+          <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 // DecisionPage.jsx
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // ❌ เอา NavLink ออก
 import "./DecisionPage.css";
 import {
   Banknote,
@@ -57,13 +57,13 @@ export default function DecisionPage() {
     return DEFAULT_BUDGETS;
   });
 
-  // ✅ Derived values (ต้องมาก่อน useEffect ที่ใช้งาน usedBudget)
+  // ✅ Derived values
   const usedBudget = useMemo(
     () => budgets.reduce((acc, b) => acc + (Number(b.value) || 0), 0),
     [budgets]
   );
 
-  // ✅ Save ลง storage พร้อม ceoCashRemaining (แก้ error usedBudget before init)
+  // ✅ Save ลง storage
   useEffect(() => {
     const ceoCashRemaining = Math.max(0, TOTAL_BUDGET - usedBudget);
     localStorage.setItem(
@@ -78,10 +78,6 @@ export default function DecisionPage() {
     [budgets]
   );
 
-  /**
-   * สร้าง state กลางที่ทุกหน้าควรได้รับเหมือนกัน
-   * - ceoCashRemaining: เงินสดคงเหลือจริงจากหน้า allocation
-   */
   const buildCommonState = useCallback(() => {
     const marketingBudget = getBudget(1);
     const hrBudget = getBudget(2);
@@ -97,8 +93,6 @@ export default function DecisionPage() {
       ceoMarketSharePrev: 12,
       ceoSatisfaction: 3.5,
       ceoAssetHealth: 95,
-
-      // ส่งงบแยกหมวดไปด้วย เผื่อหน้าอื่นใช้
       ceoMarketingBudget: marketingBudget,
       ceoHRBudget: hrBudget,
       ceoMaintenanceBudget: maintenanceBudget,
@@ -107,13 +101,13 @@ export default function DecisionPage() {
     };
   }, [getBudget, usedBudget]);
 
-  /**
-   * go(path): ไปหน้าไหนก็ส่ง commonState ชุดเดียวกัน
-   */
   const go = useCallback(
     (path) => navigate(path, { state: buildCommonState() }),
     [navigate, buildCommonState]
   );
+
+  // ✅ Helper เช็ค Active Tab
+  const isActiveTab = (path) => location.pathname === path ? "tab-btn active" : "tab-btn";
 
   // ===== Actions =====
   const handleBudgetChange = (id, newValue) => {
@@ -126,7 +120,6 @@ export default function DecisionPage() {
       .filter((b) => b.id !== id)
       .reduce((acc, b) => acc + (Number(b.value) || 0), 0);
 
-    // clamp ไม่ให้เกิน TOTAL
     if (otherTotal + v > TOTAL_BUDGET) v = TOTAL_BUDGET - otherTotal;
 
     setBudgets((prev) => prev.map((b) => (b.id === id ? { ...b, value: v } : b)));
@@ -149,92 +142,74 @@ export default function DecisionPage() {
     }
   };
 
-  // ===== Tab button class helper =====
-  const tabClass = ({ isActive }) => `tab-btn ${isActive ? "active" : ""}`;
-
   return (
     <div className="decision-page">
-      {/* =========================
-          1) TOP STATS
-         ========================= */}
+      {/* 1) TOP STATS */}
       <div className="stats-grid">
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">เงินสดปัจจุบัน</span>
-            <div className="stat-icon-box">
-              <Banknote size={20} />
-            </div>
+            <div className="stat-icon-box"><Banknote size={20} /></div>
           </div>
           <div className="stat-value">{formatMoney(TOTAL_BUDGET)}</div>
           <div className="stat-sub">ระยะเวลาหมุนเวียน : 3-4 ไตรมาส</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ส่วนแบ่งการตลาด</span>
-            <div className="stat-icon-box">
-              <Users size={20} />
-            </div>
+            <div className="stat-icon-box"><Users size={20} /></div>
           </div>
           <div className="stat-value">12%</div>
           <div className="stat-sub">อยู่อันดับ 3 จาก 6</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ความพึงพอใจลูกค้า</span>
-            <div className="stat-icon-box">
-              <Bed size={20} />
-            </div>
+            <div className="stat-icon-box"><Bed size={20} /></div>
           </div>
           <div className="stat-value">3.5/5</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : พอใช้</div>
         </div>
-
         <div className="stat-card">
           <div className="stat-header">
             <span className="stat-title">ความสมบูรณ์ทรัพย์สิน</span>
-            <div className="stat-icon-box">
-              <span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>฿</span>
-            </div>
+            <div className="stat-icon-box"><span style={{ fontWeight: "bold", fontSize: "1.2rem" }}>฿</span></div>
           </div>
           <div className="stat-value">95%</div>
           <div className="stat-sub">อยู่ในเกณฑ์ : ดีมาก</div>
         </div>
       </div>
 
-      {/* =========================
-          2) TABS (ใช้ NavLink ทั้งหมด)
-         ========================= */}
+      {/* 2) TABS - แก้ไขเป็นปุ่มทั้งหมดและเช็ค Active */}
       <div className="decision-tabs">
-        <NavLink to="/decision" className={tabClass}>
+        <button className={isActiveTab("/decision")} onClick={() => go("/decision")}>
           <PieChart size={15} /> <span>การจัดสรรเงิน</span>
-        </NavLink>
+        </button>
 
-        <button className="tab-btn" onClick={() => go("/pricing")}>
+        <button className={isActiveTab("/pricing")} onClick={() => go("/pricing")}>
           <Tag size={15} /> <span>การกำหนดราคาห้องพัก</span>
         </button>
 
-        <button className="tab-btn" onClick={() => go("/marketing")}>
+        <button className={isActiveTab("/marketing")} onClick={() => go("/marketing")}>
           <Megaphone size={15} /> <span>การลงทุนด้านการตลาด</span>
         </button>
 
-        <button className="tab-btn" onClick={() => go("/personnel")}>
+        <button className={isActiveTab("/personnel")} onClick={() => go("/personnel")}>
           <Users size={15} /> <span>การลงทุนด้านบุคลากร</span>
         </button>
 
-        <button className="tab-btn" onClick={() => go("/maintenance")}>
+        <button className={isActiveTab("/maintenance")} onClick={() => go("/maintenance")}>
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
 
         <button
-          className="tab-btn"
+          className={isActiveTab("/other")}
           onClick={() => {
             const common = buildCommonState();
             navigate("/other", {
               state: {
                 ...common,
-                ceoOther2Budget: common.ceoCashRemaining, // ✅ ใช้เงินสดคงเหลือจริง
+                ceoOther2Budget: common.ceoCashRemaining,
               },
             });
           }}
@@ -243,9 +218,7 @@ export default function DecisionPage() {
         </button>
       </div>
 
-      {/* =========================
-          3) MAIN CONTENT (allocation)
-         ========================= */}
+      {/* 3) MAIN CONTENT */}
       <div className="decision-content">
         <div className="left-column">
           <div className="budget-form-section">
@@ -259,7 +232,6 @@ export default function DecisionPage() {
             <div className="sliders-container">
               {budgets.map((item) => {
                 const percent = ((item.value / TOTAL_BUDGET) * 100).toFixed(1);
-
                 return (
                   <div key={item.id} className="budget-item">
                     <div className="item-label">
@@ -267,7 +239,6 @@ export default function DecisionPage() {
                       <span>{item.name}</span>
                       <span className="percent-badge">{percent}%</span>
                     </div>
-
                     <div className="slider-row">
                       <input
                         type="range"
@@ -284,7 +255,6 @@ export default function DecisionPage() {
                         disabled={isSaved}
                       />
                     </div>
-
                     <div className="controls-row">
                       <div className="number-input-wrapper">
                         <input
@@ -299,7 +269,6 @@ export default function DecisionPage() {
                         />
                         <span className="unit">บาท</span>
                       </div>
-
                       <div className="percent-buttons">
                         {PERCENT_OPTIONS.map((pct) => {
                           const targetValue = (TOTAL_BUDGET * pct) / 100;
@@ -310,15 +279,7 @@ export default function DecisionPage() {
                               onClick={() => handlePercentClick(item.id, pct)}
                               disabled={isSaved}
                               className={isActive ? "active" : ""}
-                              style={
-                                isActive
-                                  ? {
-                                      backgroundColor: item.color,
-                                      borderColor: item.color,
-                                      color: "#fff",
-                                    }
-                                  : {}
-                              }
+                              style={isActive ? { backgroundColor: item.color, borderColor: item.color, color: "#fff" } : {}}
                             >
                               {pct}%
                             </button>
@@ -331,17 +292,15 @@ export default function DecisionPage() {
               })}
             </div>
           </div>
-
           <div className="max-spending-card">
             รายได้สูงสุดต่อเดือน (ยังไม่หักค่าใช้จ่าย):{" "}
             <strong>6,450,000 บาท/เดือน</strong>
           </div>
         </div>
 
-        {/* ===== Summary ด้านขวา (ของเดิม) ===== */}
+        {/* Summary */}
         <div className="summary-section">
           <h3>สัดส่วนการจัดสรร</h3>
-
           <div className="donut-chart-wrapper">
             <div className="chart-center-info">
               <span className="chart-label-text">ใช้ไป</span>
@@ -349,59 +308,36 @@ export default function DecisionPage() {
                 {((usedBudget / TOTAL_BUDGET) * 100).toFixed(0)}%
               </span>
             </div>
-
             <svg viewBox="0 0 100 100" className="donut-chart">
               {(() => {
                 let currentOffset = 25;
                 const elements = [];
-
                 budgets.forEach((item) => {
                   const p = (item.value / TOTAL_BUDGET) * 100;
                   if (p > 0) {
                     elements.push(
                       <circle
-                        key={item.id}
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        fill="transparent"
-                        stroke={item.color}
-                        strokeWidth="10"
-                        pathLength="100"
-                        strokeDasharray={`${p} ${100 - p}`}
-                        strokeDashoffset={currentOffset}
-                        strokeLinecap="butt"
+                        key={item.id} cx="50" cy="50" r="40" fill="transparent" stroke={item.color} strokeWidth="10"
+                        pathLength="100" strokeDasharray={`${p} ${100 - p}`} strokeDashoffset={currentOffset} strokeLinecap="butt"
                       />
                     );
                     currentOffset -= p;
                   }
                 });
-
                 const remainingBudget = TOTAL_BUDGET - usedBudget;
                 if (remainingBudget > 0) {
                   const rp = (remainingBudget / TOTAL_BUDGET) * 100;
                   elements.push(
                     <circle
-                      key="remaining"
-                      cx="50"
-                      cy="50"
-                      r="40"
-                      fill="transparent"
-                      stroke="#E5E7EB"
-                      strokeWidth="10"
-                      pathLength="100"
-                      strokeDasharray={`${rp} ${100 - rp}`}
-                      strokeDashoffset={currentOffset}
-                      strokeLinecap="butt"
+                      key="remaining" cx="50" cy="50" r="40" fill="transparent" stroke="#E5E7EB" strokeWidth="10"
+                      pathLength="100" strokeDasharray={`${rp} ${100 - rp}`} strokeDashoffset={currentOffset} strokeLinecap="butt"
                     />
                   );
                 }
-
                 return elements;
               })()}
             </svg>
           </div>
-
           <div className="legend-list">
             {budgets.map((item) => (
               <div key={item.id} className="legend-item">
@@ -409,33 +345,24 @@ export default function DecisionPage() {
                   <span className="legend-dot" style={{ backgroundColor: item.color }} />
                   <span className="legend-name">{item.name}</span>
                 </div>
-                <span className="legend-val">
-                  {((item.value / TOTAL_BUDGET) * 100).toFixed(0)}%
-                </span>
+                <span className="legend-val">{((item.value / TOTAL_BUDGET) * 100).toFixed(0)}%</span>
               </div>
             ))}
-
             <div className="legend-item">
               <div className="legend-left">
                 <span className="legend-dot" style={{ backgroundColor: "#E5E7EB" }} />
-                <span className="legend-name" style={{ color: "#6B7280" }}>
-                  งบประมาณคงเหลือ
-                </span>
+                <span className="legend-name" style={{ color: "#6B7280" }}>งบประมาณคงเหลือ</span>
               </div>
               <span className="legend-val" style={{ color: "#6B7280" }}>
                 {(((TOTAL_BUDGET - usedBudget) / TOTAL_BUDGET) * 100).toFixed(0)}%
               </span>
             </div>
           </div>
-
           <div className="budget-status">
             <div className="status-header">
               <span>ใช้ไปแล้ว</span>
-              <span className="status-percent">
-                {((usedBudget / TOTAL_BUDGET) * 100).toFixed(1)}%
-              </span>
+              <span className="status-percent">{((usedBudget / TOTAL_BUDGET) * 100).toFixed(1)}%</span>
             </div>
-
             <div className="progress-bar">
               <div
                 className="progress-fill"
@@ -445,7 +372,6 @@ export default function DecisionPage() {
                 }}
               />
             </div>
-
             <div className="summary-text-group">
               <div className="summary-row">
                 <span>งบประมาณทั้งหมด:</span>
@@ -461,17 +387,7 @@ export default function DecisionPage() {
                   {formatMoney(TOTAL_BUDGET - usedBudget)} บาท
                 </span>
               </div>
-
-              <p
-                style={{
-                  color: "#EF4444",
-                  fontSize: "0.75rem",
-                  textAlign: "right",
-                  marginTop: "8px",
-                  marginBottom: "0",
-                  fontWeight: "500",
-                }}
-              >
+              <p style={{ color: "#EF4444", fontSize: "0.75rem", textAlign: "right", marginTop: "8px", fontWeight: "500" }}>
                 * ควรสำรองเงินสดเพื่อรักษาสภาพคล่อง ในการดำเนินงานรอบถัดไป
               </p>
             </div>
@@ -479,24 +395,19 @@ export default function DecisionPage() {
         </div>
       </div>
 
-      {/* =========================
-          4) Bottom Action Bar (เหมือนเดิม)
-         ========================= */}
+      {/* 4) Bottom Action Bar */}
       <div className="bottom-action-bar">
         <div className="break-even-section">
           <div className="be-title">จุดคุ้มทุน (Break-even point)</div>
           <div className="be-value">3,500,000 บาท/เดือน</div>
         </div>
-
         <div className="action-section">
           <button
             className="confirm-btn-large"
             onClick={handleSave}
             disabled={isSaved || usedBudget > TOTAL_BUDGET}
           >
-            <div className="btn-icon-circle">
-              <Check size={16} strokeWidth={3} />
-            </div>
+            <div className="btn-icon-circle"><Check size={16} strokeWidth={3} /></div>
             {isSaved ? "บันทึกเรียบร้อย" : "บันทึกการจัดสรรเงิน"}
           </button>
           <div className="action-remark">* หากบันทึกแล้วจะไม่สามารถแก้ไขได้</div>
