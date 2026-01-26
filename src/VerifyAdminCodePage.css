@@ -1,0 +1,327 @@
+.verify-shell{
+  height: 100vh;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: #fff;
+}
+
+/* LEFT */
+.verify-left{
+  background-image: url("https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop");
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.verify-left::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.15);
+}
+
+/* RIGHT */
+.verify-right{
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 48px;
+  background: #fff;
+}
+
+/* Back */
+.verify-back{
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  color: #111827;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.verify-back:hover{ background: rgba(17,24,39,0.06); }
+
+/* Center */
+.verify-wrap{ width: 100%; max-width: 420px; }
+.verify-header{ text-align: center; margin-bottom: 22px; }
+
+.verify-badge{
+  width: 36px; height: 36px; border-radius: 10px;
+  background: #f3f4f6;
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+}
+
+.verify-title{
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+.verify-subtitle{
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 6px;
+}
+
+/* Form */
+.verify-form{ display: flex; flex-direction: column; gap: 14px; }
+.verify-field label{
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: block;
+  color: #111827;
+}
+.verify-field input{
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  outline: none;
+}
+.verify-field input:focus{
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 3px rgba(46,125,50,0.15);
+}
+
+.verify-submit{
+  height: 38px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+.verify-submit:hover{ background: #1b5e20; }
+
+.verify-footer{
+  margin-top: 6px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.verify-link{
+  background: none;
+  border: none;
+  color: #2e7d32;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+}
+.verify-link:hover{ text-decoration: underline; }
+
+/* ================= POPUP overlay ================= */
+.verify-modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.70);
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  z-index: 9999;
+}
+
+/* ================= Popup 1: Verify complete ================= */
+.verify-modal-card{
+  width: min(480px, 92vw);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+
+  padding: 32px 28px;
+  text-align: center;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.verify-check-circle{
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 24px;
+  font-weight: 900;
+
+  color: #2E7D32;
+  background: rgba(46,125,50,0.15);
+  border: 2px solid rgba(46,125,50,0.45);
+}
+
+.verify-modal-text{
+  font-size: 20px;
+  font-weight: 800;
+  color: #2E7D32;
+}
+
+.verify-modal-btn{
+  height: 36px;
+  padding: 0 20px;
+  border-radius: 8px;
+  border: none;
+
+  background: #2E7D32;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.verify-modal-btn:hover{ background: #1B5E20; }
+
+/* ================= Popup 2: Contact Information ================= */
+.contact-modal-card{
+  width: min(640px, 92vw);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  box-shadow: 0 26px 70px rgba(0,0,0,0.40);
+  overflow: hidden;
+}
+
+/* Header (เขียว) */
+.contact-modal-header{
+  background: #2E7D32;
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.contact-title-row{
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  font-size: 22px;
+}
+
+.contact-lock{
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.contact-close-btn{
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.contact-close-btn:hover{
+  background: rgba(255,255,255,0.22);
+}
+
+/* Body */
+.contact-modal-body{
+  padding: 18px 18px 16px;
+  color: #111827;
+  text-align: left;
+}
+
+.contact-alert{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px;
+  border-radius: 10px;
+  background: #F3F4F6;
+  border: 1px solid rgba(0,0,0,0.06);
+  margin-bottom: 14px;
+  color: #2E7D32;
+  font-weight: 700;
+}
+
+.contact-alert-icon{
+  font-size: 16px;
+}
+
+.contact-text{
+  font-size: 13px;
+  margin: 6px 0 10px;
+  color: #111827;
+}
+
+.contact-box{
+  border: 1.5px solid rgba(46,125,50,0.55);
+  border-radius: 10px;
+  padding: 10px 12px;
+  text-align: center;
+  color: #2E7D32;
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.contact-footer{
+  text-align: center;
+  margin-top: 14px;
+  font-weight: 900;
+  color: #080496;
+  font-size: 18px;
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  .verify-shell{
+    grid-template-columns: 1fr;
+    grid-template-rows: 40vh 1fr;
+  }
+  .verify-right{ padding: 48px 22px; }
+}
+.contact-row{
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1.8;
+}
+
+.contact-name{
+  font-weight: 700;
+  color: #2E7D32;
+}
+
+/* 🔥 ตัวอีเมล */
+.contact-email{
+  color: #080496;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* hover แล้วรู้ทันทีว่าคลิกได้ */
+.contact-email:hover{
+  text-decoration: underline;
+}

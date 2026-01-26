@@ -1,82 +1,96 @@
-import React, { useState } from 'react';
-import './LoginAdminPage.css';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import "./LoginAdminPage.css";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, Lock } from "lucide-react";
 
-function LoginAdminPage() {
+export default function LoginAdminPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    console.log("Admin Login Submitted");
-    navigate('/game-dashboard');
-  };
-
-  // ฟังก์ชันย้อนกลับ
-  const handleBack = () => {
-    navigate('/');
+    // TODO: เช็ค auth จริงภายหลัง
+    navigate("/admin/dashboard"); // เปลี่ยนให้ตรง route ที่คุณมี
   };
 
   return (
-    <div className="admin-login-container">
-      
-      {/* ฝั่งซ้าย: รูปภาพ */}
-      <div className="admin-left-panel"></div>
+    <div className="admin-login-shell">
+      {/* Left image */}
+      <div className="admin-login-left" />
 
-      {/* ฝั่งขวา: ฟอร์ม */}
-      <div className="admin-right-panel">
-        
-        {/* 🔥 (1) ใส่ปุ่ม Back ตรงนี้ครับ 🔥 */}
-        <button className="btn-back-link" onClick={handleBack}>
-            &lt; Back
+      {/* Right form */}
+      <div className="admin-login-right">
+        <button
+          className="admin-back"
+          type="button"
+          onClick={() => navigate("/")}
+        >
+          <ChevronLeft size={18} />
+          <span>Back</span>
         </button>
 
-        <div className="admin-login-box">
-          
-          <div className="icon-header">
-            🛡️
-          </div>
-          <h1>Login Admin</h1>
-          <p className="subtitle">Sign in to access admin</p>
+        <div className="admin-form-wrap">
+          <div className="admin-form-header">
+            <div className="admin-badge">
+              <Lock size={18} />
+            </div>
 
-          <form onSubmit={handleLogin}>
-            <div className="form-group">
+            <h1 className="admin-title">Admin Login</h1>
+            <p className="admin-subtitle">Sign in to access admin</p>
+          </div>
+
+          <form className="admin-form" onSubmit={handleLogin}>
+            <div className="admin-field">
               <label>Email Address</label>
               <input type="email" placeholder="Enter your email" required />
             </div>
 
-            <div className="form-group">
+            <div className="admin-field">
               <label>Password</label>
-              <div className="password-input-wrapper">
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Enter your password" 
-                  required 
+              <div className="admin-password">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  required
                 />
-                <span 
-                  className="eye-icon" 
-                  onClick={() => setShowPassword(!showPassword)}
+                <button
+                  type="button"
+                  className="admin-eye"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label="Toggle password visibility"
                 >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </span>
+                  {showPassword ? "👁️" : "👁️‍🗨️"}
+                </button>
               </div>
             </div>
 
-            <div className="forgot-password-link">
-              <a href="#forgot">Forgot Password?</a>
+            <div className="admin-actions-row">
+              <button
+                type="button"
+                className="admin-link"
+                onClick={() => navigate("/admin-forgot-password")}
+              >
+                Forgot Password?
+              </button>
             </div>
 
-            <button type="submit" className="btn-admin-login">Login</button>
+            <button type="submit" className="admin-submit">
+              Login
+            </button>
+
+            <div className="admin-footer">
+              <span>Don&apos;t have an account?</span>
+              <button
+                type="button"
+                className="admin-link"
+                onClick={() => navigate("/admin/verify")}
+              >
+                Signup Here
+              </button>
+            </div>
           </form>
-
-          <div className="signup-link">
-            Don't have an account? <a href="#signup">Signup Here</a>
-          </div>
-
         </div>
       </div>
     </div>
   );
 }
-
-export default LoginAdminPage;

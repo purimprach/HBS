@@ -24,6 +24,11 @@ import MarketingPage from './MarketingPage';
 import PersonnelPage from "./PersonnelPage";
 import MaintenancePage from "./MaintenancePage";
 import OtherInvestmentsPage from "./OtherInvestmentsPage";
+import VerifyAdminCodePage from './VerifyAdminCodePage';
+import CreateAdminAccountPage from './CreateAdminAccountPage';
+import AdminForgotPasswordPage from './AdminForgotPasswordPage';
+import AdminResetPasswordPage from "./AdminResetPasswordPage";
+
 
 function App() {
   // 1. สร้าง State เวลาที่นี่ (จุดศูนย์กลาง)
@@ -31,13 +36,13 @@ function App() {
 
   // 2. สั่งให้เวลานับถอยหลังที่นี่ (ทำงานตลอดเวลา)
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timerId = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-      return () => clearInterval(timerId);
-    }
-  }, [timeLeft]);
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(timerId);
+  }, []);
+
 
   return (
     <> 
@@ -54,6 +59,10 @@ function App() {
         <Route path="/waiting-room" element={<WaitingListPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/admin-login" element={<LoginAdminPage />} />
+        <Route path="/admin/verify" element={<VerifyAdminCodePage />} />
+        <Route path="/admin/create-account" element={<CreateAdminAccountPage />} />
+        <Route path="/admin-forgot-password" element={<AdminForgotPasswordPage />} />
+        <Route path="/admin-reset-password" element={<AdminResetPasswordPage />}/>
 
         {/* --- ✅✅ กลุ่มหน้าที่ "ใช้" DashboardLayout ร่วมกัน (Sidebar/Header จะนิ่ง) --- */}
         {/* ส่ง timeLeft ให้ Layout จัดการแสดงผลที่ Header ครั้งเดียวจบ */}

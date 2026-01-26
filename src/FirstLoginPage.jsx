@@ -38,7 +38,7 @@ const FirstLoginPage = () => {
           {/* ลิงก์ Admin เล็กๆ ด้านล่างขวา */}
           <button 
             className="link-login-admin"
-            onClick={() => console.log('Go to Admin Login')}
+            onClick={() => navigate('/admin-login')}
           >
             Login as a admin
           </button>
