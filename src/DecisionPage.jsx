@@ -1,3 +1,4 @@
+// DecisionPage.jsx
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import "./DecisionPage.css";
@@ -18,7 +19,12 @@ const PERCENT_OPTIONS = [0, 5, 10, 15, 20, 25, 30, 35, 40, 50];
 
 const DEFAULT_BUDGETS = [
   { id: 1, name: "งบการลงทุนด้านการตลาด", value: 2_000_000, color: "#00C49F" },
-  { id: 2, name: "งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน", value: 2_500_000, color: "#FFBB28" },
+  {
+    id: 2,
+    name: "งบการลงทุนด้านการพัฒนาและฝึกอบรมพนักงาน",
+    value: 2_500_000,
+    color: "#FFBB28",
+  },
   { id: 3, name: "งบซ่อมแซมและบำรุงรักษาสถานที่", value: 1_000_000, color: "#4287f5" },
   { id: 4, name: "งบการลงทุนด้านอื่นๆ", value: 1_500_000, color: "#A020F0" },
   { id: 5, name: "งบสำรองจ่าย", value: 1_000_000, color: "#f22c09" },
@@ -51,15 +57,20 @@ export default function DecisionPage() {
     return DEFAULT_BUDGETS;
   });
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ budgets, isSaved }));
-  }, [budgets, isSaved]);
-
-  // ===== Derived values =====
+  // ✅ Derived values (ต้องมาก่อน useEffect ที่ใช้งาน usedBudget)
   const usedBudget = useMemo(
     () => budgets.reduce((acc, b) => acc + (Number(b.value) || 0), 0),
     [budgets]
   );
+
+  // ✅ Save ลง storage พร้อม ceoCashRemaining (แก้ error usedBudget before init)
+  useEffect(() => {
+    const ceoCashRemaining = Math.max(0, TOTAL_BUDGET - usedBudget);
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ budgets, isSaved, ceoCash: TOTAL_BUDGET, ceoCashRemaining })
+    );
+  }, [budgets, isSaved, usedBudget]);
 
   // ===== Helpers =====
   const getBudget = useCallback(
@@ -69,7 +80,7 @@ export default function DecisionPage() {
 
   /**
    * สร้าง state กลางที่ทุกหน้าควรได้รับเหมือนกัน
-   * - ceoCash: (ตอนนี้ยังใช้ TOTAL_BUDGET) ถ้าวันหลังอยากให้เป็นเงินสดคงเหลือจริง ๆ ค่อยเปลี่ยนจุดนี้จุดเดียว
+   * - ceoCashRemaining: เงินสดคงเหลือจริงจากหน้า allocation
    */
   const buildCommonState = useCallback(() => {
     const marketingBudget = getBudget(1);
@@ -78,8 +89,11 @@ export default function DecisionPage() {
     const otherBudget = getBudget(4);
     const reserveBudget = getBudget(5);
 
+    const ceoCashRemaining = Math.max(0, TOTAL_BUDGET - usedBudget);
+
     return {
       ceoCash: TOTAL_BUDGET,
+      ceoCashRemaining,
       ceoMarketSharePrev: 12,
       ceoSatisfaction: 3.5,
       ceoAssetHealth: 95,
@@ -91,7 +105,7 @@ export default function DecisionPage() {
       ceoOtherBudget: otherBudget,
       ceoReserveBudget: reserveBudget,
     };
-  }, [getBudget]);
+  }, [getBudget, usedBudget]);
 
   /**
    * go(path): ไปหน้าไหนก็ส่ง commonState ชุดเดียวกัน
@@ -191,7 +205,6 @@ export default function DecisionPage() {
 
       {/* =========================
           2) TABS (ใช้ NavLink ทั้งหมด)
-          - active ไม่ต้องใช้ state แล้ว
          ========================= */}
       <div className="decision-tabs">
         <NavLink to="/decision" className={tabClass}>
@@ -214,7 +227,18 @@ export default function DecisionPage() {
           <Wrench size={15} /> <span>การลงทุนด้านการบำรุงรักษา</span>
         </button>
 
-        <button className="tab-btn" onClick={() => go("/other")}>
+        <button
+          className="tab-btn"
+          onClick={() => {
+            const common = buildCommonState();
+            navigate("/other", {
+              state: {
+                ...common,
+                ceoOther2Budget: common.ceoCashRemaining, // ✅ ใช้เงินสดคงเหลือจริง
+              },
+            });
+          }}
+        >
           <Banknote size={15} /> <span>การลงทุนด้านอื่นๆ</span>
         </button>
       </div>
@@ -288,7 +312,11 @@ export default function DecisionPage() {
                               className={isActive ? "active" : ""}
                               style={
                                 isActive
-                                  ? { backgroundColor: item.color, borderColor: item.color, color: "#fff" }
+                                  ? {
+                                      backgroundColor: item.color,
+                                      borderColor: item.color,
+                                      color: "#fff",
+                                    }
                                   : {}
                               }
                             >
