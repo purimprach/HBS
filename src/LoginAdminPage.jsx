@@ -10,7 +10,7 @@ export default function LoginAdminPage() {
   const handleLogin = (e) => {
     e.preventDefault();
     // TODO: เช็ค auth จริงภายหลัง
-    navigate("/admin/dashboard"); // เปลี่ยนให้ตรง route ที่คุณมี
+    navigate("/admin/game-settings");
   };
 
   return (
