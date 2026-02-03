@@ -1,7 +1,6 @@
-// src/DashboardLayout.jsx
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import './EventPage.css'; // ใช้ CSS เดิม
+import './EventPage.css'; // ตรวจสอบว่าไฟล์ CSS ชื่อนี้จริงไหม
 import {
   Building2, LayoutDashboard, FileText, Target, TrendingUp,
   FileBarChart, Users, BookOpen, Settings, LogOut, Clock, User
@@ -23,7 +22,7 @@ function DashboardLayout({ timeLeft }) {
       return 'normal';                       
   };
 
-  // ✅✅✅ รองรับหลายหน้า + รองรับ sub-route ✅✅✅
+  // ✅✅✅ Logic เดิมของคุณ เก็บไว้ครบถ้วน ✅✅✅
   const isActive = (path) => {
     const matchOne = (p) =>
       location.pathname === p || location.pathname.startsWith(p + "/");
@@ -34,11 +33,10 @@ function DashboardLayout({ timeLeft }) {
     return matchOne(path) ? "active" : "";
   };
 
-
   return (
     <div className="dashboard-layout">
       
-      {/* --- Sidebar (ส่วนกลาง) --- */}
+      {/* --- Sidebar (ส่วนซ้าย) --- */}
       <aside className="sidebar">
         <div className="sidebar-header">
           <Building2 size={24} className="logo-icon" />
@@ -55,8 +53,8 @@ function DashboardLayout({ timeLeft }) {
               <FileText size={20} /> <span>บทวิเคราะห์</span>
             </Link>
 
-            {/* ✅✅✅ แก้ไขบรรทัดนี้: ให้ Active ทั้งหน้า decision และ pricing ✅✅✅ */}
-            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing','/personnel','/maintenance', '/other'])}`}> {/*ทำแถบการตัดสินใจให้เป็นสีเขียวอ่อน*/} 
+            {/* กลุ่มเมนูตัดสินใจ */}
+            <Link to="/decision" className={`menu-item ${isActive(['/decision', '/pricing', '/marketing','/personnel','/maintenance', '/other'])}`}> 
                 <Target size={20} /> <span>การตัดสินใจ</span>
             </Link>
 
@@ -87,10 +85,10 @@ function DashboardLayout({ timeLeft }) {
         </nav>
       </aside>
 
-      {/* --- Main Content Wrapper --- */}
+      {/* --- Main Content Wrapper (ส่วนขวา) --- */}
       <main className="main-content-area bg-gray-soft">
         
-        {/* --- Header (ส่วนกลาง) --- */}
+        {/* --- Header (แถบบน) --- */}
         <header className="dashboard-topbar">
           <div className="topbar-left">
             <span style={{ fontWeight: '500', color: '#333' }}>รอบ : <span style={{ color: '#2E7D32', fontWeight: 'bold' }}>1 / 12</span></span>
@@ -119,8 +117,10 @@ function DashboardLayout({ timeLeft }) {
           </div>
         </header>
 
-        {/* ✅✅ Outlet คือจุดที่จะเปลี่ยนเนื้อหาตาม Route ✅✅ */}
-        <Outlet />
+        {/* ✅✅✅ เพิ่ม Div นี้มาครอบ Outlet เพื่อทำ Scroll แยกส่วน ✅✅✅ */}
+        <div className="page-content-scroll">
+            <Outlet />
+        </div>
 
       </main>
     </div>

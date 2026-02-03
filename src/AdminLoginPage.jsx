@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import "./LoginAdminPage.css";
+import "./AdminLoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Lock } from "lucide-react";
 
-export default function LoginAdminPage() {
+export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -42,7 +42,11 @@ export default function LoginAdminPage() {
           <form className="admin-form" onSubmit={handleLogin}>
             <div className="admin-field">
               <label>Email Address</label>
-              <input type="email" placeholder="Enter your email" required />
+              <input
+                type="email"
+                placeholder="Enter your email"
+                required
+              />
             </div>
 
             <div className="admin-field">
@@ -68,7 +72,7 @@ export default function LoginAdminPage() {
               <button
                 type="button"
                 className="admin-link"
-                onClick={() => navigate("/admin-forgot-password")}
+                onClick={() => navigate("/admin/forgot-password")}
               >
                 Forgot Password?
               </button>

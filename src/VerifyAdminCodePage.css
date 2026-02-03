@@ -7,19 +7,32 @@
   background: #fff;
 }
 
-/* LEFT */
+/* LEFT IMAGE */
 .verify-left{
-  background-image: url("https://images.unsplash.com/photo-1497215728101-856f4ea42174?q=80&w=2070&auto=format&fit=crop");
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,0.05),
+      rgba(0,0,0,0.10)
+    ),
+    url("/AdminPic/AdminPic.jpg");
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   position: relative;
+  overflow: hidden;
 }
+
 .verify-left::after{
   content:"";
   position:absolute;
   inset:0;
-  background: rgba(0,0,0,0.15);
+  background: radial-gradient(
+    1200px 600px at 30% 30%,
+    rgba(0,0,0,0.08),
+    rgba(0,0,0,0.18)
+  );
 }
+
 
 /* RIGHT */
 .verify-right{
@@ -107,24 +120,32 @@
 }
 .verify-submit:hover{ background: #1b5e20; }
 
+/* แถว "No code? Contact System" */
 .verify-footer{
-  margin-top: 6px;
+  margin-top: 10px;
   display: flex;
+  align-items: center;       /* ✅ ทำให้บรรทัดตรงกัน */
   justify-content: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: 8px;
+  font-size: 13px;
   color: #6b7280;
+  line-height: 1;            /* ✅ ปรับ baseline ให้ชัด */
 }
 
+/* ลิงก์/ปุ่ม Contact */
 .verify-link{
+  display: inline-flex;      /* ✅ ให้ align กลางเหมือนกัน */
+  align-items: center;
+  line-height: 1;            /* ✅ กันตัวหนังสือตกบรรทัด */
   background: none;
   border: none;
   color: #2e7d32;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  padding: 0;
+  padding: 0;                /* ✅ เอา padding ที่ทำให้ยก/ตกออก */
 }
 .verify-link:hover{ text-decoration: underline; }
+
 
 /* ================= POPUP overlay ================= */
 .verify-modal-overlay{

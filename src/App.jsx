@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
 
 /* Utils */
 import ScrollToTop from "./ScrollToTop";
 
 /* ===== Layouts ===== */
-import DashboardLayout from "./DashboardLayout";          // Player layout
-import AdminDashboardLayout from "./AdminDashboardLayout"; // Admin layout
+import DashboardLayout from "./DashboardLayout";
+import AdminDashboardLayout from "./AdminDashboardLayout";
 
 /* ===== Public / Auth Pages ===== */
 import FirstLoginPage from "./FirstLoginPage";
@@ -17,13 +17,13 @@ import CreateAccountPage from "./CreateAccountPage";
 import ForgotPassword from "./ForgotPassword";
 
 /* Admin Auth */
-import LoginAdminPage from "./LoginAdminPage";
+import AdminLoginPage from "./AdminLoginPage";
 import VerifyAdminCodePage from "./VerifyAdminCodePage";
 import CreateAdminAccountPage from "./CreateAdminAccountPage";
 import AdminForgotPasswordPage from "./AdminForgotPasswordPage";
 import AdminResetPasswordPage from "./AdminResetPasswordPage";
 
-/* ===== Player Pages (ใช้ DashboardLayout) ===== */
+/* ===== Player Pages ===== */
 import HomePage from "./HomePage";
 import EventPage from "./EventPage";
 import SettingPageGame from "./SettingPageGame";
@@ -37,12 +37,34 @@ import AccountPage from "./AccountPage";
 import WaitingListPage from "./WaitingListPage";
 import SettingsPage from "./SettingsPage";
 
-/* ===== Admin Pages (ใช้ AdminDashboardLayout) ===== */
+/* ===== Admin Pages ===== */
 import AdminGameSettingsPage from "./AdminGameSettingsPage";
+import AdminLobbyPage from "./AdminLobbyPage";
+import AdminActiveGamesPage from "./AdminActiveGamesPage";
+
+// ✅ 1. สร้าง Component สำหรับ Redirect ไปยังเกมล่าสุด
+const AdminLiveRedirect = () => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    // ดึงข้อมูลเกมทั้งหมดจาก LocalStorage
+    const savedGames = JSON.parse(localStorage.getItem("hbs_games") || "[]");
+    
+    if (savedGames.length > 0) {
+      // ถ้ามีเกม ให้ไปที่ห้องล่าสุด
+      const lastGame = savedGames[savedGames.length - 1];
+      navigate(`/admin/lobby/${lastGame.code}`, { replace: true });
+    } else {
+      // ถ้าไม่มีเกมเลย ให้เด้งไปหน้าสร้างเกม
+      navigate("/admin/game-settings", { replace: true });
+    }
+  }, [navigate]);
+
+  return <div style={{padding: 20}}>กำลังค้นหาเกมที่ใช้งานอยู่...</div>;
+};
 
 function App() {
   /* ===== Timer (สำหรับ Player เท่านั้น) ===== */
-  const [timeLeft, setTimeLeft] = useState(900); // 15 นาที
+  const [timeLeft, setTimeLeft] = useState(900);
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -66,11 +88,14 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ----- Admin Auth ----- */}
-        <Route path="/admin-login" element={<LoginAdminPage />} />
+        <Route path="/admin-login" element={<AdminLoginPage />} />
         <Route path="/admin/verify" element={<VerifyAdminCodePage />} />
         <Route path="/admin/create-account" element={<CreateAdminAccountPage />} />
         <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
+
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/waiting-room" element={<WaitingListPage />} />
 
         {/* ================= PLAYER AREA ================= */}
         <Route element={<DashboardLayout timeLeft={timeLeft} />}>
@@ -83,16 +108,14 @@ function App() {
           <Route path="/personnel" element={<PersonnelPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/other" element={<OtherInvestmentsPage />} />
-
-          {/* Player misc */}
-          <Route path="/account" element={<AccountPage />} />
-          <Route path="/waiting-room" element={<WaitingListPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* ================= ADMIN AREA ================= */}
         <Route element={<AdminDashboardLayout />}>
           <Route path="/admin/game-settings" element={<AdminGameSettingsPage />} />
+          <Route path="/admin/lobby/:gameCode" element={<AdminLobbyPage />} />
+          <Route path="/admin/active-games" element={<AdminActiveGamesPage />} />
 
           {/* placeholder admin pages */}
           <Route path="/admin/players" element={<div>Admin Players / Teams (TODO)</div>} />

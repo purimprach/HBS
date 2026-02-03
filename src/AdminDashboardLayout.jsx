@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import "./AdminDashboardLayout.css";
 import {
   PlusCircle,
@@ -14,6 +14,12 @@ import {
 
 export default function AdminDashboardLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ ให้เมนู "โฮสต์/เกมที่ใช้งานอยู่" ติด active ทั้งหน้า list และหน้าห้อง lobby
+  const isHostActive =
+    location.pathname.startsWith("/admin/active-games") ||
+    location.pathname.startsWith("/admin/lobby");
 
   return (
     <div className="adl-shell">
@@ -26,7 +32,6 @@ export default function AdminDashboardLayout() {
             </div>
             <div className="adl-app-text">
               <div className="adl-app-title">จำลองธุรกิจโรงแรม</div>
-              <div className="adl-app-sub">Admin / Host</div>
             </div>
           </div>
         </div>
@@ -37,9 +42,13 @@ export default function AdminDashboardLayout() {
             <span>สร้างการตั้งค่าเกม</span>
           </NavLink>
 
-          <NavLink to="/admin/live" className="adl-item">
+          {/* ✅ ใช้ NavLink ปกติ แต่บังคับ active เองให้ครอบ lobby ด้วย */}
+          <NavLink
+            to="/admin/active-games"
+            className={`adl-item ${isHostActive ? "active" : ""}`}
+          >
             <MonitorPlay size={18} />
-            <span>ไลฟ์ / เกมที่ใช้งานอยู่</span>
+            <span>เกมที่กำลังดำเนินอยู่</span>
           </NavLink>
 
           <NavLink to="/admin/overview" className="adl-item">
@@ -58,6 +67,8 @@ export default function AdminDashboardLayout() {
             <Settings size={18} />
             <span>การตั้งค่า</span>
           </NavLink>
+
+          {/* (Optional) ถ้าต้องการให้ Log out อยู่ล่างสุดใน sidebar ให้ย้ายปุ่มไปไว้ตรงนี้ */}
         </nav>
       </aside>
 

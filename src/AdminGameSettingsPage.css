@@ -1,761 +1,1007 @@
 /* =========================
    AdminGameSettingsPage.css
-   (Based on your code + Updated Step 2 Design)
+   (PRO CLEAN FULL FILE)
    ========================= */
 
-/* ===== Page ===== */
-.ags-page {
-  max-width: 1110px;
-  width: 100%;
-  margin: 0 auto; /* จัดกลาง */
+/* =========================
+   THEME TOKENS
+   ========================= */
+:root{
+  --green-900:#1B5E20;
+  --green-800:#256F2A;
+  --green-700:#2E7D32;
+  --green-200:rgba(46,125,50,0.12);
+
+  --bg:#ffffff;
+  --text:#111827;
+  --muted:#6B7280;
+
+  --border:#E5E7EB;
+  --border-2:#D9DEE6;
+
+  /* Lock palette */
+  --lock-border:#D1D5DB;
+  --lock-bg:#F3F4F6;
+  --lock-bg-2:#F9FAFB;
+  --lock-text:#6B7280;
+  --lock-text-strong:#374151;
+  --lock-icon:#9CA3AF;
 }
 
-/* ===== Title row (แท่งเขียว + ตัวหนังสือ) ===== */
-.ags-stepTitleRow {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin: 14px 0 12px;
-}
-.ags-stepBar {
-  width: 6px;
-  height: 38px;
-  border-radius: 6px;
-  background: #2E7D32;
-}
-.ags-titleText {
-  font-weight: 900;
-  color: #111827;
-  font-size: 18px;
-  line-height: 1.25;
-  display: flex;
-  align-items: center;
-  height: 38px; /* จัดให้ตรงกับแท่งเขียว */
+/* =========================
+   BASE / PAGE
+   ========================= */
+.ags-page{
+  max-width:1200px;
+  width:100%;
+  margin:0 auto;
+  padding:0;
+  box-sizing:border-box;
 }
 
-/* spacer ระหว่าง step */
-.ags-stepTitleRow--spacer {
-  margin-top: 40px; /* เพิ่มระยะห่างหน่อยให้ดูไม่อึดอัด */
+/* =========================
+   STEP TITLE ROW
+   ========================= */
+.ags-stepTitleRow{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  margin:0 0 8px;
+}
+.ags-stepTitleRow--spacer{ margin-top:20px; }
+
+.ags-stepBar{
+  width:6px;
+  height:38px;
+  border-radius:6px;
+  background:var(--green-700);
 }
 
-/* ===== Card (Common) ===== */
-.ags-card {
-  background: #fff;
-  border: 1px solid #E5E7EB;
-  border-radius: 10px;
-  padding: 18px;
+.ags-titleText{
+  font-weight:900;
+  color:var(--text);
+  font-size:18px;
+  line-height:1.25;
+  display:flex;
+  align-items:center;
+  height:38px;
 }
 
-/* ===== Inputs ===== */
-.ags-field label {
-  display: block;
-  font-size: 12px;
-  font-weight: 900;
-  color: #111827;
-  margin-bottom: 6px;
+/* =========================
+   CARD (COMMON)
+   ========================= */
+.ags-card{
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:18px;
+}
+
+/* Active / Locked card visuals */
+.ags-card.is-active{
+  border-color:rgba(46,125,50,0.30);
+  box-shadow:0 10px 24px rgba(17,24,39,0.06);
+}
+.ags-card.is-locked{
+  border-color:var(--lock-border) !important;
+  background:var(--lock-bg-2) !important;
+  box-shadow:none !important;
+}
+
+/* =========================
+   INPUTS (COMMON)
+   ========================= */
+.ags-field label{
+  display:block;
+  font-size:12px;
+  font-weight:900;
+  color:var(--text);
+  margin-bottom:6px;
 }
 
 .ags-field input,
-.ags-field select {
-  width: 100%;
-  height: 34px;
-  border-radius: 8px;
-  border: 1px solid #D9DEE6;
-  padding: 0 10px;
-  outline: none;
-  font-size: 12px;
-  background: #fff;
-  color: #111827;
-  box-sizing: border-box;
+.ags-field select{
+  width:100%;
+  height:34px;
+  border-radius:8px;
+  border:1px solid var(--border-2);
+  padding:0 10px;
+  outline:none;
+  font-size:12px;
+  background:#fff;
+  color:var(--text);
+  box-sizing:border-box;
 }
 
-.ags-field input::placeholder { color: #9CA3AF; }
+.ags-field input::placeholder{ color:#9CA3AF; }
 
 .ags-field input:focus,
-.ags-field select:focus {
-  border-color: rgba(46, 125, 50, 0.55);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.10);
+.ags-field select:focus{
+  border-color:rgba(46,125,50,0.55);
+  box-shadow:0 0 0 3px rgba(46,125,50,0.10);
 }
 
-.input-full {
-    width: 100%;
-}
-
-/* =====================
-   STEP 1 (คงเดิมตามที่คุณส่งมา)
-   ===================== */
-
-.asg-gridTop {
-  display: grid;
-  grid-template-columns: 2.2fr 1fr 1fr 1.6fr;
-  gap: 14px;
-  align-items: end;
-}
-
-.asg-midRow {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 18px;
-  align-items: start;
-}
-
-.asg-subtitle {
-  font-size: 12px;
-  font-weight: 900;
-  color: #111827;
-  margin: 0 0 10px;
-}
-
-.asg-modeRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  width: 100%;
-}
-
-.asg-modeCard {
-  width: 100%;
-  min-width: 0;
-  height: 62px;
-  border-radius: 10px;
-  border: 1px solid #E5E7EB;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  font-weight: 900;
-  font-size: 12px;
-  color: #111827;
-  cursor: pointer;
-  transition: .15s ease;
-  box-sizing: border-box;
-}
-
-.asg-modeCard svg { opacity: .75; }
-
-.asg-modeCard:hover {
-  border-color: rgba(46, 125, 50, 0.30);
-  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.06);
-}
-
-.asg-modeCard.active {
-  background: #2E7D32;
-  color: #fff;
-  border-color: rgba(46, 125, 50, 0.55);
-  box-shadow: 0 14px 30px rgba(46, 125, 50, 0.18);
-}
-.asg-modeCard.active svg { color: #fff; opacity: 1; }
-
-.asg-modeExtras {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  align-items: start;
-  min-height: 70px;
-}
-
-.asg-modeExtras.is-hidden { visibility: hidden; pointer-events: none; }
-.asg-teamSize.is-hidden, .asg-otherRange.is-hidden { visibility: hidden; pointer-events: none; }
-
-.asg-under-col2, .asg-under-col3 { display: flex; justify-content: center; }
-
-.asg-teamSize { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.asg-teamSize label { font-size: 11px; font-weight: 900; color: #111827; }
-.asg-teamSize select { height: 28px; width: 76px; border-radius: 10px; border: 1px solid #D9DEE6; padding: 0 10px; text-align: center; font-size: 12px; }
-
-.asg-otherRange { display: flex; gap: 12px; justify-content: center; }
-.asg-miniSelect { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.asg-miniSelect label { font-size: 11px; font-weight: 900; color: #111827; }
-.asg-miniSelect select { height: 28px; width: 76px; border-radius: 10px; border: 1px solid #D9DEE6; padding: 0 10px; text-align: center; font-size: 12px; }
-
-.asg-rightBlock { display: flex; gap: 14px; justify-content: flex-end; padding-top: 20px; }
-.asg-miniField { width: 140px; }
-.asg-miniField label { display: block; font-size: 12px; font-weight: 900; color: #111827; margin-bottom: 6px; }
-.asg-miniField input { width: 100%; height: 34px; border-radius: 8px; border: 1px solid #D9DEE6; padding: 0 10px; outline: none; font-size: 12px; }
-
-/* =====================
-   STEP 2 (MODIFIED for Image Match)
-   ===================== */
-
-.step2-container {
-    margin-top: 10px;
-    position: relative;
-}
-
-/* --- 1. Folder Tabs (แทนที่ Pill Tabs เดิม) --- */
-.step2-tabs-wrapper {
-    display: flex;
-    gap: 4px;
-    padding-left: 0px;
-    margin-bottom: -1px; /* ดึงลงมาทับเส้นขอบ Card */
-    z-index: 10;
-    position: relative;
-}
-
-.step2-tab {
-    padding: 8px 24px;
-    background-color: #bce8cf; /* สีเทาอ่อน */
-    border: 1px solid #E5E7EB;
-    border-bottom: none;
-    border-radius: 10px 10px 0 0; /* มนเฉพาะด้านบน */
-    color: #6B7280;
-    font-weight: 700; /* ใช้ font weight เดิมของคุณ */
-    font-size: 15px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    transition: all 0.2s;
-}
-
-.step2-tab:hover {
-    background-color: #E5E7EB;
-}
-
-.step2-tab.active {
-    background-color: #2E7D32; /* สีเขียวตาม Theme */
-    color: #fff;
-    border-color: #2E7D32;
-    padding-top: 14px; /* ยกสูงขึ้นนิดนึงตอน Active */
-    margin-top: -4px;
-}
-
-/* --- 2. Step 2 Content Card --- */
-.step2-card-content {
-    background: #fff;
-    border: 1px solid #E5E7EB;
-    border-radius: 10px;
-    border-top-left-radius: 0; /* มุมซ้ายบนตัดตรง รับกับ Tab */
-    padding: 24px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    position: relative;
-    z-index: 1;
-}
-
-/* Header inside Card */
-.step2-header {
-    margin-bottom: 24px;
-    border-bottom: 1px solid #F3F4F6;
-    padding-bottom: 16px;
-}
-.step2-header h3 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    font-weight: 900;
-    color: #111827;
-}
-.step2-header p {
-    margin: 0;
-    font-size: 12px;
-    color: #6B7280;
-    font-weight: 500;
-}
-
-/* Layout Grids */
-.ags-row-full { margin-bottom: 20px; }
-.ags-row-4col {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 30px;
-}
-
-.step2-divider {
-    height: 1px;
-    background: #E5E7EB;
-    margin: 24px 0;
-}
-
-.step2-sub-title {
-    font-size: 14px;
-    font-weight: 900;
-    color: #111827;
-    margin-bottom: 16px;
-}
-
-/* --- 3. Quarter Cards (Update ให้มีขอบเขียวและ Layout 2 บรรทัด) --- */
-.step2-q-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-
-.step2-q-card {
-    border: 1px solid #4CAF50; /* ✅ ขอบสีเขียวตามรูปภาพ */
-    border-radius: 10px;
-    background: #fff;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-}
-
-.q-card-header {
-    padding: 12px 16px 0;
-    font-weight: 900;
-    font-size: 13px;
-    color: #111827;
-}
-
-.q-card-body {
-    padding: 12px 16px 20px;
-}
-
-/* Layout ภายใน Quarter Card: แถวแรก 2 ช่อง, แถวสอง 1 ช่อง */
-.q-card-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 12px;
-}
-
-/* Footer & Buttons */
-.step2-footer {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 30px;
-    border-top: 1px solid #F3F4F6;
-    padding-top: 20px;
-}
-
-.btn-save {
-    height: 38px;
-    padding: 0 20px;
-    border-radius: 8px;
-    border: none;
-    background: #2E7D32;
-    color: #fff;
-    font-weight: 900;
-    font-size: 13px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    transition: background 0.2s;
-}
-
-.btn-save:hover {
-    background: #1B5E20;
-}
+.input-full{ width:100%; }
 
 /* Dropdown Colors */
-optgroup[label^="--- ปัจจัยลบ"] { color: #D32F2F; font-weight: 900; }
-optgroup[label^="--- ปัจจัยบวก"] { color: #388E3C; font-weight: 900; }
+optgroup[label^="--- ปัจจัยลบ"]{ color:#D32F2F; font-weight:900; }
+optgroup[label^="--- ปัจจัยบวก"]{ color:#388E3C; font-weight:900; }
 
-/* =====================
-   Responsive
-   ===================== */
-@media (max-width: 980px){
-  .asg-gridTop{ grid-template-columns: 1fr; }
-  .asg-midRow{ grid-template-columns: 1fr; }
-  .asg-rightBlock{ justify-content:flex-start; padding-top: 0; }
-  
-  /* Step 2 Responsive */
-  .ags-row-4col { grid-template-columns: 1fr 1fr; }
-  .step2-q-grid { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 600px) {
-  .asg-modeRow { grid-template-columns: 1fr; }
-  .asg-modeExtras { grid-template-columns: 1fr; gap: 20px; }
-  .ags-row-4col { grid-template-columns: 1fr; }
-  .q-card-row { grid-template-columns: 1fr; }
-}
-/* =====================
-   STEP 3 STYLES
-   ===================== */
-
-/* Total Weight Bar */
-.step3-total-bar {
-  background: #F3F4F6;
-  border-radius: 12px;
-  height: 50px;
+/* ทำให้ field ไม่กินเต็มแถว */
+.step2-container .ags-row-full {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  margin-bottom: 24px;
-  border: 1px solid #E5E7EB;
-  position: relative;
-  overflow: hidden; /* เพื่อให้ bar-fill ไม่ล้น */
-  color: #1B5E20;
 }
 
-.step3-total-bar.is-invalid {
-  border-color: #EF4444; /* สีแดงถ้ายังไม่ครบ 100 */
-  color: #B91C1C;
+.step2-container .ags-row-full .ags-field {
+  width: auto;            /* 👈 ปลดล็อก */
 }
 
-.bar-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: rgba(46, 125, 50, 0.1); /* สีเขียวจางๆ เป็นพื้นหลัง progress */
-  z-index: 0;
-  transition: width 0.3s ease;
+/* แล้วคุมความกว้าง select ได้จริง */
+.step2-container .ags-row-full .ags-field select {
+  width: 570px;           /* 👈 จะ 800, 900 ก็ได้ */
+  max-width: 100%;
 }
 
-.step3-total-bar.is-invalid .bar-fill {
-  background: rgba(239, 68, 68, 0.1); /* สีแดงจางๆ */
+
+/* =========================
+   STEP 1
+   ========================= */
+.asg-gridTop{
+  display:grid;
+  grid-template-columns:2.2fr 1fr 1fr 1.6fr;
+  gap:14px;
+  align-items:end;
 }
 
-.bar-label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  z-index: 1;
+.asg-midRow{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:1fr 300px;
+  gap:18px;
+  align-items:start;
 }
 
-.bar-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-.bar-text strong { font-size: 13px; font-weight: 900; }
-.bar-text span { font-size: 11px; opacity: 0.8; }
-
-.bar-value {
-  font-size: 18px;
-  font-weight: 900;
-  z-index: 1;
+.asg-subtitle{
+  font-size:12px;
+  font-weight:900;
+  color:var(--text);
+  margin:0 0 10px;
 }
 
-/* Grid for Scoring Cards */
-.step3-grid {
+.asg-modeRow{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+  width:100%;
+}
+
+.asg-modeCard{
+  width:100%;
+  min-width:0;
+  height:62px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-weight:900;
+  font-size:12px;
+  color:var(--text);
+  cursor:pointer;
+  transition:.15s ease;
+  box-sizing:border-box;
+}
+
+.asg-modeCard svg{ opacity:.75; }
+
+.asg-modeCard:hover{
+  border-color:rgba(46,125,50,0.30);
+  box-shadow:0 10px 24px rgba(17,24,39,0.06);
+}
+
+.asg-modeCard.active{
+  background:var(--green-700);
+  color:#fff;
+  border-color:rgba(46,125,50,0.55);
+  box-shadow:0 14px 30px rgba(46,125,50,0.18);
+}
+.asg-modeCard.active svg{ color:#fff; opacity:1; }
+
+.asg-modeExtras{
+  margin-top:10px;
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:12px;
+  align-items:start;
+  min-height:70px;
+}
+
+.asg-modeExtras.is-hidden{ visibility:hidden; pointer-events:none; }
+.asg-teamSize.is-hidden,
+.asg-otherRange.is-hidden{ visibility:hidden; pointer-events:none; }
+
+.asg-under-col2,
+.asg-under-col3{
+  display:flex;
+  justify-content:center;
+}
+
+.asg-teamSize{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.asg-teamSize label{ font-size:11px; font-weight:900; color:var(--text); }
+
+.asg-teamSize select{
+  height:28px;
+  width:76px;
+  border-radius:10px;
+  border:1px solid var(--border-2);
+  padding:0 10px;
+  text-align:center;
+  font-size:12px;
+}
+
+.asg-otherRange{
+  display:flex;
+  gap:12px;
+  justify-content:center;
+}
+
+.asg-miniSelect{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.asg-miniSelect label{ font-size:11px; font-weight:900; color:var(--text); }
+
+.asg-miniSelect select{
+  height:28px;
+  width:76px;
+  border-radius:10px;
+  border:1px solid var(--border-2);
+  padding:0 10px;
+  text-align:center;
+  font-size:12px;
+}
+
+.asg-rightBlock{
+  display:flex;
+  gap:14px;
+  justify-content:flex-end;
+  padding-top:20px;
+}
+
+.asg-miniField{ width:140px; }
+
+.asg-miniField label{
+  display:block;
+  font-size:12px;
+  font-weight:900;
+  color:var(--text);
+  margin-bottom:6px;
+}
+
+.asg-miniField input{
+  width:100%;
+  height:34px;
+  border-radius:8px;
+  border:1px solid var(--border-2);
+  padding:0 10px;
+  outline:none;
+  font-size:12px;
+}
+
+/* =========================
+   STEP 2
+   ========================= */
+.step2-container{
+  margin-top:10px;
+  position:relative;
+}
+
+/* Folder Tabs */
+.step2-tabs-wrapper{
+  display:flex;
+  gap:4px;
+  padding-left:0;
+  margin-bottom:-1px;
+  z-index:10;
+  position:relative;
+}
+
+.step2-tab{
+  padding:8px 22px;
+  background:#EAF7EF;
+  border:1px solid var(--border);
+  border-bottom:none;
+  border-radius:10px 10px 0 0;
+  color:#374151;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  display:flex;
+  min-width:125px;
+  align-items:center;
+  transition:all .18s ease;
+}
+
+.step2-tab:hover{
+  background:#DFF1E7;
+}
+
+.step2-tab.active{
+  background:var(--green-700);
+  color:#fff;
+  border-color:var(--green-700);
+  padding-top:14px;
+  margin-top:-4px;
+}
+
+/* Step 2 Content Card */
+.step2-card-content{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  border-top-left-radius:0;
+  padding:24px;
+  box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);
+  position:relative;
+  z-index:1;
+}
+
+/* Header */
+.step2-header{
+  margin-bottom:24px;
+  border-bottom:1px solid #F3F4F6;
+  padding-bottom:16px;
+}
+
+.step2-header h3{
+  margin:0 0 8px 0;
+  font-size:16px;
+  font-weight:900;
+  color:var(--text);
+}
+
+.step2-header p{
+  margin:0;
+  font-size:12px;
+  color:var(--muted);
+  font-weight:500;
+}
+
+/* Layout */
+.ags-row-full{ margin-bottom:20px; }
+
+.ags-row-4col{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 230px); /* ✅ คุมความสั้นของแต่ละช่อง */
   gap: 16px;
+  margin-bottom: 30px;
+  justify-content: start; /* ไม่ยืดเต็มแถว */
 }
 
-@media (max-width: 800px) {
-  .step3-grid { grid-template-columns: 1fr; }
+.step2-divider{
+  height:1px;
+  background:var(--border);
+  margin:24px 0;
 }
 
-/* Scoring Card */
-.step3-card {
-  border: 1px solid #4CAF50; /* ขอบเขียวตามภาพ */
-  border-radius: 12px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: #fff;
-  transition: all 0.2s;
+.step2-sub-title{
+  font-size:14px;
+  font-weight:900;
+  color:var(--text);
+  margin-bottom:16px;
 }
 
-.step3-card:hover {
-  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.08);
-}
-
-.step3-card-icon {
-  width: 42px;
-  height: 42px;
-  background: #1B5E20; /* พื้นหลังไอคอนเขียวเข้ม */
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  flex-shrink: 0;
-}
-
-.step3-card-content {
-  flex: 1;
-}
-
-.card-title {
-  font-weight: 900;
-  font-size: 13px;
-  color: #111827;
-  margin-bottom: 4px;
-}
-.card-desc {
-  font-size: 11px;
-  color: #6B7280;
-  line-height: 1.3;
-}
-
-.step3-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: #F9FAFB;
-  padding: 4px;
-  border-radius: 8px;
-  border: 1px solid #E5E7EB;
-}
-
-.btn-adj {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: #fff;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 900;
-  color: #374151;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+/* Quarter Cards */
+.step2-q-grid{
   display: grid;
-  place-items: center;
-}
-.btn-adj:hover { background: #F3F4F6; }
-.btn-adj:active { transform: translateY(1px); }
-
-.score-val {
-  width: 24px;
-  text-align: center;
-  font-weight: 900;
-  font-size: 14px;
-  color: #111827;
-}
-.unit {
-  font-size: 12px;
-  font-weight: 900;
-  color: #9CA3AF;
-  margin-right: 4px;
+  grid-template-columns: repeat(2, 470px); /* ✅ แถวละ 2 คอลัมน์ */
+  gap: 30px;
+  justify-content: left; /* ชิดซ้าย ไม่ยืด */
 }
 
-/* Final Button */
-.step3-footer-centered {
-  display: flex;
-  justify-content: center;
-  margin-top: 40px;
-  margin-bottom: 40px;
+.step2-q-card{
+  border:1px solid #4CAF50;
+  border-radius:10px;
+  background:#fff;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  width: 480px;
 }
 
-.btn-create {
-  background-color: #2E7D32;
-  color: #fff;
-  border: none;
-  padding: 12px 40px;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
-  transition: all 0.2s;
+.q-card-header{
+  padding:12px 16px 0;
+  font-weight:900;
+  font-size:13px;
+  color:var(--text);
 }
 
-.btn-create:hover {
-  background-color: #1B5E20;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(46, 125, 50, 0.25);
-}
-.btn-create:disabled {
-  background-color: #9CA3AF;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.q-card-body{ padding:12px 16px 20px; }
+
+.q-card-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:12px;
 }
 
-/* =====================
-   STEP 4 STYLES
-   ===================== */
-
-/* Animation for revealing Step 4 */
-.fade-in-up {
-  animation: fadeInUp 0.5s ease-out forwards;
+/* Step2 Footer */
+.step2-footer{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:30px;
+  border-top:1px solid #F3F4F6;
+  padding-top:20px;
 }
 
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* =========================
+   STEP 2 BUTTON
+   ========================= */
+.btn-save{
+  height:38px;
+  padding:0 20px;
+  border-radius:8px;
+  border:none;
+  background:var(--green-700);
+  color:#fff;
+  font-weight:900;
+  font-size:13px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .2s ease;
+}
+.btn-save:hover{ background:var(--green-900); }
+
+.btn-save.btn-edit-mode{
+  background:#E5E7EB;
+  color:#374151;
+  border:1px solid var(--lock-border);
+}
+.btn-save.btn-edit-mode:hover{ background:#D1D5DB; }
+
+.btn-save:disabled{
+  opacity:.6;
+  cursor:not-allowed;
 }
 
-.step4-card {
-  padding: 24px;
+/* =========================
+   STEP 3
+   ========================= */
+.step3-total-bar{
+  background:#F3F4F6;
+  border-radius:12px;
+  height:50px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  margin-bottom:24px;
+  border:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
+  color:var(--green-900);
 }
 
-.step4-row {
-  display: flex;
-  align-items: flex-end; /* จัดให้ Input กับปุ่มอยู่แนวเดียวกันด้านล่าง */
-  gap: 20px;
-  flex-wrap: wrap;
+.step3-total-bar.is-invalid{
+  border-color:#EF4444;
+  color:#B91C1C;
 }
 
-.input-readonly {
-  background-color: #F9FAFB !important;
-  color: #6B7280 !important;
-  border-color: #E5E7EB !important;
-  cursor: default;
+.bar-fill{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  background:var(--green-200);
+  z-index:0;
+  transition:width .3s ease;
+}
+.step3-total-bar.is-invalid .bar-fill{
+  background:rgba(239,68,68,0.10);
 }
 
-/* Code Group */
-.step4-code-group {
-  display: flex;
-  gap: 10px;
+.bar-label{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  z-index:1;
+}
+.bar-text{
+  display:flex;
+  flex-direction:column;
+  line-height:1.1;
+}
+.bar-text strong{ font-size:13px; font-weight:900; }
+.bar-text span{ font-size:11px; opacity:.8; }
+
+.bar-value{
+  font-size:18px;
+  font-weight:900;
+  z-index:1;
 }
 
-.code-box {
-  flex: 1;
-  height: 40px;
-  background: #F9FAFB;
-  border: 1px solid #E5E7EB;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 4px 0 12px;
-  font-family: monospace;
-  font-size: 16px;
-  font-weight: 900;
-  color: #111827;
+.step3-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));
+  gap:16px;
 }
 
-.btn-icon-copy {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: #6B7280;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
+.step3-card{
+  border:1px solid #4CAF50;
+  border-radius:12px;
+  padding:16px;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  background:#fff;
+  transition:all .2s;
 }
-.btn-icon-copy:hover {
-  background: #E5E7EB;
-  color: #111827;
+.step3-card:hover{ box-shadow:0 4px 12px rgba(46,125,50,0.08); }
+
+.step3-card-icon{
+  width:42px;
+  height:42px;
+  background:var(--green-900);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#fff;
+  flex-shrink:0;
 }
 
-.btn-share {
-  height: 40px;
-  padding: 0 16px;
-  background: #2E7D32;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: background 0.2s;
-}
-.btn-share:hover { background: #1B5E20; }
+.step3-card-content{ flex:1; }
 
-/* Actions (Right Side) */
-.step4-actions {
-  display: flex;
-  gap: 10px;
-  margin-left: auto; /* ดันไปขวาสุด */
+.card-title{
+  font-weight:900;
+  font-size:13px;
+  color:var(--text);
+  margin-bottom:4px;
 }
 
-.btn-gray {
-  height: 40px;
-  padding: 0 16px;
-  background: #9CA3AF; /* สีเทาเข้ม */
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-gray:hover { background: #6B7280; }
-
-.btn-green-go {
-  height: 40px;
-  padding: 0 20px;
-  background: #1B5E20; /* เขียวเข้ม */
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 700;
-  cursor: pointer;
-}
-.btn-green-go:hover { background: #14532d; }
-
-/* Disable Look for Main Button */
-.btn-disabled-look {
-  background-color: #9CA3AF !important;
-  color: #fff !important;
-  box-shadow: none !important;
-  transform: none !important;
-  cursor: default !important;
+.card-desc{
+  font-size:11px;
+  color:var(--muted);
+  line-height:1.3;
 }
 
-/* Responsive */
-@media (max-width: 800px) {
-  .step4-row {
-    flex-direction: column;
-    align-items: stretch;
+.step3-card-actions{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#F9FAFB;
+  padding:4px;
+  border-radius:8px;
+  border:1px solid var(--border);
+}
+
+.btn-adj{
+  width:28px;
+  height:28px;
+  border:none;
+  background:#fff;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:900;
+  color:#374151;
+  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+  display:grid;
+  place-items:center;
+}
+.btn-adj:hover{ background:#F3F4F6; }
+.btn-adj:active{ transform:translateY(1px); }
+
+.score-val{
+  width:24px;
+  text-align:center;
+  font-weight:900;
+  font-size:14px;
+  color:var(--text);
+}
+
+.unit{
+  font-size:12px;
+  font-weight:900;
+  color:#9CA3AF;
+  margin-right:4px;
+}
+
+/* Create Button */
+.step3-footer-centered{
+  display:flex;
+  justify-content:center;
+  margin-top:40px;
+  margin-bottom:40px;
+}
+
+.btn-create{
+  background-color:var(--green-700);
+  color:#fff;
+  border:none;
+  padding:12px 40px;
+  border-radius:8px;
+  font-size:16px;
+  font-weight:900;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  box-shadow:0 4px 6px rgba(46,125,50,0.20);
+  transition:all .2s;
+}
+.btn-create:hover{
+  background-color:var(--green-900);
+  transform:translateY(-2px);
+  box-shadow:0 6px 12px rgba(46,125,50,0.25);
+}
+.btn-create:disabled{
+  background-color:#9CA3AF;
+  cursor:not-allowed;
+  transform:none;
+  box-shadow:none;
+}
+
+/* =========================
+   STEP 4
+   ========================= */
+.fade-in-up{ animation:fadeInUp .5s ease-out forwards; }
+
+@keyframes fadeInUp{
+  from{ opacity:0; transform:translateY(20px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.step4-card{ padding:24px; }
+
+.step4-row{
+  display:flex;
+  align-items:flex-end;
+  gap:20px;
+  flex-wrap:wrap;
+}
+
+.input-readonly{
+  background-color:#F9FAFB !important;
+  color:#6B7280 !important;
+  border-color:var(--border) !important;
+  cursor:default;
+}
+
+/* Code Box */
+.step4-code-group{ display:flex; gap:10px; }
+
+.code-box{
+  flex:1;
+  height:40px;
+  background:#F9FAFB;
+  border:1px solid var(--border);
+  border-radius:8px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 4px 0 12px;
+  font-family:monospace;
+  font-size:16px;
+  font-weight:900;
+  color:var(--text);
+}
+
+.btn-icon-copy{
+  width:32px;
+  height:32px;
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  color:#6B7280;
+  border-radius:6px;
+  display:grid;
+  place-items:center;
+}
+.btn-icon-copy:hover{
+  background:#E5E7EB;
+  color:var(--text);
+}
+
+/* Actions */
+.step4-actions{
+  display:flex;
+  gap:10px;
+  margin-left:auto;
+}
+
+.btn-green-go{
+  height:40px;
+  padding:0 20px;
+  background:var(--green-900);
+  color:#fff;
+  border:none;
+  border-radius:8px;
+  font-weight:800;
+  cursor:pointer;
+}
+.btn-green-go:hover{ background:#14532d; }
+
+.btn-done{
+  background:#111827;
+  color:#fff;
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.btn-done:hover{ opacity:0.95; }
+
+/* Disable Look */
+.btn-disabled-look{
+  background-color:#9CA3AF !important;
+  color:#fff !important;
+  box-shadow:none !important;
+  transform:none !important;
+  cursor:default !important;
+}
+
+/* Step4 Edit Button */
+.btn-edit-criteria{
+  height:40px;
+  padding:0 20px;
+  min-width:240px;
+  background:#FFFFFF;
+  color:var(--green-700);
+  border:2px solid var(--green-700);
+  border-radius:8px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:all .2s ease;
+  font-family:'Prompt', sans-serif;
+}
+.btn-edit-criteria:hover{
+  background:#F0FDF4;
+  transform:translateY(-1px);
+}
+.btn-edit-criteria.is-saving{
+  background:#16a34a;
+  color:#fff;
+  border-color:#16a34a;
+}
+
+/* =========================
+   ADMIN SHARE BOX
+   ========================= */
+.share-admin-box{
+  margin-top:20px;
+  padding:20px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:#F9FAFB;
+}
+
+.share-preview{ margin-bottom:16px; }
+
+.share-preview-title{
+  font-weight:800;
+  margin-bottom:8px;
+  color:#1F2937;
+}
+
+.share-preview-content{
+  background:#FFFFFF;
+  border:1px dashed var(--lock-border);
+  border-radius:10px;
+  padding:14px;
+  font-size:0.9rem;
+  color:var(--text);
+  white-space:pre-wrap;
+}
+
+.share-actions{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.btn-share-admin{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:10px;
+  font-weight:700;
+  border:none;
+  cursor:pointer;
+  transition:all .2s;
+}
+
+/* Copy */
+.btn-copy{
+  background:#111827;
+  color:#fff;
+}
+.btn-copy:hover{ background:#000; }
+
+/* LINE */
+.btn-line{
+  background:#06C755;
+  color:#fff;
+}
+.btn-line:hover{ background:#05B24C; }
+
+/* Email */
+.btn-email{
+  background:#2563EB;
+  color:#fff;
+}
+.btn-email:hover{ background:#1D4ED8; }
+
+/* =========================
+   FOOTER
+   ========================= */
+.ags-footer{
+  margin-top:60px;
+  padding-bottom:40px;
+  text-align:center;
+  color:#9CA3AF;
+}
+
+.footer-line{
+  width:60px;
+  height:4px;
+  background-color:var(--border);
+  border-radius:2px;
+  margin:0 auto 16px;
+}
+
+.ags-footer p{
+  margin:4px 0;
+  font-size:13px;
+  font-weight:700;
+}
+.footer-sub{
+  font-size:11px !important;
+  font-weight:400 !important;
+  opacity:0.8;
+}
+
+/* =========================
+   LOCK MODE (REAL)
+   ใช้กับ:
+   - .ags-card.is-locked
+   - .step2-container.is-locked
+   ========================= */
+
+/* 1) ปิด interaction ให้ดูเป็น lock */
+.ags-card.is-locked,
+.step2-container.is-locked{
+  filter:grayscale(0.05);
+}
+
+/* 2) Inputs/select/button ใน lock ให้เป็นเทาและอ่านง่าย */
+.ags-card.is-locked input,
+.ags-card.is-locked select,
+.step2-container.is-locked input,
+.step2-container.is-locked select{
+  background:var(--lock-bg-2) !important;
+  border-color:var(--lock-border) !important;
+  color:var(--lock-text-strong) !important;
+}
+
+.ags-card.is-locked input:focus,
+.ags-card.is-locked select:focus,
+.step2-container.is-locked input:focus,
+.step2-container.is-locked select:focus{
+  border-color:var(--lock-border) !important;
+  box-shadow:0 0 0 3px rgba(156,163,175,0.18) !important;
+}
+
+/* 3) Step2 Tabs (lock) */
+.step2-container.is-locked .step2-tab{
+  background:var(--lock-bg) !important;
+  color:var(--lock-text) !important;
+  border-color:var(--lock-border) !important;
+  cursor:default !important;
+}
+.step2-container.is-locked .step2-tab:hover{
+  background:var(--lock-bg) !important;
+}
+.step2-container.is-locked .step2-tab.active{
+  background:#E5E7EB !important;
+  color:var(--lock-text-strong) !important;
+  border-color:var(--lock-border) !important;
+}
+
+/* 4) ขอบเขียวในการ์ด -> เทา */
+.step2-container.is-locked .step2-q-card{
+  border-color:var(--lock-border) !important;
+}
+.ags-card.is-locked .step3-card{
+  border-color:var(--lock-border) !important;
+}
+
+/* 5) Icon ใน Step3 -> เทา */
+.ags-card.is-locked .step3-card-icon{
+  background:var(--lock-icon) !important;
+  color:#fff !important;
+}
+
+/* 6) Total bar -> เทา (ไม่ว่าจะ valid/invalid) */
+.ags-card.is-locked .step3-total-bar{
+  background:var(--lock-bg) !important;
+  border-color:var(--lock-border) !important;
+  color:var(--lock-text-strong) !important;
+}
+.ags-card.is-locked .step3-total-bar.is-invalid{
+  border-color:var(--lock-border) !important;
+  color:var(--lock-text-strong) !important;
+}
+.ags-card.is-locked .bar-fill,
+.ags-card.is-locked .step3-total-bar.is-invalid .bar-fill{
+  background:rgba(107,114,128,0.12) !important;
+}
+
+/* 7) ปุ่ม +/- -> เทาและ disable-look */
+.ags-card.is-locked .btn-adj{
+  background:#E5E7EB !important;
+  color:#9CA3AF !important;
+  cursor:not-allowed !important;
+  box-shadow:none !important;
+}
+.ags-card.is-locked .btn-adj:hover{
+  background:#E5E7EB !important;
+}
+
+/* 8) Disabled elements ให้ชัด อ่านง่าย */
+.ags-page input:disabled,
+.ags-page select:disabled,
+.ags-page button:disabled{
+  background:var(--lock-bg-2);
+  color:var(--lock-icon);
+  border-color:var(--lock-border);
+  cursor:not-allowed;
+  opacity:1;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width:980px){
+  .asg-gridTop{ grid-template-columns:1fr; }
+  .asg-midRow{ grid-template-columns:1fr; }
+  .asg-rightBlock{ justify-content:flex-start; padding-top:0; }
+  .ags-row-4col{ grid-template-columns:1fr 1fr; }
+  .step2-q-grid{ grid-template-columns:1fr; }
+}
+
+@media (max-width:800px){
+  .step3-grid{ grid-template-columns:1fr; }
+  .step4-row{
+    flex-direction:column;
+    align-items:stretch;
   }
-  .step4-actions {
-    margin-left: 0;
-    justify-content: flex-end;
-    margin-top: 10px;
+  .step4-actions{
+    margin-left:0;
+    justify-content:flex-end;
+    margin-top:10px;
   }
 }
-/* =====================
-   FOOTER STYLES
-   ===================== */
 
-.ags-footer {
-  margin-top: 60px;      /* เว้นระยะห่างจากเนื้อหาด้านบน */
-  padding-bottom: 40px;  /* เว้นระยะจากขอบจอด้านล่าง */
-  text-align: center;
-  color: #9CA3AF;        /* สีเทาจางๆ สบายตา */
-}
-
-.footer-line {
-  width: 60px;
-  height: 4px;
-  background-color: #E5E7EB;
-  border-radius: 2px;
-  margin: 0 auto 16px;   /* จัดกึ่งกลาง */
-}
-
-.ags-footer p {
-  margin: 4px 0;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.footer-sub {
-  font-size: 11px !important;
-  font-weight: 400 !important;
-  opacity: 0.8;
-}
-
-/* =====================
-   Edit Mode Button Style
-   ===================== */
-
-/* ปุ่มปกติ (บันทึก) */
-.btn-save {
-  transition: all 0.2s ease;
-}
-
-/* ปุ่มโหมดแก้ไข (หลังจากกดบันทึกแล้ว) */
-.btn-save.btn-edit-mode {
-  background-color: #FFFFFF;
-  color: #2E7D32;
-  border: 2px solid #2E7D32;
-}
-
-.btn-save.btn-edit-mode:hover {
-  background-color: #F0FDF4; /* สีเขียวอ่อนๆ เวลา Hover */
-}
-/* ปุ่มแก้ไขใน Step 4 (สไตล์เดียวกับ Step 2 Edit Mode) */
-.btn-edit-criteria {
-  height: 40px;
-  padding: 0 20px;
-  background-color: #FFFFFF; /* พื้นขาว */
-  color: #2E7D32;            /* ตัวหนังสือเขียว */
-  border: 2px solid #2E7D32; /* ขอบเขียว */
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.2s ease;
-  font-family: 'Prompt', sans-serif;
-}
-
-.btn-edit-criteria:hover {
-  background-color: #F0FDF4; /* สีเขียวอ่อนๆ เวลา Hover */
-  transform: translateY(-1px);
+@media (max-width:600px){
+  .asg-modeRow{ grid-template-columns:1fr; }
+  .asg-modeExtras{ grid-template-columns:1fr; gap:20px; }
+  .ags-row-4col{ grid-template-columns:1fr; }
+  .q-card-row{ grid-template-columns:1fr; }
 }
