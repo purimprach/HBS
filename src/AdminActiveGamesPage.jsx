@@ -15,6 +15,35 @@ import { useNavigate } from "react-router-dom";
 import "./AdminActiveGamesPage.css";
 
 /* =========================================================
+   Helper: แปลง mode จาก settings -> ข้อความตามที่ต้องการ
+   - single => เดี่ยว
+   - team   => ทีม (2 คน) / ทีม (3 คน) / ทีม (4 คน)
+   - other  => ทีม (2-4 คน)
+   ========================================================= */
+function getModeLabelFromSettings(modeObj) {
+  if (!modeObj) return "-";
+
+  const type = modeObj.type;
+
+  if (type === "single") return "เดี่ยว";
+
+  if (type === "team") {
+    const n = modeObj.teamSize; // ใน GameSettings คุณใช้ teamSize
+    return n ? `ทีม (${n} คน)` : "ทีม";
+  }
+
+  if (type === "other") {
+    const min = modeObj.minTeams;
+    const max = modeObj.maxTeams;
+    if (min != null && max != null) return `ทีม (${min}-${max} คน)`;
+    if (max != null) return `ทีม (1-${max} คน)`;
+    return "ทีม";
+  }
+
+  return "-";
+}
+
+/* =========================================================
    MOCK DATA (Demo)
    ========================================================= */
 const MOCK_GAMES = [
@@ -37,7 +66,7 @@ const MOCK_GAMES = [
     teams: { current: 5, max: 5 },
     ready: { current: 2, max: 8 },
     roundText: "2 / 8",
-    modeText: "ทีม",
+    modeText: "ทีม (3 คน)",
     progress: 0.25,
   },
   {
@@ -48,8 +77,8 @@ const MOCK_GAMES = [
     teams: { current: 10, max: 15 },
     ready: { current: 5, max: 10 },
     roundText: "5 / 10",
-    modeText: "ผสม",
-    progress: 0.50,
+    modeText: "ทีม (2-4 คน)",
+    progress: 0.5,
   },
   {
     id: 4,
@@ -59,16 +88,16 @@ const MOCK_GAMES = [
     teams: { current: 0, max: 0 },
     ready: { current: 0, max: 0 },
     roundText: "รอเริ่มระบบ",
-    modeText: "ผสม",
+    modeText: "-",
     progress: 0,
   },
 ];
 
 const STATUS_META = {
-  playing: { label: "กำลังเล่น", Icon: PlayCircle, dot: "dot-green", badge: "badge-green" },
-  paused: { label: "หยุดชั่วคราว", Icon: PauseCircle, dot: "dot-yellow", badge: "badge-yellow" },
-  ended: { label: "จบเกม", Icon: CheckCircle2, dot: "dot-gray", badge: "badge-gray" },
-  idle: { label: "รอเริ่มเกม", Icon: Hourglass, dot: "dot-gray", badge: "badge-gray" },
+  playing: { label: "กำลังเล่น", Icon: PlayCircle, dot: "dot-green" },
+  paused: { label: "หยุดชั่วคราว", Icon: PauseCircle, dot: "dot-yellow" },
+  ended: { label: "จบเกม", Icon: CheckCircle2, dot: "dot-gray" },
+  idle: { label: "รอเริ่มเกม", Icon: Hourglass, dot: "dot-gray" },
 };
 
 const GAMES_KEY = "hbs_games";
@@ -87,6 +116,9 @@ export default function AdminActiveGamesPage() {
     const mapped = saved.map((g, index) => {
       const maxTeams = g?.settings?.mode?.maxTeams ?? 10;
 
+      // ✅ ดึง modeText จาก settings.mode
+      const modeText = getModeLabelFromSettings(g?.settings?.mode);
+
       return {
         id: `created-${g.code}-${index}`,
         status: "idle",
@@ -95,7 +127,7 @@ export default function AdminActiveGamesPage() {
         teams: { current: g.teams?.length ?? 0, max: maxTeams },
         ready: { current: 0, max: g.teams?.length ?? 0 },
         roundText: "รอเริ่มระบบ",
-        modeText: "-",
+        modeText, // ✅ สำคัญ
         progress: 0,
         raw: g,
       };
@@ -115,7 +147,9 @@ export default function AdminActiveGamesPage() {
         g.sessionName.toLowerCase().includes(q) ||
         g.gameCode.toLowerCase().includes(q);
 
-      const matchStatus = statusFilter === "all" ? true : g.status === statusFilter;
+      const matchStatus =
+        statusFilter === "all" ? true : g.status === statusFilter;
+
       return matchQ && matchStatus;
     });
   }, [query, statusFilter, createdGames]);
@@ -129,8 +163,10 @@ export default function AdminActiveGamesPage() {
     const paused = all.filter((g) => g.status === "paused").length;
     const idle = all.filter((g) => g.status === "idle").length;
 
-    // “จำนวนผู้เข้าร่วม” ในภาพ: นับเป็น “คน” (ใช้ teams.current เป็นตัวแทน)
-    const totalPlayers = all.reduce((sum, g) => sum + (g.teams?.current ?? 0), 0);
+    const totalPlayers = all.reduce(
+      (sum, g) => sum + (g.teams?.current ?? 0),
+      0
+    );
 
     return { totalActive, totalPlayers, playing, paused, idle };
   }, [createdGames]);
@@ -144,9 +180,6 @@ export default function AdminActiveGamesPage() {
   const goDetail = (g) => {
     if (g.raw) {
       navigate(`/admin/lobby/${g.gameCode}`, { state: { gameData: g.raw } });
-    } else {
-      // mock ก็ให้ไปหน้า lobby ได้เหมือนกัน (ถ้าอยาก)
-      // navigate(`/admin/lobby/${g.gameCode}`);
     }
   };
 
@@ -154,53 +187,24 @@ export default function AdminActiveGamesPage() {
     <div className="ag-page">
       {/* Title */}
       <div className="ag-titleBlock">
-        <div className="ag-titleTop">Host / Active Game</div>
         <div className="ag-titleRow">
           <h1 className="ag-title">เกมทั้งหมด</h1>
-          <div className="ag-titleHint">- จัดการและตรวจสอบเกมที่กำลังดำเนินการทั้งหมด</div>
+          <div className="ag-titleHint">
+            - จัดการและตรวจสอบเกมที่กำลังดำเนินการทั้งหมด
+          </div>
         </div>
       </div>
 
-      {/* Summary cards (แบบในภาพ: ไอคอนขวา + value ใหญ่ + หน่วย) */}
+      {/* Summary cards */}
       <div className="ag-cards">
-        <SummaryCard
-          icon={<Gamepad2 size={18} />}
-          title="เกมที่ Active ทั้งหมด"
-          value={summary.totalActive}
-          unit="เกม"
-          accent="blue"
-        />
-        <SummaryCard
-          icon={<Users size={18} />}
-          title="จำนวนผู้เข้าร่วม"
-          value={summary.totalPlayers}
-          unit="คน"
-          accent="pink"
-        />
-        <SummaryCard
-          icon={<CheckCircle2 size={18} />}
-          title="เกมที่กำลังเล่น"
-          value={summary.playing}
-          unit="เกม"
-          accent="green"
-        />
-        <SummaryCard
-          icon={<PauseCircle size={18} />}
-          title="เกมที่หยุดชั่วคราว"
-          value={summary.paused}
-          unit="เกม"
-          accent="yellow"
-        />
-        <SummaryCard
-          icon={<Hourglass size={18} />}
-          title="เกมที่รอเริ่มเกม"
-          value={summary.idle}
-          unit="เกม"
-          accent="gray"
-        />
+        <SummaryCard icon={<Gamepad2 size={18} />} title="เกมที่ Active ทั้งหมด" value={summary.totalActive} unit="เกม" accent="blue" />
+        <SummaryCard icon={<Users size={18} />} title="จำนวนผู้เข้าร่วม" value={summary.totalPlayers} unit="คน" accent="pink" />
+        <SummaryCard icon={<CheckCircle2 size={18} />} title="เกมที่กำลังเล่น" value={summary.playing} unit="เกม" accent="green" />
+        <SummaryCard icon={<PauseCircle size={18} />} title="เกมที่หยุดชั่วคราว" value={summary.paused} unit="เกม" accent="yellow" />
+        <SummaryCard icon={<Hourglass size={18} />} title="เกมที่รอเริ่มเกม" value={summary.idle} unit="เกม" accent="gray" />
       </div>
 
-      {/* Green toolbar (แบบในภาพ) */}
+      {/* Toolbar */}
       <div className="ag-toolbar">
         <div className="ag-search">
           <Search size={16} />
@@ -217,22 +221,14 @@ export default function AdminActiveGamesPage() {
         </div>
 
         <div className="ag-chips">
-          <Chip active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>
-            ทั้งหมด
-          </Chip>
-          <Chip active={statusFilter === "playing"} onClick={() => setStatusFilter("playing")}>
-            กำลังเล่น
-          </Chip>
-          <Chip active={statusFilter === "paused"} onClick={() => setStatusFilter("paused")}>
-            หยุดชั่วคราว
-          </Chip>
-          <Chip active={statusFilter === "idle"} onClick={() => setStatusFilter("idle")}>
-            รอเริ่มเกม
-          </Chip>
+          <Chip active={statusFilter === "all"} onClick={() => setStatusFilter("all")}>ทั้งหมด</Chip>
+          <Chip active={statusFilter === "playing"} onClick={() => setStatusFilter("playing")}>กำลังเล่น</Chip>
+          <Chip active={statusFilter === "paused"} onClick={() => setStatusFilter("paused")}>หยุดชั่วคราว</Chip>
+          <Chip active={statusFilter === "idle"} onClick={() => setStatusFilter("idle")}>รอเริ่มเกม</Chip>
         </div>
       </div>
 
-      {/* Table Card */}
+      {/* Table */}
       <div className="ag-tableCard">
         <div className="ag-thead">
           <div className="th-status">สถานะ</div>
@@ -263,7 +259,9 @@ export default function AdminActiveGamesPage() {
                 </div>
 
                 <div className="td-code">
-                  <span className={`gameCode ${g.status === "idle" ? "muted" : ""}`}>{g.gameCode}</span>
+                  <span className={`gameCode ${g.status === "idle" ? "muted" : ""}`}>
+                    {g.gameCode}
+                  </span>
                   <button className="btnCopy" onClick={() => handleCopy(g.gameCode)} type="button">
                     <Copy size={16} />
                   </button>
@@ -274,18 +272,24 @@ export default function AdminActiveGamesPage() {
                 </div>
 
                 <div className="td-mode">
-                  <span className={`modeText ${g.status === "idle" ? "muted" : ""}`}>{g.modeText}</span>
+                  <span className={`modeText ${g.status === "idle" ? "muted" : ""}`}>
+                    {g.modeText}
+                  </span>
                 </div>
 
                 <div className="td-round">
-                  <span className={`roundText ${g.status === "idle" ? "muted" : ""}`}>{g.roundText}</span>
+                  <span className={`roundText ${g.status === "idle" ? "muted" : ""}`}>
+                    {g.roundText}
+                  </span>
                 </div>
 
                 <div className="td-progress">
                   <div className="progressBar">
                     <div className="progressFill" style={{ width: `${pct}%` }} />
                   </div>
-                  <div className={`progressPct ${g.status === "idle" ? "muted" : ""}`}>{pct}%</div>
+                  <div className={`progressPct ${g.status === "idle" ? "muted" : ""}`}>
+                    {pct}%
+                  </div>
                 </div>
 
                 <div className="td-action">
@@ -307,6 +311,15 @@ export default function AdminActiveGamesPage() {
 
         {games.length === 0 && <div className="ag-empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>}
       </div>
+      <footer className="ag-footer">
+        <div className="ag-footer-line" />
+        <p className="ag-footer-main">
+          © 2026 Hotel Business Simulator System
+        </p>
+        <p className="ag-footer-sub">
+          Designed for GT Technology • Admin Panel
+        </p>
+      </footer>
     </div>
   );
 }
@@ -332,11 +345,7 @@ function SummaryCard({ icon, title, value, unit, accent }) {
 
 function Chip({ active, children, onClick }) {
   return (
-    <button
-      className={`chip ${active ? "chip-active" : ""}`}
-      onClick={onClick}
-      type="button"
-    >
+    <button className={`chip ${active ? "chip-active" : ""}`} onClick={onClick} type="button">
       {children}
     </button>
   );

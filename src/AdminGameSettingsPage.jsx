@@ -86,6 +86,51 @@ const makeDefaultQuarter = (quarterNumber, minutesPerRound) => ({
   event: "none",
 });
 
+// =========================
+// ✅ Default State (Reset)
+// =========================
+const DEFAULT_STATE = {
+  // Step 1
+  gameName: "ตัวอย่าง HBS - CU2026",
+  hotelSize: "medium",
+  location: "chiangmai",
+  scenario: "balanced",
+
+  mode: "team",
+  teamSize: 4,
+  minTeams: 1,
+  maxTeams: 4,
+
+  totalQuarters: 12,
+  minutesPerRound: 15,
+
+  // Step 2
+  activeYear: 1,
+  yearEconSettings: [makeDefaultYearEcon()],
+  quarterSettings: Array.from({ length: 12 }, (_, i) =>
+    makeDefaultQuarter(i + 1, 15)
+  ),
+  isStep2Saved: false,
+
+  // Step 3
+  scoring: {
+    overall: 20,
+    financial: 20,
+    market: 15,
+    operations: 15,
+    people: 10,
+    risk: 10,
+    growth: 10,
+  },
+  isStep3Saved: false,
+  isEditingScoring: false,
+
+  // Step 4
+  isGameCreated: false,
+  gameCode: "",
+  createdGameData: null,
+};
+
 export default function AdminGameSettingsPage() {
   const navigate = useNavigate();
   const step2Ref = useRef(null);
@@ -98,23 +143,29 @@ export default function AdminGameSettingsPage() {
   const [isStep3Saved, setIsStep3Saved] = useState(false);
 
   // ===================== Step 1 States =====================
-  const [gameName, setGameName] = useState("ตัวอย่าง HBS - CU2026");
-  const [hotelSize, setHotelSize] = useState("medium");
-  const [location, setLocation] = useState("chiangmai");
-  const [scenario, setScenario] = useState("balanced");
+  const [gameName, setGameName] = useState(DEFAULT_STATE.gameName);
+  const [hotelSize, setHotelSize] = useState(DEFAULT_STATE.hotelSize);
+  const [location, setLocation] = useState(DEFAULT_STATE.location);
+  const [scenario, setScenario] = useState(DEFAULT_STATE.scenario);
 
-  const [mode, setMode] = useState("team");
-  const [teamSize, setTeamSize] = useState(4);
-  const [minTeams, setMinTeams] = useState(1);
-  const [maxTeams, setMaxTeams] = useState(4);
+  const [mode, setMode] = useState(DEFAULT_STATE.mode);
+  const [teamSize, setTeamSize] = useState(DEFAULT_STATE.teamSize);
+  const [minTeams, setMinTeams] = useState(DEFAULT_STATE.minTeams);
+  const [maxTeams, setMaxTeams] = useState(DEFAULT_STATE.maxTeams);
 
   // ✅ ค่าจริง (ตัวเลข)
-  const [totalQuarters, setTotalQuarters] = useState(12);
-  const [minutesPerRound, setMinutesPerRound] = useState(15);
+  const [totalQuarters, setTotalQuarters] = useState(DEFAULT_STATE.totalQuarters);
+  const [minutesPerRound, setMinutesPerRound] = useState(
+    DEFAULT_STATE.minutesPerRound
+  );
 
   // ✅ ค่าในช่อง input (สตริง)
-  const [totalQuartersInput, setTotalQuartersInput] = useState("12");
-  const [minutesPerRoundInput, setMinutesPerRoundInput] = useState("15");
+  const [totalQuartersInput, setTotalQuartersInput] = useState(
+    String(DEFAULT_STATE.totalQuarters)
+  );
+  const [minutesPerRoundInput, setMinutesPerRoundInput] = useState(
+    String(DEFAULT_STATE.minutesPerRound)
+  );
 
   const teamSizeOptions = useMemo(() => [2, 3, 4], []);
   const otherMinOptions = useMemo(() => [1, 2, 3, 4], []);
@@ -137,16 +188,20 @@ export default function AdminGameSettingsPage() {
   };
 
   // ===================== Step 2 States =====================
-  const [activeYear, setActiveYear] = useState(1);
+  const [activeYear, setActiveYear] = useState(DEFAULT_STATE.activeYear);
 
-  const [yearEconSettings, setYearEconSettings] = useState([makeDefaultYearEcon()]);
+  const [yearEconSettings, setYearEconSettings] = useState(
+    DEFAULT_STATE.yearEconSettings
+  );
 
   const [quarterSettings, setQuarterSettings] = useState(() => {
-    return Array.from({ length: 12 }, (_, i) => makeDefaultQuarter(i + 1, 15));
+    return Array.from({ length: DEFAULT_STATE.totalQuarters }, (_, i) =>
+      makeDefaultQuarter(i + 1, DEFAULT_STATE.minutesPerRound)
+    );
   });
 
   // ✅ Step2 saved -> ใช้ล็อก/ปลดล็อกการแก้ไข Step2
-  const [isStep2Saved, setIsStep2Saved] = useState(false);
+  const [isStep2Saved, setIsStep2Saved] = useState(DEFAULT_STATE.isStep2Saved);
 
   const handleSaveStep2 = () => {
     if (isStep2Saved) {
@@ -167,7 +222,10 @@ export default function AdminGameSettingsPage() {
     return Math.min(10, Math.max(1, n));
   }, [totalQuarters]);
 
-  const years = useMemo(() => Array.from({ length: yearsCount }, (_, i) => i + 1), [yearsCount]);
+  const years = useMemo(
+    () => Array.from({ length: yearsCount }, (_, i) => i + 1),
+    [yearsCount]
+  );
 
   useEffect(() => {
     setActiveYear((y) => Math.min(Math.max(1, y), yearsCount));
@@ -208,7 +266,9 @@ export default function AdminGameSettingsPage() {
   const industryFactor = yearEconSettings[yearIndex]?.industryFactor ?? 1.0;
 
   const patchYearEcon = (patch) => {
-    setYearEconSettings((prev) => prev.map((y, idx) => (idx === yearIndex ? { ...y, ...patch } : y)));
+    setYearEconSettings((prev) =>
+      prev.map((y, idx) => (idx === yearIndex ? { ...y, ...patch } : y))
+    );
   };
 
   const currentQuartersSlice = useMemo(() => {
@@ -219,21 +279,18 @@ export default function AdminGameSettingsPage() {
 
   const updateQuarter = (localIdxInYear, patch) => {
     const absoluteIdx = (activeYear - 1) * 4 + localIdxInYear;
-    setQuarterSettings((prev) => prev.map((q, i) => (i === absoluteIdx ? { ...q, ...patch } : q)));
+    setQuarterSettings((prev) =>
+      prev.map((q, i) => (i === absoluteIdx ? { ...q, ...patch } : q))
+    );
   };
 
   // ===================== Step 3 States =====================
-  const [scoring, setScoring] = useState({
-    overall: 20,
-    financial: 20,
-    market: 15,
-    operations: 15,
-    people: 10,
-    risk: 10,
-    growth: 10,
-  });
+  const [scoring, setScoring] = useState(DEFAULT_STATE.scoring);
 
-  const totalWeight = useMemo(() => Object.values(scoring).reduce((a, b) => a + b, 0), [scoring]);
+  const totalWeight = useMemo(
+    () => Object.values(scoring).reduce((a, b) => a + b, 0),
+    [scoring]
+  );
 
   const adjustScore = (key, delta) => {
     setScoring((prev) => {
@@ -289,9 +346,11 @@ export default function AdminGameSettingsPage() {
   ];
 
   // ===================== Step 4 States & Logic =====================
-  const [isGameCreated, setIsGameCreated] = useState(false);
-  const [gameCode, setGameCode] = useState("");
-  const [createdGameData, setCreatedGameData] = useState(null);
+  const [isGameCreated, setIsGameCreated] = useState(DEFAULT_STATE.isGameCreated);
+  const [gameCode, setGameCode] = useState(DEFAULT_STATE.gameCode);
+  const [createdGameData, setCreatedGameData] = useState(
+    DEFAULT_STATE.createdGameData
+  );
 
   // ===================== Draft Persist =====================
   const [draftLoaded, setDraftLoaded] = useState(false);
@@ -369,6 +428,7 @@ export default function AdminGameSettingsPage() {
       if (draft.minutesPerRound != null) setMinutesPerRound(draft.minutesPerRound);
 
       // Step 2
+      if (draft.activeYear != null) setActiveYear(draft.activeYear);
       if (draft.yearEconSettings != null) setYearEconSettings(draft.yearEconSettings);
       if (draft.quarterSettings != null) setQuarterSettings(draft.quarterSettings);
       if (typeof draft.isStep2Saved === "boolean") setIsStep2Saved(draft.isStep2Saved);
@@ -404,6 +464,8 @@ export default function AdminGameSettingsPage() {
       maxTeams,
       totalQuarters,
       minutesPerRound,
+
+      activeYear,
       yearEconSettings,
       quarterSettings,
       isStep2Saved,
@@ -430,6 +492,8 @@ export default function AdminGameSettingsPage() {
     maxTeams,
     totalQuarters,
     minutesPerRound,
+
+    activeYear,
     yearEconSettings,
     quarterSettings,
     isStep2Saved,
@@ -460,20 +524,56 @@ export default function AdminGameSettingsPage() {
     return true;
   };
 
-  const handleDone = () => {
-    // ✅ ต้องบันทึก Step2 + Step3 ก่อน
-    if (!ensureAllSaved()) return;
-
+  // ✅ รีเซ็ตทุกอย่างกลับค่าเริ่มต้น (หลัง “เสร็จเรียบร้อย”)
+  const resetToDefault = () => {
+    // 1) ล้าง draft ก่อน กันโหลดค่าล่าสุดกลับมา
     localStorage.removeItem(ADMIN_DRAFT_KEY);
-    alert("บันทึกเรียบร้อย ✅ พร้อมสร้างเกมใหม่ได้เลย");
 
+    // Step 1
+    setGameName(DEFAULT_STATE.gameName);
+    setHotelSize(DEFAULT_STATE.hotelSize);
+    setLocation(DEFAULT_STATE.location);
+    setScenario(DEFAULT_STATE.scenario);
+
+    setMode(DEFAULT_STATE.mode);
+    setTeamSize(DEFAULT_STATE.teamSize);
+    setMinTeams(DEFAULT_STATE.minTeams);
+    setMaxTeams(DEFAULT_STATE.maxTeams);
+
+    setTotalQuarters(DEFAULT_STATE.totalQuarters);
+    setMinutesPerRound(DEFAULT_STATE.minutesPerRound);
+
+    // sync ช่อง input
+    setTotalQuartersInput(String(DEFAULT_STATE.totalQuarters));
+    setMinutesPerRoundInput(String(DEFAULT_STATE.minutesPerRound));
+
+    // Step 2
+    setActiveYear(DEFAULT_STATE.activeYear);
+    setYearEconSettings(DEFAULT_STATE.yearEconSettings);
+    setQuarterSettings(DEFAULT_STATE.quarterSettings);
+    setIsStep2Saved(false);
+
+    // Step 3
+    setScoring(DEFAULT_STATE.scoring);
+    setIsStep3Saved(false);
+    setIsEditingScoring(false);
+
+    // Step 4
     setIsGameCreated(false);
     setGameCode("");
     setCreatedGameData(null);
 
-    setIsStep2Saved(false);
-    setIsStep3Saved(false);
-    setIsEditingScoring(false);
+    // UX
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDone = () => {
+    if (!ensureAllSaved()) return;
+
+    alert("บันทึกเรียบร้อย ✅ พร้อมสร้างเกมใหม่ได้เลย");
+
+    // ✅ รีเซ็ตกลับค่าเริ่มต้นจริง ๆ
+    resetToDefault();
   };
 
   const handleCreateGame = () => {
@@ -563,7 +663,6 @@ export default function AdminGameSettingsPage() {
 
   const handleGoToLobby = () => {
     if (!ensureGameCode()) return;
-    // ✅ ต้องบันทึก Step2 + Step3 ก่อนถึงไป Lobby ได้
     if (!ensureAllSaved()) return;
 
     navigate(`/admin/lobby/${gameCode}`, { state: { gameData: createdGameData } });
@@ -572,8 +671,8 @@ export default function AdminGameSettingsPage() {
   // =========================
   // ✅ ล็อก/ปลดล็อก ตาม flow
   // =========================
-  const isStep1Locked = isStep2Saved || isGameCreated; // Step1 ล็อกถาวรหลังบันทึก Step2 หรือสร้างเกม
-  const isStep2Locked = isStep2Saved; // Step2 ล็อกเมื่อบันทึกแล้ว
+  const isStep1Locked = isStep2Saved || isGameCreated;
+  const isStep2Locked = isStep2Saved;
 
   // Step3: แก้ได้เมื่อ Step2 saved เท่านั้น
   // หลังสร้างเกม: ล็อก จนกว่าจะกด "แก้ไขเกณฑ์"
@@ -842,7 +941,11 @@ export default function AdminGameSettingsPage() {
 
             <div className="ags-field">
               <label>MRR</label>
-              <select value={mrr} onChange={(e) => patchYearEcon({ mrr: Number(e.target.value) })} disabled={isStep2Locked}>
+              <select
+                value={mrr}
+                onChange={(e) => patchYearEcon({ mrr: Number(e.target.value) })}
+                disabled={isStep2Locked}
+              >
                 {[4, 4.5, 5.0, 5.5, 6, 6.5, 7, 7.5, 8].map((n) => (
                   <option key={n} value={n}>
                     {n}%
@@ -909,7 +1012,11 @@ export default function AdminGameSettingsPage() {
 
                   <div className="ags-field">
                     <label>เหตุการณ์</label>
-                    <select value={q.event} onChange={(e) => updateQuarter(idx, { event: e.target.value })} disabled={isStep2Locked}>
+                    <select
+                      value={q.event}
+                      onChange={(e) => updateQuarter(idx, { event: e.target.value })}
+                      disabled={isStep2Locked}
+                    >
                       {EVENT_OPTIONS.map((opt, i) =>
                         opt.options ? (
                           <optgroup key={i} label={opt.label}>
@@ -985,13 +1092,23 @@ export default function AdminGameSettingsPage() {
               </div>
 
               <div className="step3-card-actions">
-                <button type="button" className="btn-adj" onClick={() => adjustScore(item.key, -5)} disabled={!canEditStep3}>
+                <button
+                  type="button"
+                  className="btn-adj"
+                  onClick={() => adjustScore(item.key, -5)}
+                  disabled={!canEditStep3}
+                >
                   -
                 </button>
 
                 <div className="score-val">{scoring[item.key]}</div>
 
-                <button type="button" className="btn-adj" onClick={() => adjustScore(item.key, 5)} disabled={!canEditStep3}>
+                <button
+                  type="button"
+                  className="btn-adj"
+                  onClick={() => adjustScore(item.key, 5)}
+                  disabled={!canEditStep3}
+                >
                   +
                 </button>
 
@@ -1047,7 +1164,6 @@ export default function AdminGameSettingsPage() {
                   className={`btn-edit-criteria ${isEditingScoring ? "is-saving" : ""}`}
                   onClick={() => {
                     if (isEditingScoring) {
-                      // ✅ กำลังจะ "บันทึกการแก้ไข" -> ต้อง 100 เท่านั้น
                       if (totalWeight !== 100) {
                         alert(`ยังบันทึกไม่ได้: น้ำหนักรวมต้องเท่ากับ 100% (ปัจจุบัน ${totalWeight}%)`);
                         return;
@@ -1056,9 +1172,8 @@ export default function AdminGameSettingsPage() {
                       setIsStep3Saved(true);
                       alert("บันทึกการแก้ไขเกณฑ์การให้คะแนนแล้ว ✅");
                     } else {
-                      // ✅ เข้าโหมดแก้ไข
                       setIsEditingScoring(true);
-                      setIsStep3Saved(false); // เริ่มแก้ = ยังไม่บันทึก
+                      setIsStep3Saved(false);
                       setTimeout(() => {
                         step3Ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                       }, 50);

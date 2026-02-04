@@ -1,207 +1,833 @@
-/* AccountPage.css - Final Grid Fix */
+/* AccountPage.css - Final Grid Fix (Cleaned + Add/Remove member buttons) */
 
 /* --- Main Layout --- */
-.account-container { background-color: #f8f9fa; min-height: 100vh; font-family: 'Segoe UI', Roboto, sans-serif; color: #333; }
-.account-header { display: flex; justify-content: space-between; align-items: center; padding: 0 3%; height: 72px; background-color: #fff; border-bottom: 1px solid #e5e7eb; }
-.header-left, .header-right { display: flex; align-items: center; gap: 12px; }
-.header-title { font-weight: 700; font-size: 1rem; color: #111; }
-.lang-btn { display: flex; align-items: center; gap: 6px; background: none; border: none; font-weight: 700; cursor: pointer; font-size: 0.9rem; color: #111; margin-right: 10px; }
-.header-btn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.85rem; transition: all 0.2s; }
-.settings-btn { background-color: #198754; color: white; border: 1px solid #198754; } .settings-btn:hover { background-color: #146c43; }
-.logout-btn { background-color: white; color: #198754; border: 1px solid #198754; } .logout-btn:hover { background-color: #f0fdf4; }
+.account-container {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  font-family: "Segoe UI", Roboto, sans-serif;
+  color: #333;
+}
 
-.main-content { width: 94%; max-width: 1800px; margin: 0 auto; padding: 40px 0; }
-.welcome-section { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
-.user-avatar-circle { width: 72px; height: 72px; border: 1.5px solid #000; border-radius: 50%; display: flex; justify-content: center; align-items: center; background-color: #fff; }
-.welcome-section h1 { font-size: 2rem; font-weight: 800; color: #111; letter-spacing: -0.5px; }
+.account-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 3%;
+  height: 72px;
+  background-color: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-title {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #111;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #111;
+  margin-right: 10px;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.settings-btn {
+  background-color: #198754;
+  color: white;
+  border: 1px solid #198754;
+}
+.settings-btn:hover {
+  background-color: #146c43;
+}
+
+.logout-btn {
+  background-color: white;
+  color: #198754;
+  border: 1px solid #198754;
+}
+.logout-btn:hover {
+  background-color: #f0fdf4;
+}
+
+.main-content {
+  width: 94%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.welcome-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.user-avatar-circle {
+  width: 72px;
+  height: 72px;
+  border: 1.5px solid #000;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+}
+
+.welcome-section h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: -0.5px;
+
+  /* Gradient text */
+  background: linear-gradient(to right, #111, #444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 
 /* Grid Dashboard */
-.dashboard-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; align-items: start; }
-@media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
-.left-column, .right-column { display: flex; flex-direction: column; gap: 24px; }
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 40px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
 /* Cards */
-.card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); border: 1px solid #f0f0f0; text-align: center; }
-.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #1f2937; }
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  border: 1px solid #f0f0f0;
+  text-align: center;
+
+  /* Glassmorphism & soft shadow */
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
 
 /* Join Game */
-.join-input { width: 100%; height: 40px; background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 12px; outline: none; padding: 0 12px; text-align: center; font-weight: 600; letter-spacing: 1px; color: #333; }
-.helper-text { font-size: 0.75rem; color: #6b7280; margin-bottom: 20px; } .helper-text a { color: #198754; text-decoration: none; font-weight: 700; }
-.join-btn { width: 200px; padding: 10px; background-color: #b0b8b4; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: not-allowed; transition: background-color 0.2s; }
-.join-btn.active { background-color: #198754; cursor: pointer; }
+.join-input {
+  width: 100%;
+  height: 40px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  outline: none;
+  padding: 0 12px;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #333;
+}
+
+.helper-text {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+.helper-text a {
+  color: #198754;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.join-btn {
+  width: 200px;
+  padding: 10px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: not-allowed;
+  transition: background-color 0.2s;
+
+  /* default disabled look */
+  background-color: #b0b8b4;
+}
+
+.join-btn.active {
+  cursor: pointer;
+
+  /* Gradient + shadow (premium) */
+  background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+  box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+}
 
 /* Join Team */
-.team-invite-placeholder { width: 100%; max-width: 280px; height: 80px; background-color: #ecfdf5; border-radius: 4px; margin: 0 auto 24px; }
-.join-team-actions { display: flex; justify-content: center; gap: 16px; }
-.btn-deny, .btn-accept { width: 120px; padding: 10px; border-radius: 6px; border: none; font-weight: 700; }
-.btn-deny:disabled, .btn-accept:disabled { background-color: #ced4da; color: white; cursor: not-allowed; }
+.team-invite-placeholder {
+  width: 100%;
+  max-width: 280px;
+  height: 80px;
+  background-color: #ecfdf5;
+  border-radius: 4px;
+  margin: 0 auto 24px;
+}
+
+.join-team-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.btn-deny,
+.btn-accept {
+  width: 120px;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 700;
+}
+.btn-deny:disabled,
+.btn-accept:disabled {
+  background-color: #ced4da;
+  color: white;
+  cursor: not-allowed;
+}
 
 /* History */
-.history-card-section { text-align: left; padding: 20px; }
-.card-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
-.header-with-icon { display: flex; align-items: center; gap: 8px; }
-.badge-count { background-color: #f3f4f6; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
-.history-item { border-bottom: 1px solid #f3f4f6; padding-bottom: 16px; margin-bottom: 16px; } .history-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.history-top-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
-.history-top-row h4 { margin: 0; font-size: 0.9rem; font-weight: 700; color: #111; } .medal { font-size: 1.1rem; }
-.sub-detail { font-size: 0.75rem; color: #6b7280; margin: 2px 0; }
-.history-footer { display: flex; justify-content: space-between; font-size: 0.7rem; color: #9ca3af; margin-top: 12px; }
-.view-report-link { text-align: right; margin-top: 4px; } .view-report-link a { font-size: 0.75rem; color: #198754; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; }
-
-/* Announcements */
-.announcements-card { text-align: left; padding: 24px; }
-.announcement-item { padding: 20px; border-radius: 8px; margin-bottom: 16px; position: relative; overflow: hidden; }
-.announcement-item.important { background-color: #ecfdf5; } .announcement-item.normal { background-color: #f0fdf9; }
-.admin-tag { position: absolute; top: 0; right: 0; background-color: #ff3b30; color: white; padding: 6px 16px; border-bottom-left-radius: 8px; font-size: 0.75rem; font-weight: 700; }
-.announcement-item h4 { margin: 0 0 8px 0; font-size: 0.9rem; font-weight: 700; color: #1f2937; padding-right: 60px; }
-.announcement-item p { font-size: 0.8rem; color: #4b5563; line-height: 1.5; margin-bottom: 12px; }
-.ann-meta { font-size: 0.75rem; color: #6b7280; display: flex; gap: 16px; font-weight: 500; }
-.view-all-ann { text-align: right; margin-top: 8px; } .view-all-btn { font-size: 0.8rem; color: #198754; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-
-/* ----------------------------------------------------------- */
-/* ✅ Team Setup Card (แก้ Grid ใหม่ให้ตรงเป๊ะ) */
-/* ----------------------------------------------------------- */
-
-.team-setup-card-inline {
-  background: white; border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03); border: 1px solid #f0f0f0;
-  overflow: visible; padding: 0; margin-top: 24px;
+.history-card-section {
+  text-align: left;
+  padding: 20px;
 }
-.team-setup-header-tag {
-  background-color: #198754; color: white; font-weight: 700; font-size: 1rem;
-  padding: 10px 24px; display: inline-block; border-bottom-right-radius: 16px; margin-bottom: 24px;
-}
-.team-form-body { padding: 0 32px 32px 32px; }
-.form-group { margin-bottom: 24px; }
-.form-group label {
-  display: block; color: #198754; font-weight: 700; font-size: 1rem; margin-bottom: 8px;
-}
-.form-input {
-  width: 100%; padding: 10px 14px; border: 1px solid #dee2e6;
-  background-color: #fff; border-radius: 6px; font-size: 0.95rem; outline: none; color: #495057;
-}
-.form-input.readonly { background-color: #f1f3f5; color: #6c757d; }
 
-/* --- Member Grid System --- */
-.members-grid-container { display: flex; flex-direction: column; gap: 24px; } /* ช่องไฟระหว่างแถว */
+.card-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
 
-/* 🔥 จัด Grid ให้ Header และ Rows ใช้โครงสร้างเดียวกันเป๊ะ */
-.member-grid-header, .member-row {
-  display: grid;
-  grid-template-columns: 50px 1.5fr 160px minmax(220px, 1fr); 
-  gap: 15px; 
+.header-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-count {
+  background-color: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.history-item {
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.history-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.history-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 4px;
+}
+.history-top-row h4 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #111;
+}
+.medal {
+  font-size: 1.1rem;
+}
+
+.sub-detail {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin: 2px 0;
+}
+
+.history-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-top: 12px;
+}
+
+.view-report-link {
+  text-align: right;
+  margin-top: 4px;
+}
+.view-report-link a {
+  font-size: 0.75rem;
+  color: #198754;
+  text-decoration: none;
+  font-weight: 700;
+  display: inline-flex;
   align-items: center;
 }
 
-/* ✅ ส่วนหัวตาราง: ดัน Role Selection ให้ตรงคอลัมน์ 3 */
+/* Announcements */
+.announcements-card {
+  text-align: left;
+  padding: 24px;
+}
+
+.announcement-item {
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.announcement-item.important {
+  background-color: #ecfdf5;
+}
+.announcement-item.normal {
+  background-color: #f0fdf9;
+}
+
+.admin-tag {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #ff3b30;
+  color: white;
+  padding: 6px 16px;
+  border-bottom-left-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.announcement-item h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1f2937;
+  padding-right: 60px;
+}
+
+.announcement-item p {
+  font-size: 0.8rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.ann-meta {
+  font-size: 0.75rem;
+  color: #6b7280;
+  display: flex;
+  gap: 16px;
+  font-weight: 500;
+}
+
+.view-all-ann {
+  text-align: right;
+  margin-top: 8px;
+}
+.view-all-btn {
+  font-size: 0.8rem;
+  color: #198754;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+/* ----------------------------------------------------------- */
+/* ✅ Team Setup Card (Grid aligned) */
+/* ----------------------------------------------------------- */
+.team-setup-card-inline {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  border: 1px solid #f0f0f0;
+  overflow: visible;
+  padding: 0;
+  margin-top: 24px;
+}
+
+.team-setup-header-tag {
+  background-color: #198754;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 10px 24px;
+  display: inline-block;
+  border-bottom-right-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.team-form-body {
+  padding: 0 32px 32px 32px;
+}
+
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-group label {
+  display: block;
+  color: #198754;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  color: #495057;
+}
+
+.form-input.readonly {
+  background-color: #f1f3f5;
+  color: #6c757d;
+}
+.teamname-input{
+  width: 360px;      /* ปรับความกว้างตามต้องการ */
+  max-width: 100%;
+}
+
+/* ✅ Team name: lock + pencil */
+.teamname-row{
+  display: flex;
+  align-items: center;
+}
+
+.teamname-input-wrap{
+  position: relative;
+  width: 360px;   /* คุมความกว้างตามเดิม */
+  max-width: 100%;
+}
+
+.teamname-pencil{
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.teamname-pencil:hover{
+  color: #111;
+}
+
+/* เผื่อ readOnly แล้วอยากให้ padding กันชนดินสอ */
+.teamname-input-wrap .teamname-input{
+  padding-right: 40px;
+}
+
+/* --- Member Grid System --- */
+.members-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.member-grid-header,
+.member-row {
+  display: grid;
+  grid-template-columns: 50px 1.5fr 150px 260px;
+  gap: 15px;
+  align-items: center;
+}
+
 .member-grid-header {
-    margin-bottom: 8px; /* เว้นระยะห่างจากแถวแรกเล็กน้อย */
+  margin-bottom: 8px;
 }
 
 .role-header-text {
-  grid-column: 3; /* บังคับให้อยู่ Column 3 ตรงกับปุ่ม Dropdown */
-  font-size: 0.75rem; font-weight: 700; color: #000;
-  white-space: nowrap; cursor: help;
-  /* จัดชิดล่าง เพื่อให้ดูเหมือนลอยอยู่เหนือปุ่ม */
-  align-self: end; 
-}
-.q-mark { text-decoration: underline; margin-left: 2px; }
-
-.col-label { font-weight: 700; color: #000; font-size: 0.9rem; }
-.input-icon-wrapper { position: relative; width: 100%; }
-.input-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: #adb5bd; }
-
-/* Role Dropdown */
-.select-wrapper {
-    position: relative; width: 100%; height: 38px;
-    border-radius: 6px; overflow: hidden; cursor: pointer; transition: background 0.2s;
-}
-.select-wrapper.purple { background-color: #A855F7; }
-.select-wrapper.purple .role-select { color: white; }
-.select-wrapper.purple .select-arrow { color: white; }
-
-.select-wrapper.gray { background-color: #e9ecef; border: 1px solid #ced4da; }
-.select-wrapper.gray .role-select { color: #6c757d; }
-.select-wrapper.gray .select-arrow { color: #6c757d; }
-
-.role-select {
-    width: 100%; height: 100%; background-color: transparent; border: none;
-    font-size: 0.85rem; font-weight: 600; padding: 0 10px;
-    appearance: none; -webkit-appearance: none; cursor: pointer;
-    position: relative; z-index: 2;
-}
-.select-arrow {
-    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-    pointer-events: none; z-index: 1;
-}
-.role-select option { color: #333; background-color: white; }
-.role-select option:disabled { color: #ccc; background-color: #f9f9f9; }
-
-/* Status & Buttons */
-.col-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-
-.status-pill {
-  height: 32px; padding: 0 14px; border-radius: 20px;
-  font-size: 0.75rem; font-weight: 700; color: white;
-  display: flex; align-items: center; justify-content: center; min-width: 80px;
-}
-.status-pill.waiting { background-color: #adb5bd; }
-.status-pill.accepted { background-color: #86efac; color: #14532d; }
-
-.pill-btn {
-  height: 32px; padding: 0 14px; border-radius: 20px; border: none;
-  font-size: 0.75rem; font-weight: 700; color: white; cursor: pointer;
-  display: flex; align-items: center; gap: 4px; min-width: 80px; justify-content: center;
-}
-.pill-btn.share, .pill-btn.send { background-color: #198754; }
-
-/* Footer */
-.form-footer { display: flex; justify-content: space-between; margin-top: 40px; }
-.footer-btn { width: 140px; padding: 10px; border-radius: 6px; border: none; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
-.footer-btn.edit { background-color: #ced4da; color: white; }
-.footer-btn.ok { background-color: #198754; color: white; }
-
-/* ... (CSS เดิม) ... */
-
-/* เพิ่มต่อท้ายไฟล์ */
-
-/* สถานะ Waiting สีเหลือง */
-.status-pill.waiting { 
-    background-color: #FBC02D; 
-    color: white; 
+  grid-column: 3;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #000;
+  white-space: nowrap;
+  cursor: help;
+  align-self: end;
 }
 
-/* ปุ่ม Send สีเขียว */
-.pill-btn.send {
-    background-color: #198754;
-    color: white;
+.q-mark {
+  text-decoration: underline;
+  margin-left: 2px;
 }
 
-/* ปุ่ม Send สีเทา (Disabled) */
-.pill-btn.disabled {
-    background-color: #e9ecef;
-    color: #adb5bd;
-    cursor: not-allowed;
-    border: 1px solid #dee2e6;
+.col-label {
+  font-weight: 700;
+  color: #000;
+  font-size: 0.9rem;
 }
 
-/* Input เมื่อเป็น ReadOnly (หลังกด Send) */
-.form-input.readonly {
-    background-color: #f1f3f5;
-    color: #6c757d;
+.input-icon-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #adb5bd;
 }
 
 /* ทำให้ไอคอนดินสอกดได้ */
 .input-icon.clickable {
-    cursor: pointer;
-    color: #666;
+  cursor: pointer;
+  color: #666;
 }
 .input-icon.clickable:hover {
-    color: #000;
+  color: #000;
 }
 
 /* เพิ่ม Padding ด้านขวา เพื่อกันไม่ให้ข้อความไปทับกับไอคอนดินสอ */
 .input-icon-wrapper .form-input {
-    padding-right: 40px; /* เว้นที่ด้านขวา 40px (จากเดิม 14px) */
-    text-overflow: ellipsis; /* ถ้าข้อความยาวเกินให้ขึ้น ... */
+  padding-right: 40px;
+  text-overflow: ellipsis;
 }
+
+/* Role Dropdown */
+.select-wrapper {
+  position: relative;
+  width: 150px; 
+  height: 38px;
+  border-radius: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.select-wrapper.purple {
+  background-color: #a855f7;
+}
+.select-wrapper.purple .role-select {
+  color: white;
+}
+.select-wrapper.purple .select-arrow {
+  color: white;
+}
+
+.select-wrapper.gray {
+  background-color: #e9ecef;
+  border: 1px solid #ced4da;
+}
+.select-wrapper.gray .role-select {
+  color: #6c757d;
+}
+.select-wrapper.gray .select-arrow {
+  color: #6c757d;
+}
+
+.role-select {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+}
+
+.select-arrow {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.role-select option {
+  color: #333;
+  background-color: white;
+}
+.role-select option:disabled {
+  color: #ccc;
+  background-color: #f9f9f9;
+}
+
+/* Status & Buttons */
+.col-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.status-pill {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+}
+
+/* Waiting ให้ดู soft */
+.status-pill.waiting {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+
+.status-pill.accepted {
+  background-color: #86efac;
+  color: #14532d;
+}
+
+/* pill buttons */
+.pill-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 20px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+  justify-content: center;
+  transition: 0.2s;
+}
+
+/* send/share default green */
+.pill-btn.share,
+.pill-btn.send {
+  background-color: #198754;
+  color: white;
+}
+
+/* disabled send */
+.pill-btn.disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  border: 1px solid #dee2e6;
+}
+
+/* =========================================
+   ✅ NEW: Add/Remove member buttons (under email grid)
+   ========================================= */
+.member-actions-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding-left: 50px; /* ชิด grid (เท่าคอลัมน์ label) */
+}
+
+/* outline (add member) */
+.pill-btn.pill-outline {
+  background: #ffffff;
+  color: #198754;
+  border: 1px solid #198754;
+}
+.pill-btn.pill-outline:hover {
+  background: #f0fdf4;
+}
+
+/* danger (remove member) */
+.pill-btn.pill-danger {
+  background: #fff5f5;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+.pill-btn.pill-danger:hover {
+  background: #ffecec;
+}
+
+.pill-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Footer */
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+}
+
+.footer-btn {
+  width: 140px;
+  padding: 10px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.footer-btn.edit {
+  background-color: #ced4da;
+  color: white;
+}
+
+.footer-btn.ok {
+  color: white;
+  border: none;
+
+  /* premium gradient */
+  background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+  box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2);
+}
+
+/* Responsive: ปุ่ม add/remove ลงบรรทัด */
+@media (max-width: 640px) {
+  .member-actions-row {
+    justify-content: stretch;
+    flex-direction: column;
+    padding-left: 0;
+  }
+  .member-actions-row .pill-btn {
+    width: 100%;
+  }
+}
+.pill-btn.danger {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+.pill-btn.danger:disabled{
+  opacity: 0.5;
+}
+/* =========================================
+   ✅ Join Team: Invite details box (เหมือนรูป)
+   ========================================= */
+.team-invite-box{
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 24px;
+  background-color: #ecfdf5; /* เขียวอ่อน */
+  border-radius: 4px;
+  padding: 18px 18px;
+  line-height: 1.9;
+  font-weight: 600;
+}
+
+/* ปุ่ม deny/accept (ถ้าคุณยังไม่กำหนดสีไว้) */
+.btn-deny{
+  background-color: #f1f3f5;
+  color: #111;
+  cursor: pointer;
+}
+.btn-accept{
+  background: linear-gradient(135deg, #198754 0%, #146c43 100%);
+  color: white;
+  cursor: pointer;
+}
+
+/* =========================================
+   ✅ Status denied (ให้ host เห็น Denied ได้)
+   ========================================= */
+.status-pill.denied{
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #fecaca;
+}
+/* =========================
+   Join Team Invite box (แบบรูป)
+   ========================= */
+.team-invite-box{
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 24px;
+  background-color: #ecfdf5;
+  border-radius: 4px;
+  padding: 18px;
+  line-height: 1.9;
+  font-weight: 600;
+}
+
+/* ปุ่ม Deny/Accept สีตามรูป */
+.btn-deny{
+  background:#dc2626;
+  color:#fff;
+  cursor:pointer;
+}
+.btn-accept{
+  background:#198754;
+  color:#fff;
+  cursor:pointer;
+}
+.btn-deny:hover,
+.btn-accept:hover{
+  filter: brightness(0.95);
+}
+
+/* status denied */
+.status-pill.denied{
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border: 1px solid #fecaca;
+}
+
