@@ -32,27 +32,32 @@ function getDraftKeyForPlayer(playerId) {
 /* =========================
    Helpers
    ========================= */
-function getModeLabel(modeObj) {
-  if (!modeObj) return "-";
-  const type = modeObj.type;
+  function getModeLabelEN(modeObj) {
+    if (!modeObj) return "";
+    const type = modeObj.type;
 
-  if (type === "single") return "เดี่ยว";
+    if (type === "single") return "Single";
 
-  if (type === "team") {
-    const n = modeObj.teamSize;
-    return n ? `ทีม (${n} คน)` : "ทีม";
+    if (type === "team") {
+      const n = modeObj.teamSize;
+      return n ? `Team (${n} people)` : "Team";
+    }
+
+    if (type === "other") {
+      const min = modeObj.minTeams;
+      const max = modeObj.maxTeams;
+
+      if (min != null && max != null)
+        return `Team (${min}-${max} people)`;
+
+      if (max != null)
+        return `Team (1-${max} people)`;
+
+      return "Team";
+    }
+
+    return "";
   }
-
-  if (type === "other") {
-    const min = modeObj.minTeams;
-    const max = modeObj.maxTeams;
-    if (min != null && max != null) return `ทีม (${min}-${max} คน)`;
-    if (max != null) return `ทีม (1-${max} คน)`;
-    return "ทีม";
-  }
-
-  return "-";
-}
 
 function safeJSONParse(raw, fallback) {
   try {
@@ -903,8 +908,9 @@ function AccountPage() {
   const greetingName = currentPlayer?.name || "Player";
 
   const teamSetupModeLabel = useMemo(() => {
-    return getModeLabel(joinedGame?.settings?.mode);
+    return getModeLabelEN(joinedGame?.settings?.mode);
   }, [joinedGame]);
+
 
   const teamLimit = useMemo(() => {
     return getTeamLimitFromMode(joinedGame?.settings?.mode);
@@ -933,11 +939,21 @@ function AccountPage() {
       </nav>
 
       <main className="main-content">
-        <div className="welcome-section">
-          <div className="user-avatar-circle">
-            <User size={40} strokeWidth={1.5} color="#333" />
+        {/* ✅ Greeting Banner (เหมือนรูป) */}
+        <div className="greeting-hero">
+          <div className="greeting-hero-inner">
+            <div className="greeting-text">
+              <div className="greeting-title">
+                Hello, {greetingName} <span className="wave">👋</span>
+              </div>
+              <div className="greeting-subtitle">
+                Get back to managing your hotel empire now. This season’s competition is fierce!
+              </div>
+            </div>
+
+            {/* optional: ไอคอนจางๆ ด้านขวา */}
+            <div className="greeting-hero-mark" aria-hidden="true" />
           </div>
-          <h1>Hello, {greetingName} !</h1>
         </div>
 
         <div className="dashboard-grid">
@@ -973,7 +989,7 @@ function AccountPage() {
                 <div style={{ marginTop: 10, fontSize: 12, color: "#374151" }}>
                   ✅ Joined: <strong>{joinedGame.name}</strong> —{" "}
                   <span style={{ color: "#6B7280" }}>
-                    Mode: {getModeLabel(joinedGame?.settings?.mode)}
+                    Mode: {getModeLabelEN(joinedGame?.settings?.mode)}
                   </span>
                 </div>
               )}
@@ -1072,50 +1088,6 @@ function AccountPage() {
           </div>
 
           <div className="right-column">
-            {/* Announcements */}
-            <div className="card announcements-card">
-              <div className="card-header-row">
-                <div className="header-with-icon">
-                  <Megaphone size={20} className="icon-megaphone" />
-                  <h3>Announcements</h3>
-                </div>
-                <span className="badge-count">{allAnnouncements.length}</span>
-              </div>
-
-              <div className="announcement-list">
-                {displayedAnnouncements.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`announcement-item ${item.type}`}
-                  >
-                    {item.hasTag && <div className="admin-tag">Admin</div>}
-                    <h4>{item.title}</h4>
-                    <p>{item.desc}</p>
-                    <div className="ann-meta">
-                      <span>👤 {item.author}</span>
-                      <span>📅 {item.date}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="view-all-ann">
-                <span
-                  className="view-all-btn"
-                  onClick={() => setIsExpanded(!isExpanded)}
-                >
-                  {isExpanded ? "View Less" : "View All"}{" "}
-                  <ChevronRight
-                    size={14}
-                    style={{
-                      transform: isExpanded ? "rotate(-90deg)" : "rotate(0deg)",
-                      transition: "0.2s",
-                    }}
-                  />
-                </span>
-              </div>
-            </div>
-
             {/* Team Setup */}
             {showTeamSetup && (
               <div className="team-setup-card-inline">
@@ -1379,6 +1351,49 @@ function AccountPage() {
                 </div>
               </div>
             )}
+            {/* Announcements */}
+            <div className="card announcements-card">
+              <div className="card-header-row">
+                <div className="header-with-icon">
+                  <Megaphone size={20} className="icon-megaphone" />
+                  <h3>Announcements</h3>
+                </div>
+                <span className="badge-count">{allAnnouncements.length}</span>
+              </div>
+
+              <div className="announcement-list">
+                {displayedAnnouncements.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`announcement-item ${item.type}`}
+                  >
+                    {item.hasTag && <div className="admin-tag">Admin</div>}
+                    <h4>{item.title}</h4>
+                    <p>{item.desc}</p>
+                    <div className="ann-meta">
+                      <span>👤 {item.author}</span>
+                      <span>📅 {item.date}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="view-all-ann">
+                <span
+                  className="view-all-btn"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                >
+                  {isExpanded ? "View Less" : "View All"}{" "}
+                  <ChevronRight
+                    size={14}
+                    style={{
+                      transform: isExpanded ? "rotate(-90deg)" : "rotate(0deg)",
+                      transition: "0.2s",
+                    }}
+                  />
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </main>
