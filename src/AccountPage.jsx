@@ -28,7 +28,6 @@ function getDraftKeyForPlayer(playerId) {
   return `${ACCOUNT_DRAFT_KEY_BASE}_${playerId || "unknown"}`;
 }
 
-
 /* =========================
    Helpers
    ========================= */
@@ -61,7 +60,8 @@ function getDraftKeyForPlayer(playerId) {
 
 function safeJSONParse(raw, fallback) {
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    return parsed === null ? fallback : parsed;
   } catch {
     return fallback;
   }
@@ -96,9 +96,9 @@ function getTeamLimitFromMode(modeObj) {
   }
 
   if (type === "other") {
-    const minTeams = clamp(parseInt(modeObj?.minTeams || 2, 10) || 2, 2, 4);
+    const minTeams = clamp(parseInt(modeObj?.minTeams ?? 1, 10) || 1, 1, 4);
     const maxTeams = clamp(
-      parseInt(modeObj?.maxTeams || 4, 10) || 4,
+      parseInt(modeObj?.maxTeams ?? 4, 10) || 4,
       minTeams,
       4
     );
@@ -154,10 +154,52 @@ function removeInvitesByHostDraft(games, hostPlayerId, gameCode, draftTeamId) {
 
 function AccountPage() {
   const navigate = useNavigate();
+  const [storageTick, setStorageTick] = useState(0);
+  const [showOkModal, setShowOkModal] = useState(false);
+
+  function writeGamesAndRefresh(games) {
+  writeGames(games);
+  setStorageTick((t) => t + 1);
+}
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamId, teamName) {
+  const game = games[gameIdx];
+  game.teams = game.teams || [];
+
+  const draftId = draftTeamId || makeTeamId();
+
+  // หา draft team เดิม
+  let t = game.teams.find((x) => x.id === draftId);
+
+  // ถ้ายังไม่มี -> สร้าง draft team
+  if (!t) {
+    t = {
+      id: draftId,
+      name: teamName?.trim() || "Draft Team",
+      leaderPlayerId: player.id,
+      leaderName: player.name || "Host",
+      leaderEmail: player.email || "",
+      members: [player.id],
+      roles: { [player.id]: "CEO" },
+      invites: [],
+      isDraft: true,
+      createdAt: new Date().toISOString(),
+    };
+    game.teams.push(t);
+  } else {
+    // update ชื่อทีมเผื่อเปลี่ยน
+    t.name = teamName?.trim() || t.name;
+    t.isDraft = true;
+  }
+
+  games[gameIdx] = game;
+  return { games, draftId, team: t };
+}
+
 
   // -------------------------
   // Session Player
@@ -235,8 +277,7 @@ function AccountPage() {
   useEffect(() => {
     if (!currentPlayer?.email) return;
     setPendingInvite(scanPendingInvite());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPlayer]);
+  }, [currentPlayer, storageTick]);
 
   // ถ้าทดสอบ 2 แท็บ ให้ sync ทันทีเมื่อ localStorage เปลี่ยน
   useEffect(() => {
@@ -373,14 +414,56 @@ function AccountPage() {
 
     const games = readGames();
     const gameIdx = games.findIndex((g) => g.code === code);
-    if (gameIdx === -1) return { games, gameIdx, game: null, team: null };
+    if (gameIdx === -1)
+      return { games, gameIdx, game: null, team: null };
 
     const game = games[gameIdx];
-    const team =
-      (game.teams || []).find((t) => t.leaderPlayerId === hostId) || null;
+    game.teams = game.teams || [];
+
+    // ✅ 1) หา draft team จาก draftTeamId ก่อน
+    let team = null;
+    if (draftTeamId) {
+      team = game.teams.find((t) => t.id === draftTeamId) || null;
+    }
+
+    // ✅ 2) fallback หา team ที่ host เป็น leader
+    if (!team) {
+      team =
+        game.teams.find((t) => t.leaderPlayerId === hostId) || null;
+    }
 
     return { games, gameIdx, game, team };
   };
+
+  function removeInviteFromStorageByEmail(emailToRemove) {
+    const email = normalizeEmail(emailToRemove);
+    if (!email) return;
+
+    let { games, gameIdx, game, team } = getHostTeamFromStorage();
+    if (gameIdx === -1 || !game || !team) return;
+
+    // 1) ลบ invite ของอีเมลนี้ออกจากทีม
+    team.invites = (team.invites || []).filter(
+      (inv) => normalizeEmail(inv.email) !== email
+    );
+
+    // 2) ถ้าคนนี้เคย accepted แล้วมี player ในเกม -> ลบออกจาก members/roles และ reset teamId
+    const foundPlayer = (game.players || []).find(
+      (p) => normalizeEmail(p.email) === email
+    );
+
+    if (foundPlayer) {
+      team.members = (team.members || []).filter((id) => id !== foundPlayer.playerId);
+
+      if (team.roles) delete team.roles[foundPlayer.playerId];
+
+      // draft phase: ให้หลุดทีม
+      foundPlayer.teamId = null;
+    }
+
+    games[gameIdx] = game;
+    writeGamesAndRefresh(games); // ✅ สำคัญ: ให้ acceptedCount/okLabel รีเรนเดอร์
+  }
 
   const getInviteStatusFromStorage = (email) => {
     const e = normalizeEmail(email);
@@ -430,6 +513,10 @@ function AccountPage() {
 
     if (emailToSend === "" || !roleSelected) return;
 
+    // ✅ NEW: ต้องมีชื่อทีม + ห้ามซ้ำ ก่อนส่ง invite
+    const teamCheck = validateTeamNameBeforeInvite();
+    if (!teamCheck.ok) return;
+
     if (emailToSend === normalizeEmail(MY_EMAIL)) {
       alert("คุณไม่สามารถเชิญตัวเองได้");
       return;
@@ -449,8 +536,27 @@ function AccountPage() {
     setTeamMembers(updatedMembers);
 
     // Storage
-    const { games, gameIdx, game, team } = getHostTeamFromStorage();
+    let { games, gameIdx, game, team } = getHostTeamFromStorage();
+
+    if (gameIdx !== -1 && game && !team) {
+      const ensured = ensureDraftTeamInStorage(
+        games,
+        gameIdx,
+        currentPlayer,
+        joinedGame,
+        draftTeamId,
+        teamCheck.name // ✅ ใช้ชื่อทีมที่ validate แล้ว
+      );
+      games = ensured.games;
+      team = ensured.team;
+
+      if (!draftTeamId) setDraftTeamId(ensured.draftId);
+    }
+
     if (!game || !team || gameIdx === -1) return;
+
+    // ✅ NEW: อัปเดตชื่อทีมลง draft team ใน storage ให้ตรงล่าสุดด้วย
+    team.name = teamCheck.name;
 
     team.invites = team.invites || [];
     const existingIdx = team.invites.findIndex(
@@ -462,16 +568,52 @@ function AccountPage() {
       role: roleSelected,
       status: "pending",
       invitedAt: new Date().toISOString(),
+
+      // ✅ NEW: ส่งชื่อทีมไปด้วย
+      teamName: teamCheck.name,
+      teamId: team.id,
+      gameCode: joinedGame?.code || "",
+      hostEmail: currentPlayer?.email || "",
+      hostName: currentPlayer?.name || "Host",
     };
 
     if (existingIdx >= 0) team.invites[existingIdx] = payload;
     else team.invites.push(payload);
 
     games[gameIdx] = game;
-    writeGames(games);
+    writeGamesAndRefresh(games);
+  };
+
+   const handleShareInvite = (email, role) => {
+    if (!isJoined || !joinedGame) return;
+
+    // ✅ NEW: ต้องมีชื่อทีม + ห้ามซ้ำ ก่อน share
+    const teamCheck = validateTeamNameBeforeInvite();
+    if (!teamCheck.ok) return;
+
+    const teamId = draftTeamId;
+    if (!teamId) {
+      alert("Please join game first.");
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/invite?code=${joinedGame.code}&team=${teamId}`;
+    const text =
+      `Join my team "${teamCheck.name}" as ${role || "Team Member"}\n` +
+      `Code: ${joinedGame.code}\n` +
+      `Link: ${shareUrl}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      alert("Copied invite link! You can send it to your friend.");
+    });
   };
 
   const handleEditClick = (index) => {
+    const oldEmail = teamMembers[index]?.email;
+
+    // ✅ ลบ invite เก่าออกก่อน (กันค้าง acceptedCount)
+    removeInviteFromStorageByEmail(oldEmail);
+
     const updatedMembers = [...teamMembers];
     updatedMembers[index].status = "typing";
     setTeamMembers(updatedMembers);
@@ -508,6 +650,9 @@ function AccountPage() {
     const removed = teamMembers[indexToRemove];
     if (!removed) return;
 
+    // ✅ NEW: ลบ invite/accepted ใน storage ด้วย
+    removeInviteFromStorageByEmail(removed.email);
+
     // ลบ member ออกจาก list
     const nextMembers = teamMembers.filter((_, i) => i !== indexToRemove);
 
@@ -531,6 +676,10 @@ function AccountPage() {
     if (currentTotal <= limit.minTotal) return;
 
     const last = teamMembers[teamMembers.length - 1];
+    if (!last) return;
+
+    // ✅ เพิ่มบรรทัดนี้
+    removeInviteFromStorageByEmail(last.email);
     setTeamMembers((prev) => prev.slice(0, -1));
     setTeamRoles((prev) => {
       const next = { ...prev };
@@ -579,10 +728,24 @@ function AccountPage() {
     }
 
     games[gameIndex] = game;
-    writeGames(games);
+    writeGamesAndRefresh(games);
 
     setIsJoined(true);
     setJoinedGame(game);
+    // หลัง setJoinedGame(game);
+    let draftId = draftTeamId || makeTeamId();
+    setDraftTeamId(draftId);
+
+    try {
+      const games2 = readGames();
+      const idx2 = games2.findIndex((g) => g.code === game.code);
+      if (idx2 !== -1) {
+        const ensured = ensureDraftTeamInStorage(games2, idx2, player, game, draftId, teamName);
+        writeGamesAndRefresh(ensured.games); // ✅ ให้ storageTick เด้ง
+      }
+    } catch (e) {
+      console.error(e);
+    }
 
     const modeType = game?.settings?.mode?.type;
     if (modeType === "single") {
@@ -594,7 +757,6 @@ function AccountPage() {
     }
 
     setShowTeamSetup(true);
-    setDraftTeamId((prev) => prev || makeTeamId()); // ✅ เพิ่ม
 
   };
 
@@ -659,89 +821,135 @@ function AccountPage() {
     }
   };
 
+  const finalizeTeamAndGo = () => {
+    const games = readGames();
+    const player = currentPlayer;
+
+    // 1. หา Game และ Team ก่อน (ต้องทำตรงนี้ก่อน!)
+    const idx = games.findIndex((g) => g.code === joinedGame?.code);
+    if (idx === -1) { alert("ไม่พบเกมในระบบ"); return; }
+    const game = games[idx];
+
+    // 2. หา Team (ใช้ draftTeamId)
+    const teamId = draftTeamId;
+    let team = game.teams?.find((t) => t.id === teamId);
+    if (!team) {
+      alert("ไม่พบข้อมูลทีมร่าง กรุณาลอง Join เกมใหม่อีกครั้ง");
+      return;
+    }
+
+    if (team.leaderPlayerId !== player.id) {
+      alert("คุณไม่ใช่หัวหน้าทีม ไม่สามารถกดยืนยันได้");
+      return;
+    }
+
+    // 3. บันทึก Roles (ย้ายมาไว้ตรงนี้หลังจากมีตัวแปร team และ game แล้ว)
+    team.roles = team.roles || {};
+    team.roles[player.id] = teamRoles.you || "CEO";
+
+    teamMembers.forEach((m) => {
+      const status = getInviteStatusFromStorage(m.email); // ฟังก์ชันนี้ใช้ได้เพราะมันไปอ่าน storage ใหม่
+      if (status === "accepted" && teamRoles[m.key]) {
+        const foundMember = game.players.find(
+          (p) => normalizeEmail(p.email) === normalizeEmail(m.email)
+        );
+        if (foundMember) {
+          team.roles[foundMember.playerId] = teamRoles[m.key];
+        }
+      }
+    });
+
+    // 4. ตั้งค่าอื่นๆ ของทีม
+    const finalTeamName = teamName.trim() || `Team ${Math.floor(Math.random() * 900 + 100)}`;
+    team.name = finalTeamName;
+    team.isDraft = false; // ปิดสถานะร่าง
+
+    // 5. อัปเดตสมาชิกที่ตอบรับแล้วให้ผูกกับทีมนี้จริงๆ
+    (team.invites || [])
+      .filter((inv) => inv.status === "accepted")
+      .forEach((inv) => {
+        const p = game.players.find((pl) => normalizeEmail(pl.email) === normalizeEmail(inv.email));
+        if (p) p.teamId = teamId;
+      });
+
+    // 6. บันทึกและไปต่อ
+    games[idx] = game;
+    writeGamesAndRefresh(games);
+    localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
+    navigate("/waiting-room", { state: { gameCode: joinedGame.code } });
+  };
+
+  // ✅ helper: เช็คชื่อทีมซ้ำในเกมเดียวกัน (เทียบแบบ trim + case-insensitive)
+  function isDuplicateTeamName(name) {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return false;
+
+    const games = readGames();
+    const game = games.find((g) => g.code === joinedGame?.code);
+    if (!game) return false;
+
+    const myTeamId = draftTeamId;
+
+    const lower = trimmed.toLowerCase();
+
+    return (game.teams || []).some((t) => {
+      if (!t?.name) return false;
+
+      // ✅ ไม่เทียบกับทีมของตัวเอง (draft/ทีมที่กำลังแก้)
+      if (myTeamId && t.id === myTeamId) return false;
+
+      // (Optional) ถ้าอยากให้ "Draft Team" ของคนอื่นไม่นับ ให้เปิดบรรทัดนี้
+      // if (t.isDraft) return false;
+
+      return t.name.trim().toLowerCase() === lower;
+    });
+  };
+
+  function validateTeamNameBeforeInvite() {
+    const trimmedName = (teamName || "").trim();
+
+    if (!trimmedName) {
+      alert("กรุณาใส่ชื่อทีมก่อนส่งคำเชิญ");
+      return { ok: false, name: "" };
+    }
+
+    if (isDuplicateTeamName(trimmedName)) {
+      alert("ชื่อทีมนี้ถูกใช้แล้ว กรุณาเปลี่ยนชื่อทีมก่อนส่งคำเชิญ");
+      return { ok: false, name: "" };
+    }
+
+    return { ok: true, name: trimmedName };
+  }
 
   /* =========================
      OK -> Create Team
      ========================= */
-  const handleOkClick = () => {
-    if (!joinedGame) {
-      alert("ยังไม่ได้ Join เกม");
-      return;
-    }
+    const handleOkClick = () => {
 
-    const games = readGames();
-    const player = currentPlayer;
+      if (!joinedGame) {
+        alert("ยังไม่ได้ Join เกม");
+        return;
+      }
+      // ✅ 1) ต้องมีชื่อทีมก่อน
+      const trimmedName = (teamName || "").trim();
+      if (!trimmedName) {
+        alert("กรุณาใส่ชื่อทีม");
+        return;
+      }
 
-    const idx = games.findIndex((g) => g.code === joinedGame.code);
-    if (idx === -1) {
-      alert("ไม่พบเกมในระบบ (อาจถูกลบ)");
-      return;
-    }
+       // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room (ทีมในเกมเดียวกัน)
+      if (isDuplicateTeamName(trimmedName)) {
+        alert("ชื่อทีมนี้ถูกใช้แล้ว กรุณาเปลี่ยนชื่อทีม");
+        return;
+      }
+      if (!canOk) {
+        alert(`Waiting accepted: ${totalReady}/${requiredTotal}`);
+        return;
+      }
 
-    const game = games[idx];
-    game.players = game.players || [];
-    game.teams = game.teams || [];
-
-    const mode = game?.settings?.mode || {};
-    const limit = getTeamLimitFromMode(mode);
-
-    const totalNow = 1 + teamMembers.length;
-
-    if (limit.type === "team" && totalNow !== limit.minTotal) {
-      alert(`โหมดนี้ต้องมีสมาชิกทั้งหมด ${limit.minTotal} คน`);
-      return;
-    }
-
-    if (
-      limit.type === "other" &&
-      (totalNow < limit.minTotal || totalNow > limit.maxTotal)
-    ) {
-      alert(`โหมดนี้ต้องมีสมาชิกทั้งหมด ${limit.minTotal}-${limit.maxTotal} คน`);
-      return;
-    }
-
-    const finalTeamName =
-      teamName.trim() || `Team ${Math.floor(Math.random() * 900 + 100)}`;
-
-    const teamId = makeTeamId();
-
-    const rolesMap = {};
-    rolesMap[player.id] = teamRoles.you || "CEO";
-
-    const inviteList = teamMembers
-      .filter((m) => normalizeEmail(m.email) !== "")
-      .map((m) => ({
-        email: normalizeEmail(m.email),
-        role: teamRoles[m.key] || "",
-        status: "pending",
-        invitedAt: new Date().toISOString(),
-      }));
-
-    game.teams.push({
-      id: teamId,
-      name: finalTeamName,
-      leaderPlayerId: player.id,
-      leaderName: player.name || "Host",
-      leaderEmail: player.email || "",
-      members: [player.id],
-      roles: rolesMap,
-      invites: inviteList,
-      createdAt: new Date().toISOString(),
-    });
-
-    const pInGame = game.players.find((p) => p.playerId === player.id);
-    if (pInGame) pInGame.teamId = teamId;
-
-    games[idx] = game;
-    writeGames(games);
-
-    setShowTeamSetup(false);
-
-    // ✅ clear draft because user is leaving this page
-    localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
-
-    navigate("/waiting-room", { state: { gameCode: joinedGame.code } });
-  };
+      // ✅ แค่นี้พอ เปิด popup
+      setShowOkModal(true);
+    };
 
   /* =========================
      Accept / Deny Invite
@@ -786,6 +994,21 @@ function AccountPage() {
       p.teamId = team.id;
     }
 
+    const mode = game?.settings?.mode || {};
+    const limit = getTeamLimitFromMode(mode);
+
+    team.members = team.members || [];
+
+  // ถ้าตัวเองยังไม่อยู่ใน members -> คาดว่าจะเพิ่ม 1
+  const nextTotal = team.members.includes(currentPlayer.id)
+    ? team.members.length
+    : team.members.length + 1;
+
+  if (nextTotal > limit.maxTotal) {
+    alert("This team is already full.");
+    return;
+  }
+
     // add to team.members
     team.members = team.members || [];
     if (!team.members.includes(currentPlayer.id)) {
@@ -793,7 +1016,7 @@ function AccountPage() {
     }
 
     games[gameIdx] = game;
-    writeGames(games);
+    writeGamesAndRefresh(games);
 
     setPendingInvite(null);
 
@@ -824,7 +1047,7 @@ function AccountPage() {
     }
 
     games[gameIdx] = game;
-    writeGames(games);
+    writeGamesAndRefresh(games);
 
     setPendingInvite(null);
   };
@@ -907,16 +1130,65 @@ function AccountPage() {
 
   const greetingName = currentPlayer?.name || "Player";
 
-  const teamSetupModeLabel = useMemo(() => {
+ const teamSetupModeLabel = useMemo(() => {
     return getModeLabelEN(joinedGame?.settings?.mode);
-  }, [joinedGame]);
-
+  }, [joinedGame, storageTick]); // ✅ เพิ่ม storageTick
 
   const teamLimit = useMemo(() => {
     return getTeamLimitFromMode(joinedGame?.settings?.mode);
-  }, [joinedGame]);
+  }, [joinedGame, storageTick]); // ✅ เพิ่ม storageTick
 
   const currentTotalMembers = 1 + teamMembers.length;
+
+  // ✅ นับ accepted จาก invites ใน storage (ของทีม host)
+  const acceptedCount = useMemo(() => {
+    const { team } = getHostTeamFromStorage();
+    if (!team) return 0;
+    return (team.invites || []).filter((x) => x.status === "accepted").length;
+  }, [storageTick, joinedGame, draftTeamId, currentPlayer]);
+
+  // ✅ จำนวนสมาชิกที่ "ต้องมีในทีมทั้งหมด" ตาม mode
+  const requiredTotal = teamLimit.type === "single" ? 1 : teamLimit.minTotal;
+
+  // ✅ host = 1 คน + accepted คนอื่น ๆ
+  const totalReady = 1 + acceptedCount;
+
+  // ✅ เปิดปุ่ม OK เมื่อครบตามที่ต้องมี
+  const canOk =
+  isJoined &&
+  totalReady >= teamLimit.minTotal &&
+  totalReady <= teamLimit.maxTotal;
+
+  const okLabel = useMemo(() => {
+    if (teamLimit.type === "single") return `${totalReady}/1`;
+    if (teamLimit.type === "team")
+      return `${totalReady}/${teamLimit.minTotal}`; // fixed size
+    // other (range)
+    return `${totalReady}/${teamLimit.maxTotal}`; // เช่น 3/4
+  }, [teamLimit, totalReady]);
+
+  // ✅ Data สำหรับ OK Modal (เฉพาะ Accepted)
+  const okModalData = useMemo(() => {
+  const { team } = getHostTeamFromStorage();
+
+  const accepted = (team?.invites || [])
+    .filter((x) => x.status === "accepted")
+    .map((x) => ({
+      email: x.email,
+      role: x.role || "-",
+    }));
+
+  return {
+    gameName: joinedGame?.name || "-",
+    gameCode: joinedGame?.code || "-",
+    modeLabel: getModeLabelEN(joinedGame?.settings?.mode) || "-",
+    teamName: teamName?.trim() || "Hotel Team",
+    hostName: currentPlayer?.name || "Host",
+    hostEmail: currentPlayer?.email || "",
+    accepted,
+  };
+}, [storageTick, joinedGame, draftTeamId, currentPlayer, teamName]);
+
 
   return (
     <div className="account-container">
@@ -1088,269 +1360,236 @@ function AccountPage() {
           </div>
 
           <div className="right-column">
-            {/* Team Setup */}
-            {showTeamSetup && (
-              <div className="team-setup-card-inline">
-                <div className="team-setup-header-tag">
-                  Team Setup : {teamSetupModeLabel || "Team mode"}
-                </div>
+            {/* ✅ Team Setup (show always, lock when NOT joined) */}
+<div className={`team-setup-card-inline ${!isJoined ? "locked" : ""}`}>
+  <div className="team-setup-header-tag">
+    Team Setup {isJoined ? `: ${teamSetupModeLabel || ""}` : ""}
+  </div>
 
-                <div className="team-form-body">
-                  <div className="form-group">
-                    <label>Team name</label>
-                    <input
-                      type="text"
-                      placeholder="Enter Team name"
-                      className="form-input teamname-input"
-                      value={teamName}
-                      onChange={(e) => setTeamName(e.target.value)}
-                    />
-                  </div>
+  <div className="team-form-body">
+    {/* ===== ใช้ฟอร์มเดิมของคุณได้เลย แต่เพิ่ม disabled={!isJoined} ===== */}
+    <div className="form-group">
+      <label>Team name</label>
+      <input
+        type="text"
+        placeholder="Enter Team name"
+        className="form-input teamname-input"
+        value={teamName}
+        onChange={(e) => setTeamName(e.target.value)}
+        disabled={!isJoined}
+      />
+    </div>
 
-                  <div className="form-group">
-                    <div className="member-grid-header">
-                      <div></div>
-                      <div></div>
-                      <div className="role-header-text">
-                        Role Selection <span className="q-mark">?</span>
-                      </div>
-                      <div></div>
-                    </div>
+    <div className="form-group">
+      <div className="member-grid-header">
+        <div></div>
+        <div></div>
+        <div className="role-header-text">
+          Role Selection <span className="q-mark">?</span>
+        </div>
+        <div></div>
+      </div>
 
-                    <div className="members-grid-container">
-                      {/* Row 1: You */}
-                      <div className="member-row">
-                        <div className="col-label">You</div>
+      <div className="members-grid-container">
+        {/* Row 1: You */}
+        <div className="member-row">
+          <div className="col-label">You</div>
 
-                        <div className="col-input">
-                          <input
-                            type="text"
-                            value={MY_EMAIL}
-                            readOnly
-                            className="form-input readonly"
-                          />
-                        </div>
+          <div className="col-input">
+            <input
+              type="text"
+              value={MY_EMAIL}
+              readOnly
+              className="form-input readonly"
+              disabled={!isJoined}
+            />
+          </div>
 
-                        <div className="col-role">
-                          <div
-                            className={`select-wrapper ${
-                              teamRoles.you ? "purple" : "gray"
-                            }`}
-                          >
-                            <select
-                              className="role-select"
-                              value={teamRoles.you}
-                              onChange={(e) =>
-                                handleRoleChange("you", e.target.value)
-                              }
-                            >
-                              <option value="" disabled>
-                                Select Role
-                              </option>
-                              {ROLES.map((role) => (
-                                <option key={role} value={role}>
-                                  {role}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown size={14} className="select-arrow" />
-                          </div>
-                        </div>
+          <div className="col-role">
+            <div className={`select-wrapper ${teamRoles.you ? "purple" : "gray"}`}>
+              <select
+                className="role-select"
+                value={teamRoles.you}
+                onChange={(e) => handleRoleChange("you", e.target.value)}
+                disabled={!isJoined}
+              >
+                <option value="" disabled>Select Role</option>
+                {ROLES.map((role) => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="select-arrow" />
+            </div>
+          </div>
 
-                        <div className="col-action"></div>
-                      </div>
+          <div className="col-action"></div>
+        </div>
 
-                      {/* Other members */}
-                      {teamMembers.map((member, index) => {
-                        const roleValue = teamRoles[member.key];
-                        const hasEmail = member.email.trim() !== "";
-                        const hasRole = roleValue && roleValue !== "";
-                        const canSend = hasEmail && hasRole;
-                        const isSentUI = member.status === "sent";
+        {/* Other members (ของเดิมคุณ) */}
+        {teamMembers.map((member, index) => {
+          const roleValue = teamRoles[member.key];
+          const hasEmail = member.email.trim() !== "";
+          const hasRole = roleValue && roleValue !== "";
+          const canSend = hasEmail && hasRole;
+          const isSentUI = member.status === "sent";
 
-                        // status จริงจาก storage
-                        const realStatus = getInviteStatusFromStorage(member.email);
-                        const isAccepted = realStatus === "accepted";
-                        const isDenied = realStatus === "denied";
+          const realStatus = getInviteStatusFromStorage(member.email);
+          const isAccepted = realStatus === "accepted";
+          const isDenied = realStatus === "denied";
 
-                        return (
-                          <div key={member.key} className="member-row">
-                            <div className="col-label">
-                              {index === 0 ? "Other" : ""}
-                            </div>
+          return (
+            <div key={member.key} className="member-row">
+              <div className="col-label">{index === 0 ? "Other" : ""}</div>
 
-                            <div className="col-input input-icon-wrapper">
-                              <input
-                                type="text"
-                                placeholder="example@email.com"
-                                className={`form-input ${
-                                  isSentUI ? "readonly" : ""
-                                }`}
-                                value={member.email}
-                                onChange={(e) =>
-                                  handleEmailChange(index, e.target.value)
-                                }
-                                readOnly={isSentUI}
-                              />
-                              {isSentUI && (
-                                <Edit3
-                                  size={14}
-                                  className="input-icon clickable"
-                                  onClick={() => handleEditClick(index)}
-                                />
-                              )}
-                            </div>
+              <div className="col-input input-icon-wrapper">
+                <input
+                  type="text"
+                  placeholder="example@email.com"
+                  className={`form-input ${isSentUI ? "readonly" : ""}`}
+                  value={member.email}
+                  onChange={(e) => handleEmailChange(index, e.target.value)}
+                  readOnly={isSentUI}
+                  disabled={!isJoined}
+                />
+                {isSentUI && (
+                  <Edit3
+                    size={14}
+                    className="input-icon clickable"
+                    onClick={() => isJoined && handleEditClick(index)}
+                  />
+                )}
+              </div>
 
-                            <div className="col-role">
-                              <div
-                                className={`select-wrapper ${
-                                  roleValue ? "purple" : "gray"
-                                }`}
-                              >
-                                <select
-                                  className="role-select"
-                                  value={roleValue || ""}
-                                  onChange={(e) =>
-                                    handleRoleChange(member.key, e.target.value)
-                                  }
-                                >
-                                  <option value="" disabled>
-                                    Select Role
-                                  </option>
-                                  {ROLES.map((role) => (
-                                    <option key={role} value={role}>
-                                      {role}
-                                    </option>
-                                  ))}
-                                </select>
-                                <ChevronDown size={14} className="select-arrow" />
-                              </div>
-                            </div>
-
-                            <div className="col-action">
-                              {isSentUI ? (
-                                <>
-                                  {isAccepted ? (
-                                    <span className="status-pill accepted">
-                                      Accepted
-                                    </span>
-                                  ) : isDenied ? (
-                                    <span className="status-pill denied">
-                                      Denied
-                                    </span>
-                                  ) : (
-                                    <span className="status-pill waiting">
-                                      Waiting
-                                    </span>
-                                  )}
-
-                                  <button className="pill-btn share" type="button">
-                                    <Share2 size={12} /> Share
-                                  </button>
-
-                                  {/* ✅ ลบรายคน */}
-                                  <button
-                                    type="button"
-                                    className="pill-btn danger"
-                                    onClick={() => handleRemoveMemberAt(index)}
-                                    disabled={currentTotalMembers <= teamLimit.minTotal}
-                                    title={`ลดได้ต่ำสุด ${teamLimit.minTotal} คน`}
-                                  >
-                                    <Trash2 size={14} /> ลบ
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    className={`pill-btn ${
-                                      canSend ? "send" : "disabled"
-                                    }`}
-                                    onClick={() =>
-                                      canSend && handleSendInvite(index)
-                                    }
-                                    disabled={!canSend}
-                                    type="button"
-                                  >
-                                    Send
-                                  </button>
-                                  <button className="pill-btn share" type="button">
-                                    <Share2 size={12} /> Share
-                                  </button>
-
-                                  {/* ✅ ลบรายคน */}
-                                  <button
-                                    type="button"
-                                    className="pill-btn danger"
-                                    onClick={() => handleRemoveMemberAt(index)}
-                                    disabled={currentTotalMembers <= teamLimit.minTotal}
-                                    title={`ลดได้ต่ำสุด ${teamLimit.minTotal} คน`}
-                                  >
-                                    <Trash2 size={14} /> ลบ
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Add/Remove members (เฉพาะ other) */}
-                      {joinedGame?.settings?.mode?.type === "other" && (
-                        <div className="member-row">
-                          <div className="col-label"></div>
-
-                          {/* ปุ่มใต้คอลัมน์ email ตามที่คุณทำไว้ */}
-                          <div
-                            className="col-input"
-                            style={{
-                              display: "flex",
-                              gap: 10,
-                              flexWrap: "wrap",
-                            }}
-                          >
-
-                            <button
-                              type="button"
-                              className="pill-btn send"
-                              onClick={handleAddMember}
-                              disabled={currentTotalMembers >= teamLimit.maxTotal}
-                              style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                              }}
-                              title={`เพิ่มได้สูงสุด ${teamLimit.maxTotal} คน`}
-                            >
-                              <PlusCircle size={14} /> เพิ่มสมาชิก
-                            </button>
-                          </div>
-
-                          <div className="col-role"></div>
-                          <div className="col-action"></div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="form-footer">
-                    <button
-                      className="footer-btn edit"
-                      onClick={() => alert("Edit: (เดี๋ยวทำต่อขั้นหน้า)")}
-                      type="button"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="footer-btn ok"
-                      onClick={handleOkClick}
-                      type="button"
-                    >
-                      OK
-                    </button>
-                  </div>
+              <div className="col-role">
+                <div className={`select-wrapper ${roleValue ? "purple" : "gray"}`}>
+                  <select
+                    className="role-select"
+                    value={roleValue || ""}
+                    onChange={(e) => handleRoleChange(member.key, e.target.value)}
+                    disabled={!isJoined}
+                  >
+                    <option value="" disabled>Select Role</option>
+                    {ROLES.map((role) => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="select-arrow" />
                 </div>
               </div>
-            )}
+
+              <div className="col-action">
+                {isSentUI ? (
+                  <>
+                    {isAccepted ? (
+                      <span className="status-pill accepted">Accepted</span>
+                    ) : isDenied ? (
+                      <span className="status-pill denied">Denied</span>
+                    ) : (
+                      <span className="status-pill waiting">Waiting</span>
+                    )}
+
+                    <button 
+                      className="pill-btn share" 
+                      type="button" 
+                      disabled={!isJoined}
+                      onClick={() => handleShareInvite(member.email, roleValue)} // ✅ เรียกใช้ฟังก์ชัน Share
+                    >
+                      <Share2 size={12} /> Share
+                    </button>
+
+                    <button
+                      type="button"
+                      className="pill-btn danger"
+                      onClick={() => isJoined && handleRemoveMemberAt(index)}
+                      disabled={!isJoined}
+                    >
+                      <Trash2 className="trash-icon" /> Remove
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`pill-btn ${canSend && isJoined ? "send" : "disabled"}`}
+                      onClick={() => isJoined && canSend && handleSendInvite(index)}
+                      disabled={!isJoined || !canSend}
+                      type="button"
+                    >
+                      Invite
+                    </button>
+
+                    <button
+                      className="pill-btn share"
+                      type="button"
+                      disabled={!isJoined}
+                      onClick={() => handleShareInvite(member.email, roleValue)}
+                    >
+                      <Share2 size={12} /> Share
+                    </button>
+
+                    <button
+                      type="button"
+                      className="pill-btn danger"
+                      onClick={() => isJoined && handleRemoveMemberAt(index)}
+                      disabled={!isJoined}
+                    >
+                      <Trash2 className="trash-icon" /> Remove
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Add member (เฉพาะ other) */}
+        {joinedGame?.settings?.mode?.type === "other" && (
+          <div className="member-row">
+            <div className="col-label"></div>
+
+            <div className="col-input" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="pill-btn send"
+                onClick={() => isJoined && handleAddMember()}
+                disabled={!isJoined}
+              >
+                <PlusCircle size={14} /> Add member
+              </button>
+            </div>
+
+            <div className="col-role"></div>
+            <div className="col-action"></div>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div className="form-footer">
+      <button
+        className={`footer-btn ok ${canOk ? "active" : "disabled"}`}
+        onClick={handleOkClick}
+        type="button"
+        disabled={!canOk}
+      >
+        OK ({okLabel})
+      </button>
+    </div>
+
+    {/* ✅ LOCK OVERLAY */}
+    {!isJoined && (
+      <div className="team-setup-lock">
+        <div className="lock-card">
+          <div className="lock-icon">🔒</div>
+          <div className="lock-title">This section is Locked</div>
+          <div className="lock-desc">
+            Please enter <span className="lock-highlight">Game Code</span> to create team
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+
             {/* Announcements */}
             <div className="card announcements-card">
               <div className="card-header-row">
@@ -1396,7 +1635,51 @@ function AccountPage() {
             </div>
           </div>
         </div>
-      </main>
+           {/* ================= OK MODAL ================= */}
+          {showOkModal && (
+            <div className="okmodal-backdrop">
+              <div className="okmodal-card">
+                <h3>Confirm Team Setup</h3>
+
+                <p><b>Game:</b> {okModalData.gameName}</p>
+                <p><b>Team:</b> {okModalData.teamName}</p>
+                <p><b>Ready:</b> {totalReady}/{requiredTotal}</p>
+
+                <h4>Accepted Members</h4>
+                {okModalData.accepted.length === 0 ? (
+                  <p>-</p>
+                ) : (
+                  okModalData.accepted.map((m) => (
+                    <div key={m.email}>
+                      {m.email} ({m.role})
+                    </div>
+                  ))
+                )}
+
+                <div className="okmodal-actions">
+                  <button
+                    className="okmodal-btn cancel"
+                    onClick={() => setShowOkModal(false)}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="okmodal-btn confirm"
+                    onClick={() => {
+                      setShowOkModal(false);
+                      finalizeTeamAndGo();
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ================= END OK MODAL ================= */}
+
+        </main>
     </div>
   );
 }
