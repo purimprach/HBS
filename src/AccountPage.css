@@ -1165,3 +1165,81 @@ button.pill-btn.danger .trash-icon{
   background: #ffffff;
   border: 2px solid #EF4444;
 }
+.invmodal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display:flex; align-items:center; justify-content:center;
+  z-index: 9999;
+}
+
+.invmodal-card{
+  width: min(560px, calc(100% - 24px));
+  background:#fff;
+  border-radius: 14px;
+  padding: 18px 18px 16px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+}
+
+.invmodal-close{
+  position:absolute; top:10px; right:10px;
+  border:none; background:transparent;
+  font-size: 18px; cursor:pointer;
+  color:#6B7280;
+}
+
+.invmodal-warning{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #FFF7ED;
+  border: 1px solid #FED7AA;
+  color: #9A3412;
+  font-size: 13px;
+}
+
+.invmodal-linkbtn{
+  border: 1px solid #FB923C;
+  background: #FFEDD5;
+  color: #9A3412;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.invmodal-textarea{
+  width: 100%;
+  margin-top: 12px;
+  min-height: 140px;
+  resize: vertical;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #111827;
+  background: #F9FAFB;
+}
+
+.invmodal-actions{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.invmodal-btn{
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.invmodal-btn.primary{
+  border-color: #7C3AED;
+  background: #7C3AED;
+  color: #fff;
+}

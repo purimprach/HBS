@@ -23,6 +23,8 @@ import {
 const GAMES_KEY = "hbs_games";
 const PLAYER_SESSION_KEY = "hbs_current_player"; // { id, name, email }
 const ACCOUNT_DRAFT_KEY_BASE = "hbs_account_draft_v1";
+const USERS_KEY = "hbs_players";
+// แนะนำให้ RegisterPage เซฟเป็น array เช่น [{ id, name, email }]
 
 function getDraftKeyForPlayer(playerId) {
   return `${ACCOUNT_DRAFT_KEY_BASE}_${playerId || "unknown"}`;
@@ -121,6 +123,32 @@ function readGames() {
   return safeJSONParse(localStorage.getItem(GAMES_KEY), []);
 }
 
+function readUsers() {
+  const raw = localStorage.getItem(USERS_KEY);
+  const parsed = safeJSONParse(raw, []);
+
+  // ✅ ถ้าเป็น array ใช้ได้เลย
+  if (Array.isArray(parsed)) return parsed;
+
+  // ✅ ถ้าเป็น object (เช่น {users:[...]})
+  if (parsed && Array.isArray(parsed.users)) return parsed.users;
+
+  // ✅ ถ้าเป็น map เช่น {"email@x.com": {...}}
+  if (parsed && typeof parsed === "object") return Object.values(parsed);
+
+  return [];
+}
+
+function isEmailRegistered(email) {
+  const e = normalizeEmail(email);
+  if (!e) return false;
+
+  const users = readUsers();
+  console.log("CHECK REGISTER:", e, "usersCount:", users.length, "sample:", users[0]);
+
+  return users.some((u) => normalizeEmail(u?.email) === e);
+}
+
 function writeGames(games) {
   localStorage.setItem(GAMES_KEY, JSON.stringify(games));
 }
@@ -156,6 +184,40 @@ function AccountPage() {
   const navigate = useNavigate();
   const [storageTick, setStorageTick] = useState(0);
   const [showOkModal, setShowOkModal] = useState(false);
+    // =========================
+  // Invite / Register Modal
+  // =========================
+  const REGISTER_ROUTE = "/signup";
+
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteModalData, setInviteModalData] = useState(null);
+
+  function ensureDraftTeamIdReady() {
+    if (draftTeamId) return draftTeamId;
+
+    const newId = makeTeamId();
+    setDraftTeamId(newId);
+
+    try {
+      const games = readGames();
+      const idx = games.findIndex((g) => g.code === joinedGame?.code);
+      if (idx !== -1) {
+        const ensured = ensureDraftTeamInStorage(
+          games,
+          idx,
+          currentPlayer,
+          joinedGame,
+          newId,
+          teamName
+        );
+        writeGamesAndRefresh(ensured.games);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
+    return newId;
+  }
 
   function writeGamesAndRefresh(games) {
   writeGames(games);
@@ -283,13 +345,32 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   useEffect(() => {
     const onStorage = (e) => {
       if (e.key === GAMES_KEY) setPendingInvite(scanPendingInvite());
-      if (e.key && e.key.startsWith(ACCOUNT_DRAFT_KEY_BASE)) {
-  // optional: ไม่ต้องทำอะไรก็ได้
-}
 
+      // ✅ สำคัญ: ถ้า USERS_KEY เปลี่ยน (สมัครใหม่) -> เด้ง storageTick เพื่อให้ host UI เปลี่ยนทันที (กรณีทำใน "อีกแท็บ")
+      if (e.key === USERS_KEY) {
+        setStorageTick((t) => t + 1);
+      }
+
+      if (e.key && e.key.startsWith(ACCOUNT_DRAFT_KEY_BASE)) {
+        // optional
+      }
     };
+
+    // ✅ สำคัญ: ถ้ากลับมาหน้าเดิมหลังไป Register (แท็บเดียวกัน) -> storage event จะไม่ยิง
+    const onFocus = () => setStorageTick((t) => t + 1);
+    const onVisible = () => {
+      if (!document.hidden) setStorageTick((t) => t + 1);
+    };
+
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPlayer]);
 
@@ -312,6 +393,45 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   // Team setup state
   const [teamRoles, setTeamRoles] = useState({ you: "CEO" });
   const [teamMembers, setTeamMembers] = useState([]); // [{key, email, status}]
+
+    // =========================
+  // Auto-switch unregistered -> invite after register
+  // =========================
+  useEffect(() => {
+    // ถ้ามีคนที่เคย unregistered แล้วตอนนี้สมัครแล้ว -> กลับมาให้กด Invite ได้
+    setTeamMembers((prev) =>
+      prev.map((m) => {
+        const email = normalizeEmail(m.email);
+        if (!email) return m;
+
+        const registered = isEmailRegistered(email);
+        if (m.status === "unregistered" && registered) {
+          return { ...m, status: "typing" }; // กลับมาให้ปุ่ม Invite ได้
+        }
+        return m;
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageTick, isJoined, joinedGame, draftTeamId]);
+
+  // ✅ NEW: รีเช็คตอนกลับมาหน้า Account (แท็บเดียวกัน / ปิดโมดอลแล้ว)
+// เพราะ storage event จะไม่ยิงในแท็บเดียวกันเสมอ
+  useEffect(() => {
+    if (!showInviteModal) {
+      setTeamMembers((prev) =>
+        prev.map((m) => {
+          const email = normalizeEmail(m.email);
+          if (!email) return m;
+
+          if (m.status === "unregistered" && isEmailRegistered(email)) {
+            return { ...m, status: "typing" };
+          }
+          return m;
+        })
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageTick, showInviteModal]);
 
   // ✅ NEW: Restore draft after login (keep this page state)
   useEffect(() => {
@@ -495,13 +615,29 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   };
 
   const handleEmailChange = (index, value) => {
-    const updatedMembers = [...teamMembers];
-    updatedMembers[index].email = value;
-    if (updatedMembers[index].status !== "sent") {
-      updatedMembers[index].status = value.trim() !== "" ? "typing" : "idle";
-    }
-    setTeamMembers(updatedMembers);
-  };
+  setTeamMembers((prev) => {
+    const next = [...prev];
+    const cur = next[index];
+    if (!cur) return prev;
+
+    // อนุญาตให้แก้ไขได้ถ้ายังไม่เป็น 'sent'
+    const emailNorm = normalizeEmail(cur.email);
+    const registeredNow = isEmailRegistered(emailNorm);
+    const effectiveStatus =
+      cur.status === "unregistered" && registeredNow ? "typing" : cur.status;
+
+    if (effectiveStatus === "sent") return prev;
+    // ถ้า unregistered แต่สมัครแล้ว -> จะไม่ block แล้ว
+    if (effectiveStatus === "unregistered") return prev;
+
+    next[index] = {
+      ...cur,
+      email: value,
+      status: value.trim() !== "" ? "typing" : "idle",
+    };
+    return next;
+  });
+};
 
   // ✅ Send Invite: เขียนลง localStorage จริง
   const handleSendInvite = (index) => {
@@ -528,6 +664,26 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     if (isDuplicate) {
       alert("อีเมลนี้ถูกเพิ่มไปแล้วในช่องอื่น");
       return;
+    }
+
+    // ✅ NEW: เช็คว่าอีเมลสมัครแล้วหรือยัง
+    const registered = isEmailRegistered(emailToSend);
+
+    if (!registered) {
+      // 1. อัปเดต State ในหน้าจอ
+      setTeamMembers((prev) =>
+        prev.map((m, i) => i === index ? { ...m, status: "unregistered" } : m)
+      );
+      
+      // 2. (แนะนำ) บันทึกชื่อทีมลง Storage ไว้ก่อนเพื่อให้ชื่อทีมไม่หาย
+      let { games, gameIdx } = getHostTeamFromStorage();
+      if (gameIdx !== -1) {
+        const ensured = ensureDraftTeamInStorage(games, gameIdx, currentPlayer, joinedGame, draftTeamId, teamName);
+        writeGamesAndRefresh(ensured.games);
+      }
+
+      openInviteModal(emailToSend, roleSelected, false);
+      return; 
     }
 
     // UI
@@ -608,6 +764,77 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     });
   };
 
+function buildInviteDetails({ email, role, isRegistered }) {
+  const gameCode = joinedGame?.code || "";
+  const gameName = joinedGame?.name || "";
+  const adminName = currentPlayer?.name || "Host";
+  const adminEmail = currentPlayer?.email || "";
+  const teamId = ensureDraftTeamIdReady();
+  const teamNm = (teamName || "").trim() || "Hotel Team";
+
+  const inviteLink = `${window.location.origin}/invite?code=${gameCode}&team=${teamId}`;
+  const registerLink = `${window.location.origin}${REGISTER_ROUTE}?email=${encodeURIComponent(
+    email || ""
+  )}&code=${encodeURIComponent(gameCode)}&team=${encodeURIComponent(teamId)}`;
+
+  const header = isRegistered
+    ? `✅ You are invited to join a team`
+    : `⚠️ This email is not registered yet`;
+
+  const text =
+    `${header}\n\n` +
+    `Game: ${gameName}\n` +
+    `Game Code: ${gameCode}\n` +
+    `Team: ${teamNm}\n` +
+    `Admin: ${adminName} (${adminEmail})\n` +
+    `Role: ${role || "Team Member"}\n\n` +
+    `Invite Link: ${inviteLink}\n` +
+    (isRegistered ? "" : `Register Link: ${registerLink}\n`);
+
+  return {
+    email,
+    role,
+    isRegistered,
+    gameName,
+    gameCode,
+    teamName: teamNm,
+    adminName,
+    adminEmail,
+    inviteLink,
+    registerLink,
+    text,
+  };
+}
+
+function openInviteModal(email, role, isRegistered) {
+  ensureDraftTeamIdReady();
+  const data = buildInviteDetails({ email, role, isRegistered });
+  setInviteModalData(data);
+  setShowInviteModal(true);
+}
+
+async function copyInviteText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("Copied!");
+  } catch {
+    alert("Copy failed. Please copy manually.");
+  }
+}
+
+async function shareInviteText(text) {
+  try {
+    if (navigator.share) {
+      await navigator.share({ text });
+    } else {
+      await navigator.clipboard.writeText(text);
+      alert("Web Share not supported. Copied instead.");
+    }
+  } catch {
+    // user cancelled share -> ignore
+  }
+}
+  
   const handleEditClick = (index) => {
     const oldEmail = teamMembers[index]?.email;
 
@@ -629,7 +856,8 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     if (currentTotal >= limit.maxTotal) return;
 
     const keys = ["member2", "member3", "member4"];
-    const nextKey = keys[teamMembers.length];
+    const used = new Set(teamMembers.map((m) => m.key));
+    const nextKey = keys.find((k) => !used.has(k));
     if (!nextKey) return;
 
     const newMember = { key: nextKey, email: "", status: "idle" };
@@ -1432,6 +1660,8 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
           const hasRole = roleValue && roleValue !== "";
           const canSend = hasEmail && hasRole;
           const isSentUI = member.status === "sent";
+          const isUnregisteredUI = member.status === "unregistered";
+
 
           const realStatus = getInviteStatusFromStorage(member.email);
           const isAccepted = realStatus === "accepted";
@@ -1445,13 +1675,13 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
                 <input
                   type="text"
                   placeholder="example@email.com"
-                  className={`form-input ${isSentUI ? "readonly" : ""}`}
+                  className={`form-input ${(isSentUI || isUnregisteredUI) ? "readonly" : ""}`}
                   value={member.email}
                   onChange={(e) => handleEmailChange(index, e.target.value)}
-                  readOnly={isSentUI}
+                  readOnly={isSentUI || isUnregisteredUI}
                   disabled={!isJoined}
                 />
-                {isSentUI && (
+                {(isSentUI || isUnregisteredUI) && (
                   <Edit3
                     size={14}
                     className="input-icon clickable"
@@ -1476,37 +1706,78 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
                   <ChevronDown size={14} className="select-arrow" />
                 </div>
               </div>
+            <div className="col-action">
+              {(() => {
+                const emailNorm = normalizeEmail(member.email);
+                const registeredNow = isEmailRegistered(emailNorm);
 
-              <div className="col-action">
-                {isSentUI ? (
-                  <>
-                    {isAccepted ? (
-                      <span className="status-pill accepted">Accepted</span>
-                    ) : isDenied ? (
-                      <span className="status-pill denied">Denied</span>
-                    ) : (
-                      <span className="status-pill waiting">Waiting</span>
-                    )}
+                // สถานะจริงจาก storage (pending/accepted/denied)
+                const realStatus = getInviteStatusFromStorage(member.email);
+                const isAccepted = realStatus === "accepted";
+                const isDenied = realStatus === "denied";
 
-                    <button 
-                      className="pill-btn share" 
-                      type="button" 
-                      disabled={!isJoined}
-                      onClick={() => handleShareInvite(member.email, roleValue)} // ✅ เรียกใช้ฟังก์ชัน Share
-                    >
-                      <Share2 size={12} /> Share
-                    </button>
+                // เคส accepted -> ให้เป็นปุ่ม Accepted ตามที่ขอ
+                if (isAccepted) {
+                  return (
+                    <>
+                      <button type="button" className="pill-btn accepted" disabled>
+                        Accepted
+                      </button>
+                    </>
+                  );
+                }
 
-                    <button
-                      type="button"
-                      className="pill-btn danger"
-                      onClick={() => isJoined && handleRemoveMemberAt(index)}
-                      disabled={!isJoined}
-                    >
-                      <Trash2 className="trash-icon" /> Remove
-                    </button>
-                  </>
-                ) : (
+                // เคส deny / waiting หลังส่ง invite
+                if (isSentUI && registeredNow) {
+                  return (
+                    <>
+                      {isDenied ? (
+                        <span className="status-pill denied">Denied</span>
+                      ) : (
+                        <span className="status-pill waiting">Waiting</span>
+                      )}
+
+                      <button
+                        type="button"
+                        className="pill-btn danger"
+                        onClick={() => isJoined && handleRemoveMemberAt(index)}
+                        disabled={!isJoined}
+                      >
+                        <Trash2 className="trash-icon" /> Remove
+                      </button>
+                    </>
+                  );
+                }
+                if (isUnregisteredUI && !registeredNow) {
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        className="pill-btn send"
+                        onClick={() => {
+                          const teamId = ensureDraftTeamIdReady();
+                          navigate(
+                            `${REGISTER_ROUTE}?email=${encodeURIComponent(member.email)}&code=${encodeURIComponent(joinedGame.code)}&team=${encodeURIComponent(teamId)}`,
+                            { replace: true }
+                          );
+                        }}
+                      >
+                        Register
+                      </button>
+
+                      <button
+                        type="button"
+                        className="pill-btn danger"
+                        onClick={() => isJoined && handleRemoveMemberAt(index)}
+                      >
+                        Remove
+                      </button>
+                    </>
+                  );
+                }
+
+                // ✅ เคสปกติ: อยู่ในระบบ แต่ยังไม่ได้ส่ง -> Invite
+                return (
                   <>
                     <button
                       className={`pill-btn ${canSend && isJoined ? "send" : "disabled"}`}
@@ -1518,15 +1789,6 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
                     </button>
 
                     <button
-                      className="pill-btn share"
-                      type="button"
-                      disabled={!isJoined}
-                      onClick={() => handleShareInvite(member.email, roleValue)}
-                    >
-                      <Share2 size={12} /> Share
-                    </button>
-
-                    <button
                       type="button"
                       className="pill-btn danger"
                       onClick={() => isJoined && handleRemoveMemberAt(index)}
@@ -1535,8 +1797,9 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
                       <Trash2 className="trash-icon" /> Remove
                     </button>
                   </>
-                )}
-              </div>
+                );
+              })()}
+            </div>
             </div>
           );
         })}
@@ -1678,7 +1941,78 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
             </div>
           )}
           {/* ================= END OK MODAL ================= */}
+          {showInviteModal && inviteModalData && (
+          <div className="invmodal-backdrop">
+            <div className="invmodal-card">
+              <button
+                className="invmodal-close"
+                onClick={() => setShowInviteModal(false)}
+                aria-label="Close"
+                type="button"
+              >
+                ✕
+              </button>
 
+              <h3>{inviteModalData.isRegistered ? "Invite Details" : "Email not registered yet"}</h3>
+
+              <div style={{ fontSize: 14, lineHeight: 1.6, color: "#374151" }}>
+                <div><b>Game:</b> {inviteModalData.gameName}</div>
+                <div><b>Game Code:</b> {inviteModalData.gameCode}</div>
+                <div><b>Team:</b> {inviteModalData.teamName}</div>
+                <div><b>Admin:</b> {inviteModalData.adminName} ({inviteModalData.adminEmail})</div>
+                <div><b>Role:</b> {inviteModalData.role || "-"}</div>
+                <div><b>Email:</b> {inviteModalData.email}</div>
+              </div>
+
+              {!inviteModalData.isRegistered && (
+                <div className="invmodal-warning">
+                  This email is not registered. Please register first, then come back to invite again.
+                  <div style={{ marginTop: 8 }}>
+                    <button
+                      type="button"
+                      className="invmodal-linkbtn"
+                      onClick={() => {
+                        setShowInviteModal(false);
+
+                        const teamId = ensureDraftTeamIdReady();
+                        navigate(
+                          `${REGISTER_ROUTE}?email=${encodeURIComponent(inviteModalData.email)}&code=${encodeURIComponent(inviteModalData.gameCode)}&team=${encodeURIComponent(teamId)}`,
+                          { replace: true }
+                        );
+                      }}
+                    >
+                      Go to Register
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                className="invmodal-textarea"
+                readOnly
+                value={inviteModalData.text}
+              />
+
+              <div className="invmodal-actions">
+                <button
+                  className="invmodal-btn"
+                  type="button"
+                  onClick={() => copyInviteText(inviteModalData.text)}
+                >
+                  Copy
+                </button>
+
+                <button
+                  className="invmodal-btn primary"
+                  type="button"
+                  onClick={() => shareInviteText(inviteModalData.text)}
+                >
+                  Share
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </main>
     </div>
   );

@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Hotel, Eye, EyeOff } from 'lucide-react'; 
-import { useNavigate } from 'react-router-dom';
-import './LoginPlayerPage.css';
+import React, { useEffect, useState } from "react";
+import { ArrowLeft, Hotel, Eye, EyeOff } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+import "./LoginPlayerPage.css";
 
-const PLAYERS_KEY = "hbs_players";
+// ✅ ให้ตรงกับ AccountPage (ตอนนี้คุณใช้ hbs_players)
+const USERS_KEY = "hbs_players";
+const PLAYER_SESSION_KEY = "hbs_current_player";
 
-const CreateAccountPage = () => {
+function normalizeEmail(s) {
+  return (s || "").trim().toLowerCase();
+}
+
+export default function CreateAccountPage() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -17,65 +24,78 @@ const CreateAccountPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
 
+  // ✅ ดึง email จาก query string (เช่น /signup?email=xxx)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const emailFromInvite = params.get("email");
+    if (emailFromInvite) setEmail(emailFromInvite);
+  }, [location.search]);
+
   const handleCreateAccount = (e) => {
     e.preventDefault();
     setError("");
 
-    // 1️⃣ ตรวจกรอกครบ
     if (!username || !email || !password || !confirmPassword) {
       setError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
-
-    // 2️⃣ ตรวจ password ตรงกัน
     if (password !== confirmPassword) {
       setError("รหัสผ่านไม่ตรงกัน");
       return;
     }
 
-    const players = JSON.parse(localStorage.getItem(PLAYERS_KEY) || "[]");
+    const emailNorm = normalizeEmail(email);
 
-    // 3️⃣ ตรวจ email ซ้ำ
-    const exists = players.some((p) => p.email === email);
+    let users = [];
+    try {
+      users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
+      if (!Array.isArray(users)) users = [];
+    } catch {
+      users = [];
+    }
+
+    const exists = users.some((u) => normalizeEmail(u?.email) === emailNorm);
     if (exists) {
       setError("อีเมลนี้ถูกใช้งานแล้ว");
       return;
     }
 
-    // 4️⃣ สร้าง account
-    const newPlayer = {
-      id: crypto.randomUUID(),
-      name: username,
-      email,
+    const newUser = {
+      id: crypto?.randomUUID ? crypto.randomUUID() : `u-${Date.now()}`,
+      name: username.trim(),
+      email: emailNorm,
       password,
       createdAt: new Date().toISOString(),
     };
 
+    localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
+
+    // ✅ ตั้ง session ให้เลย
     localStorage.setItem(
-      PLAYERS_KEY,
-      JSON.stringify([...players, newPlayer])
+      PLAYER_SESSION_KEY,
+      JSON.stringify({
+        id: newUser.id, // ใช้ id เดียวกันไปเลย
+        name: newUser.name,
+        email: newUser.email,
+      })
     );
 
     alert("สมัครสมาชิกสำเร็จ 🎉");
-    navigate("/login");
+    navigate("/account", { replace: true });
   };
 
   return (
     <div className="player-login-container">
-
-      {/* ฝั่งซ้าย */}
       <div
         className="login-image-section"
         style={{
           backgroundImage:
-            `url('https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop')`,
+            "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070&auto=format&fit=crop')",
         }}
       />
 
-      {/* ฝั่งขวา */}
       <div className="login-form-section">
-
-        <button className="back-btn" onClick={() => navigate('/login')}>
+        <button className="back-btn" onClick={() => navigate("/login")}>
           <ArrowLeft size={20} />
           <span>Back</span>
         </button>
@@ -89,7 +109,6 @@ const CreateAccountPage = () => {
           </div>
 
           <form className="login-form" onSubmit={handleCreateAccount}>
-
             <div className="input-group">
               <label>Username</label>
               <input
@@ -125,7 +144,7 @@ const CreateAccountPage = () => {
                 <button
                   type="button"
                   className="eye-icon"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -145,7 +164,7 @@ const CreateAccountPage = () => {
                 <button
                   type="button"
                   className="eye-icon"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  onClick={() => setShowConfirmPassword((v) => !v)}
                 >
                   {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -158,7 +177,7 @@ const CreateAccountPage = () => {
               </div>
             )}
 
-            <button type="submit" className="submit-btn" style={{ marginTop: '1.5rem' }}>
+            <button type="submit" className="submit-btn" style={{ marginTop: "1.5rem" }}>
               Create Account
             </button>
           </form>
@@ -166,6 +185,4 @@ const CreateAccountPage = () => {
       </div>
     </div>
   );
-};
-
-export default CreateAccountPage;
+}
