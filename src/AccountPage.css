@@ -1243,3 +1243,253 @@ button.pill-btn.danger .trash-icon{
   background: #7C3AED;
   color: #fff;
 }
+/* กล่องข้อความใน Invite Modal (แทน textarea) */
+.invmodal-textbox{
+  margin-top: 12px;
+  padding: 14px 16px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background: #fff;
+
+  /* สำคัญ: ให้โชว์ครบตามเนื้อหา */
+  white-space: pre-wrap;   /* รักษาขึ้นบรรทัด \n */
+  word-break: break-word;  /* กันลิงก์/ข้อความยาวล้น */
+  overflow: visible;       /* ไม่ให้มี scroll */
+}
+
+/* ถ้ากล่อง modal ของคุณล็อคความสูงไว้ ให้ปลดล็อค */
+.invmodal-card{
+  height: auto;
+  max-height: none;  /* กันไม่ให้บังคับเกิด scroll */
+}
+/* ✅ Status pill: Accepted */
+.status-pill.accepted {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+
+  color: #059c72;
+  background: #fff;
+  border: 2px solid #34d399;
+  white-space: nowrap;
+}
+/* =========================
+   Remove Confirm Modal
+   ========================= */
+.remmodal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.remmodal-card{
+  width: 420px;        /* ← กำหนดความกว้างตรง ๆ */
+  max-width: 92vw;     /* ← กันจอเล็ก */
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.25);
+}
+
+.remmodal-header{
+  background: #B91C1C; /* red header */
+  color: #fff;
+  padding: 16px 18px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.remmodal-title{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.remmodal-usericon{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.remmodal-close{
+  border: 0;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.remmodal-body{
+  padding: 18px;
+}
+
+.remmodal-question{
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.remmodal-player{
+  background: #F3F4F6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.remmodal-playericon{
+  opacity: 0.7;
+}
+
+.remmodal-actions{
+  display:flex;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.remmodal-btn{
+  flex: 1;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.remmodal-btn.cancel{
+  background: #fff;
+  border: 1px solid #D1D5DB;
+  color: #111827;
+}
+
+.remmodal-btn.confirm{
+  background: #B91C1C;
+  border: 1px solid #B91C1C;
+  color: #fff;
+}
+
+.remmodal-btn.confirm:hover{
+  filter: brightness(0.95);
+}
+/* =========================
+   System Notice Modal (Removed from Team)
+   ========================= */
+.sysmodal-backdrop{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index: 9999;
+  padding: 18px;
+}
+
+.sysmodal-card{
+  width: 520px;
+  max-width: 92vw;
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 55px rgba(0,0,0,0.22);
+}
+
+.sysmodal-header{
+  background: #B91C1C;
+  color: #fff;
+  padding: 14px 16px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+}
+
+.sysmodal-title{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.sysmodal-icon{
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.18);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.sysmodal-close{
+  border: 0;
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.sysmodal-body{
+  padding: 18px 16px 10px;
+}
+
+.sysmodal-message{
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sysmodal-by{
+  color: #16A34A; /* เขียวเหมือนในรูป */
+  font-weight: 800;
+}
+
+.sysmodal-sub{
+  margin-top: 10px;
+  font-size: 13px;
+  color: #6B7280;
+  white-space: pre-wrap;
+}
+
+.sysmodal-actions{
+  padding: 10px 16px 16px;
+}
+
+.sysmodal-btn{
+  width: 100%;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid #D1D5DB;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -95,6 +95,7 @@ function App() {
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
 
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
         <Route path="/waiting-room" element={<WaitingListPage />} />
 
         {/* ================= PLAYER AREA ================= */}
@@ -108,7 +109,6 @@ function App() {
           <Route path="/personnel" element={<PersonnelPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/other" element={<OtherInvestmentsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         {/* ================= ADMIN AREA ================= */}

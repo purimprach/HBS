@@ -192,6 +192,49 @@ function AccountPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteModalData, setInviteModalData] = useState(null);
 
+  // ✅ Remove Confirm Modal
+  const [showRemoveModal, setShowRemoveModal] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState(null); 
+  // { index, email }
+function openRemoveConfirm(index) {
+  const email = normalizeEmail(teamMembers[index]?.email);
+  if (!email) return;
+
+  setRemoveTarget({ index, email });
+  setShowRemoveModal(true);
+}
+
+function closeRemoveConfirm() {
+  setShowRemoveModal(false);
+  setRemoveTarget(null);
+}
+function confirmRemoveAccepted() {
+  if (!removeTarget) return;
+  // ✅ เรียกลบจริงด้วย index เดิม
+  handleRemoveAcceptedMember(removeTarget.index);
+  closeRemoveConfirm();
+}
+
+  async function sendInviteEmailAPI(payload) {
+  // payload: { toEmail, subject, text, inviteLink, registerLink, ... }
+  const res = await fetch("/api/send-invite-email", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    let msg = "Failed to send email";
+    try {
+      const data = await res.json();
+      msg = data?.error || msg;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  return res.json();
+}
+
   function ensureDraftTeamIdReady() {
     if (draftTeamId) return draftTeamId;
 
@@ -300,6 +343,47 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   // -------------------------
   const [pendingInvite, setPendingInvite] = useState(null);
   // { gameCode, gameName, teamId, teamName, teamNumber, hostName, hostEmail, role, invitedAt }
+  const [systemNotice, setSystemNotice] = useState(null);
+// { title, message, at }
+
+  const scanSystemNotice = () => {
+    const email = normalizeEmail(currentPlayer?.email);
+    if (!email) return null;
+
+    const games = readGames();
+
+    for (const g of games) {
+      for (const t of (g.teams || [])) {
+        const inv = (t.invites || []).find(
+          (x) => normalizeEmail(x.email) === email && x.status === "removed" && !x.noticeSeen
+        );
+
+        if (inv) {
+          return {
+            title: "Removed from Team",
+            gameCode: g.code,
+            teamId: t.id,
+            email, // ของคนที่ถูกลบ
+            teamName: inv.teamName || t.name || "your team",
+            removedBy: inv.removedByName || "host",
+            message:
+              inv.removedMessage ||
+              `You have been removed from the team ${inv.teamName || t.name || ""} by ${inv.removedByName || "host"}`,
+            at: inv.removedAt,
+          };
+        }
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+  if (!currentPlayer?.email) return;
+
+  setPendingInvite(scanPendingInvite());
+  setSystemNotice(scanSystemNotice());
+}, [currentPlayer, storageTick]);
+
 
   // สแกนหา invite ที่ pending ของอีเมลนี้
   const scanPendingInvite = () => {
@@ -336,15 +420,13 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     return found;
   };
 
-  useEffect(() => {
-    if (!currentPlayer?.email) return;
-    setPendingInvite(scanPendingInvite());
-  }, [currentPlayer, storageTick]);
-
   // ถ้าทดสอบ 2 แท็บ ให้ sync ทันทีเมื่อ localStorage เปลี่ยน
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === GAMES_KEY) setPendingInvite(scanPendingInvite());
+      if (e.key === GAMES_KEY) {
+        setPendingInvite(scanPendingInvite());
+        setSystemNotice(scanSystemNotice());
+      }
 
       // ✅ สำคัญ: ถ้า USERS_KEY เปลี่ยน (สมัครใหม่) -> เด้ง storageTick เพื่อให้ host UI เปลี่ยนทันที (กรณีทำใน "อีกแท็บ")
       if (e.key === USERS_KEY) {
@@ -640,7 +722,7 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
 };
 
   // ✅ Send Invite: เขียนลง localStorage จริง
-  const handleSendInvite = (index) => {
+  const handleSendInvite = async (index) => {
     const targetMember = teamMembers[index];
     const memberKey = targetMember.key;
 
@@ -670,20 +752,8 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     const registered = isEmailRegistered(emailToSend);
 
     if (!registered) {
-      // 1. อัปเดต State ในหน้าจอ
-      setTeamMembers((prev) =>
-        prev.map((m, i) => i === index ? { ...m, status: "unregistered" } : m)
-      );
-      
-      // 2. (แนะนำ) บันทึกชื่อทีมลง Storage ไว้ก่อนเพื่อให้ชื่อทีมไม่หาย
-      let { games, gameIdx } = getHostTeamFromStorage();
-      if (gameIdx !== -1) {
-        const ensured = ensureDraftTeamInStorage(games, gameIdx, currentPlayer, joinedGame, draftTeamId, teamName);
-        writeGamesAndRefresh(ensured.games);
-      }
-
       openInviteModal(emailToSend, roleSelected, false);
-      return; 
+      return;
     }
 
     // UI
@@ -737,7 +807,37 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     else team.invites.push(payload);
 
     games[gameIdx] = game;
+    // หลัง writeGamesAndRefresh(games);
     writeGamesAndRefresh(games);
+
+    // ✅ ส่งอีเมลอัตโนมัติ (ไม่บล็อก UX)
+    try {
+      const details = buildInviteDetails({
+        email: emailToSend,
+        role: roleSelected,
+        isRegistered: true,
+      });
+
+      await sendInviteEmailAPI({
+        toEmail: emailToSend,
+        subject: `[HBS] You are invited to join team "${details.teamName}"`,
+        text: details.text,               // ข้อความเดียวกับใน modal ได้เลย
+        inviteLink: details.inviteLink,
+        gameCode: details.gameCode,
+        gameName: details.gameName,
+        teamName: details.teamName,
+        role: details.role,
+        adminName: details.adminName,
+        adminEmail: details.adminEmail,
+      });
+
+      // optional: toast/alert
+      // alert("Invite sent (in game + email).");
+    } catch (err) {
+      console.error(err);
+      alert(`Invite saved in game, but email failed: ${err.message}`);
+    }
+
   };
 
    const handleShareInvite = (email, role) => {
@@ -777,17 +877,13 @@ function buildInviteDetails({ email, role, isRegistered }) {
     email || ""
   )}&code=${encodeURIComponent(gameCode)}&team=${encodeURIComponent(teamId)}`;
 
-  const header = isRegistered
-    ? `✅ You are invited to join a team`
-    : `⚠️ This email is not registered yet`;
-
   const text =
-    `${header}\n\n` +
     `Game: ${gameName}\n` +
     `Game Code: ${gameCode}\n` +
     `Team: ${teamNm}\n` +
     `Admin: ${adminName} (${adminEmail})\n` +
-    `Role: ${role || "Team Member"}\n\n` +
+    `Role: ${role || "Team Member"}\n` +
+    `Email: ${email || "-"}\n\n` +
     `Invite Link: ${inviteLink}\n` +
     (isRegistered ? "" : `Register Link: ${registerLink}\n`);
 
@@ -894,6 +990,58 @@ async function shareInviteText(text) {
     setTeamMembers(nextMembers);
   };
 
+  function handleRemoveAcceptedMember(index) {
+    const removedEmail = teamMembers[index]?.email;
+    const email = normalizeEmail(removedEmail);
+    if (!email) return;
+
+    const { games, gameIdx, game, team } = getHostTeamFromStorage();
+    if (gameIdx === -1 || !game || !team) return;
+
+    // หา invite ของคนนี้
+    const inv = (team.invites || []).find((x) => normalizeEmail(x.email) === email);
+    if (!inv || inv.status !== "accepted") {
+      alert("Remove ทำได้เฉพาะคนที่ Accepted แล้วเท่านั้น");
+      return;
+    }
+
+    // ลบออกจากสมาชิกทีม + รีเซ็ต teamId ใน players
+    const foundPlayer = (game.players || []).find((p) => normalizeEmail(p.email) === email);
+    if (foundPlayer) {
+      team.members = (team.members || []).filter((id) => id !== foundPlayer.playerId);
+      if (team.roles) delete team.roles[foundPlayer.playerId];
+      foundPlayer.teamId = null;
+    }
+
+    // ✅ เปลี่ยน invite เป็น removed + ใส่ข้อความแจ้งเตือน (ไม่ลบทิ้ง)
+    const hostName = currentPlayer?.name || "Host";
+    const hostRole = teamRoles?.you || "CEO";
+    const teamNm = team?.name || teamName?.trim() || "Hotel Team";
+    const gameNm = game?.name || joinedGame?.name || "Hotel Business Simulator";
+    const gameCode = game?.code || joinedGame?.code || "";
+    inv.teamName = teamNm; // ✅ เพิ่มบรรทัดนี้
+
+    inv.status = "removed";
+    inv.removedAt = new Date().toISOString();
+    inv.removedByName = hostName;
+    inv.removedByRole = hostRole;
+
+    inv.teamName = teamNm; // ✅ เพิ่มบรรทัดนี้
+
+    inv.removedMessage =
+      `ขณะนี้ ${hostName} ตำแหน่ง ${hostRole} ได้ลบคุณออกจากทีม "${teamNm}" ` +
+      `ในเกม "${gameNm}" (Code: ${gameCode})`;
+
+    inv.noticeSeen = false; // ให้ฝั่งเพื่อนเห็น 1 ครั้ง
+
+    games[gameIdx] = game;
+    writeGamesAndRefresh(games);
+
+    // ✅ UI ฝั่ง host: ถอดปุ่ม Accepted/สถานะออกจากแถวนี้ (กลับไปให้พิมพ์ใหม่ได้)
+    setTeamMembers((prev) =>
+      prev.map((m, i) => (i === index ? { ...m, status: "typing" } : m))
+    );
+  }
 
   const handleRemoveLastMember = () => {
     const modeObj = joinedGame?.settings?.mode;
@@ -1711,36 +1859,27 @@ async function shareInviteText(text) {
                 const emailNorm = normalizeEmail(member.email);
                 const registeredNow = isEmailRegistered(emailNorm);
 
-                // สถานะจริงจาก storage (pending/accepted/denied)
                 const realStatus = getInviteStatusFromStorage(member.email);
                 const isAccepted = realStatus === "accepted";
                 const isDenied = realStatus === "denied";
 
-                // เคส accepted -> ให้เป็นปุ่ม Accepted ตามที่ขอ
+                const roleValue = teamRoles[member.key];
+                const hasEmail = (member.email || "").trim() !== "";
+                const hasRole = !!roleValue;
+                const canSend = hasEmail && hasRole;
+
+                const isSentUI = member.status === "sent"; // sent = ส่ง invite จริงแล้วเท่านั้น
+
+                // ✅ Accepted -> แสดงเป็น "ปุ่มสถานะ" (ไม่เทา) + ยังมี Remove ได้เหมือน Waiting/Deny
                 if (isAccepted) {
                   return (
                     <>
-                      <button type="button" className="pill-btn accepted" disabled>
-                        Accepted
-                      </button>
-                    </>
-                  );
-                }
-
-                // เคส deny / waiting หลังส่ง invite
-                if (isSentUI && registeredNow) {
-                  return (
-                    <>
-                      {isDenied ? (
-                        <span className="status-pill denied">Denied</span>
-                      ) : (
-                        <span className="status-pill waiting">Waiting</span>
-                      )}
+                      <span className="status-pill accepted">Accepted</span>
 
                       <button
                         type="button"
                         className="pill-btn danger"
-                        onClick={() => isJoined && handleRemoveMemberAt(index)}
+                        onClick={() => isJoined && openRemoveConfirm(index)}
                         disabled={!isJoined}
                       >
                         <Trash2 className="trash-icon" /> Remove
@@ -1748,55 +1887,40 @@ async function shareInviteText(text) {
                     </>
                   );
                 }
-                if (isUnregisteredUI && !registeredNow) {
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        className="pill-btn send"
-                        onClick={() => {
-                          const teamId = ensureDraftTeamIdReady();
-                          navigate(
-                            `${REGISTER_ROUTE}?email=${encodeURIComponent(member.email)}&code=${encodeURIComponent(joinedGame.code)}&team=${encodeURIComponent(teamId)}`,
-                            { replace: true }
-                          );
-                        }}
-                      >
-                        Register
-                      </button>
 
-                      <button
-                        type="button"
-                        className="pill-btn danger"
-                        onClick={() => isJoined && handleRemoveMemberAt(index)}
-                      >
-                        Remove
-                      </button>
-                    </>
+                // ✅ ถ้าส่ง invite แล้ว (registered เท่านั้น) -> Waiting/Denied + Remove
+                if (isSentUI) {
+                  return isDenied ? (
+                    <span className="status-pill denied">Denied</span>
+                  ) : (
+                    <span className="status-pill waiting">Waiting</span>
                   );
                 }
 
-                // ✅ เคสปกติ: อยู่ในระบบ แต่ยังไม่ได้ส่ง -> Invite
-                return (
-                  <>
+                // - ถ้า NOT registered -> ให้ปุ่มหลักเป็น Share (ตำแหน่งเดียวกับ Invite) และ "ไม่ต้องมี Not registered"
+                if (!registeredNow) {
+                  return (
                     <button
-                      className={`pill-btn ${canSend && isJoined ? "send" : "disabled"}`}
-                      onClick={() => isJoined && canSend && handleSendInvite(index)}
+                      className={`pill-btn ${canSend && isJoined ? "share" : "disabled"}`}
+                      type="button"
                       disabled={!isJoined || !canSend}
-                      type="button"
+                      onClick={() => openInviteModal(emailNorm, roleValue, false)}
                     >
-                      Invite
+                      Share
                     </button>
+                  );
+                }
 
-                    <button
-                      type="button"
-                      className="pill-btn danger"
-                      onClick={() => isJoined && handleRemoveMemberAt(index)}
-                      disabled={!isJoined}
-                    >
-                      <Trash2 className="trash-icon" /> Remove
-                    </button>
-                  </>
+                // ✅ Registered และยังไม่ส่ง -> Invite (เหมือนเดิม)
+                return (
+                  <button
+                    className={`pill-btn ${canSend && isJoined ? "send" : "disabled"}`}
+                    onClick={() => isJoined && canSend && handleSendInvite(index)}
+                    disabled={!isJoined || !canSend}
+                    type="button"
+                  >
+                    Invite
+                  </button>
                 );
               })()}
             </div>
@@ -1942,77 +2066,143 @@ async function shareInviteText(text) {
           )}
           {/* ================= END OK MODAL ================= */}
           {showInviteModal && inviteModalData && (
-          <div className="invmodal-backdrop">
-            <div className="invmodal-card">
-              <button
-                className="invmodal-close"
-                onClick={() => setShowInviteModal(false)}
-                aria-label="Close"
-                type="button"
-              >
-                ✕
-              </button>
+            <div className="invmodal-backdrop">
+              <div className="invmodal-card">
+                <button
+                  className="invmodal-close"
+                  onClick={() => setShowInviteModal(false)}
+                  aria-label="Close"
+                  type="button"
+                >
+                  ✕
+                </button>
 
-              <h3>{inviteModalData.isRegistered ? "Invite Details" : "Email not registered yet"}</h3>
+                <h3>
+                  {inviteModalData.isRegistered ? "Invite Details" : "Email not registered yet"}
+                </h3>
 
-              <div style={{ fontSize: 14, lineHeight: 1.6, color: "#374151" }}>
-                <div><b>Game:</b> {inviteModalData.gameName}</div>
-                <div><b>Game Code:</b> {inviteModalData.gameCode}</div>
-                <div><b>Team:</b> {inviteModalData.teamName}</div>
-                <div><b>Admin:</b> {inviteModalData.adminName} ({inviteModalData.adminEmail})</div>
-                <div><b>Role:</b> {inviteModalData.role || "-"}</div>
-                <div><b>Email:</b> {inviteModalData.email}</div>
-              </div>
-
-              {!inviteModalData.isRegistered && (
-                <div className="invmodal-warning">
-                  This email is not registered. Please register first, then come back to invite again.
-                  <div style={{ marginTop: 8 }}>
-                    <button
-                      type="button"
-                      className="invmodal-linkbtn"
-                      onClick={() => {
-                        setShowInviteModal(false);
-
-                        const teamId = ensureDraftTeamIdReady();
-                        navigate(
-                          `${REGISTER_ROUTE}?email=${encodeURIComponent(inviteModalData.email)}&code=${encodeURIComponent(inviteModalData.gameCode)}&team=${encodeURIComponent(teamId)}`,
-                          { replace: true }
-                        );
-                      }}
-                    >
-                      Go to Register
-                    </button>
-                  </div>
+                <div className="invmodal-textbox">
+                  {inviteModalData.text}
                 </div>
-              )}
 
-              <textarea
-                className="invmodal-textarea"
-                readOnly
-                value={inviteModalData.text}
-              />
+                <div className="invmodal-actions">
+                  <button
+                    className="invmodal-btn"
+                    type="button"
+                    onClick={() => copyInviteText(inviteModalData.text)}
+                  >
+                    Copy
+                  </button>
 
-              <div className="invmodal-actions">
-                <button
-                  className="invmodal-btn"
-                  type="button"
-                  onClick={() => copyInviteText(inviteModalData.text)}
-                >
-                  Copy
-                </button>
-
-                <button
-                  className="invmodal-btn primary"
-                  type="button"
-                  onClick={() => shareInviteText(inviteModalData.text)}
-                >
-                  Share
-                </button>
+                  <button
+                    className="invmodal-btn primary"
+                    type="button"
+                    onClick={() => shareInviteText(inviteModalData.text)}
+                  >
+                    Share
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* ================= REMOVE CONFIRM MODAL ================= */}
+          {showRemoveModal && removeTarget && (
+            <div className="remmodal-backdrop">
+              <div className="remmodal-card">
+                <div className="remmodal-header">
+                  <div className="remmodal-title">
+                    <span className="remmodal-usericon" aria-hidden="true">👤</span>
+                    Confirm Remove Player
+                  </div>
+
+                  <button
+                    className="remmodal-close"
+                    onClick={closeRemoveConfirm}
+                    aria-label="Close"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="remmodal-body">
+                  <div className="remmodal-question">
+                    Are you sure you want to remove this player?
+                  </div>
+
+                  <div className="remmodal-player">
+                    <span className="remmodal-playericon" aria-hidden="true">👥</span>
+                    <span className="remmodal-email">{removeTarget.email}</span>
+                  </div>
+                </div>
+
+                <div className="remmodal-actions">
+                  <button
+                    className="remmodal-btn cancel"
+                    onClick={closeRemoveConfirm}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="remmodal-btn confirm"
+                    onClick={confirmRemoveAccepted}
+                    type="button"
+                  >
+                    Yes
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ================= END REMOVE CONFIRM MODAL ================= */}
+
+          {/* ================= REMOVED NOTICE MODAL (for removed player) ================= */}
+          {systemNotice && (
+            <div className="sysmodal-backdrop">
+              <div className="sysmodal-card">
+                <div className="sysmodal-header">
+                  <div className="sysmodal-title">
+                    <span className="sysmodal-icon" aria-hidden="true">👤</span>
+                    {systemNotice.title || "Team Update"}
+                  </div>
+
+                  <button
+                    className="sysmodal-close"
+                    onClick={() => setSystemNotice(null)}
+                    aria-label="Close"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="sysmodal-body">
+                  <div className="sysmodal-message">
+                    You have been removed from the team{" "}
+                    <b>{systemNotice.teamName || "your team"}</b>{" "}
+                    by <span className="sysmodal-by">{systemNotice.removedBy || "-"}</span>
+                  </div>
+
+                  {/* ถ้าอยากแสดงข้อความแบบเต็ม (ไทย/ยาว) จาก removedMessage ก็เปิดบรรทัดนี้ */}
+                  {/* <div className="sysmodal-sub">{systemNotice.message}</div> */}
+                </div>
+
+                <div className="sysmodal-actions">
+                  <button
+                    className="sysmodal-btn"
+                    type="button"
+                    onClick={() => setSystemNotice(null)}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ================= END REMOVED NOTICE MODAL ================= */}
         </main>
     </div>
   );
