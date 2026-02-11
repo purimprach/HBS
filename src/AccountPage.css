@@ -114,7 +114,7 @@
 /* Grid Dashboard */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1.5fr;
+  grid-template-columns: 1fr 1fr;
   gap: 20px;
   align-items: start;
 }
@@ -129,6 +129,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 /* Cards */
@@ -482,13 +483,15 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  max-width: none;
 }
 
 .member-grid-header,
 .member-row {
   display: grid;
-  grid-template-columns: 50px 1.5fr 150px 260px;
-  gap: 15px;
+  grid-template-columns: auto 1fr 150px 260px;
+  gap: 10px;
   align-items: center;
 }
 
@@ -932,7 +935,8 @@
    ✅ Team Setup Lock Overlay
    ========================= */
 .team-setup-card-inline{
-  position: relative;
+  width: 100%;
+  max-width: none;
 }
 
 .team-setup-lock{
@@ -1462,12 +1466,6 @@ button.pill-btn.danger .trash-icon{
   padding: 18px 16px 10px;
 }
 
-.sysmodal-message{
-  color: #111827;
-  font-size: 14px;
-  font-weight: 600;
-}
-
 .sysmodal-by{
   color: #16A34A; /* เขียวเหมือนในรูป */
   font-weight: 800;
@@ -1492,4 +1490,159 @@ button.pill-btn.danger .trash-icon{
   background: #fff;
   font-weight: 700;
   cursor: pointer;
+}
+.role-fixed{
+  height: 36px;
+  border-radius: 8px;
+  background: #5B2A86;   /* สี CEO เดิม */
+  color: #fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  letter-spacing:0.5px;
+  cursor: default;
+  user-select: none;
+}
+.team-bottom-bar{
+  margin-top: 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 14px;
+}
+
+.team-exit-btn{
+  height: 44px;
+  padding: 0 26px;
+  border-radius: 12px;
+  background: transparent;
+  border: 2px solid #166534;
+  color: #166534;
+  font-weight: 700;
+  cursor: pointer;
+}
+.team-exit-btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+.sysmodal-message{
+  white-space: pre-line;
+  text-align: center;      /* ✅ จัดกลาง */
+  line-height: 1.65;
+  font-size: 14px;
+  color: #111827;
+  margin: 0 auto;          /* ✅ ให้อยู่กลางกรอบ */
+  max-width: 520px;        /* ✅ กันไม่ให้บรรทัดยาวเกินไป */
+  font-weight: 500;
+}
+/* ทำให้ Join Game + Join Team อยู่ข้างกัน */
+.join-top-row{
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px; /* ปรับได้ตามชอบ */
+  align-items: stretch;
+}
+
+/* ให้การ์ดสูงเท่ากัน (ถ้าต้องการ) */
+.join-top-row > .card{
+  height: 100%;
+}
+
+/* มือถือ: กลับมาเรียงลง */
+@media (max-width: 900px){
+  .join-top-row{
+    grid-template-columns: 1fr;
+  }
+}
+/* ✅ Fix: อย่าให้ Team Setup ถูก center จาก .card */
+.team-setup-card-inline{
+  text-align: left;
+}
+
+/* ถ้าอยากให้หัวข้อ tag ยังดูสวย */
+.team-setup-header-tag{
+  text-align: left;
+}
+.team-setup-card-inline{
+  position: relative; /* ✅ ให้ overlay อ้างอิงการ์ดนี้ */
+}
+.member-grid-header,
+.member-row{
+  grid-template-columns: 50px minmax(220px, 1fr) 150px minmax(200px, 260px);
+}
+.team-setup-card-inline{ text-align:left; position:relative; }
+
+.rolemodal-backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.35);
+  display:flex; align-items:center; justify-content:center;
+  z-index: 9999;
+}
+
+.rolemodal-card{
+  width: 480px; max-width: calc(100vw - 32px);
+  background:#fff;
+  border-radius: 14px;
+  overflow:hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+}
+
+.rolemodal-topbar{
+  background:#C28700; /* โทนส้มทองเหมือนรูป */
+  padding: 14px 18px;
+  color:#fff;
+  font-weight: 800;
+}
+
+.rolemodal-top-title{ font-size: 18px; }
+
+.rolemodal-body{ padding: 20px 22px 18px; }
+
+.rolemodal-sub{ font-weight: 700; margin-bottom: 14px; color:#111827; }
+
+.rolemodal-compare{
+  display:flex; align-items:center; justify-content:center;
+  gap: 18px;
+  margin: 12px 0 18px;
+}
+
+.rolemodal-col{ text-align:center; min-width: 160px; }
+.rolemodal-label{ font-size: 12px; color:#6B7280; margin-bottom: 8px; font-weight:700; }
+.rolemodal-label.new{ color:#059669; }
+
+.rolemodal-pill{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  background:#F9FAFB;
+  font-weight: 800;
+  color:#374151;
+}
+
+.rolemodal-pill.new{
+  border-color:#10B981;
+  background:#ECFDF5;
+  color:#047857;
+}
+
+.rolemodal-arrow{
+  font-size: 28px;
+  font-weight: 900;
+  color:#111827;
+}
+
+.rolemodal-closebtn{
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #E5E7EB;
+  background:#fff;
+  font-weight: 800;
+  cursor:pointer;
+}
+.rolemodal-closebtn:hover{
+  background:#F9FAFB;
 }
