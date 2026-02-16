@@ -154,3 +154,10 @@
   }
   .create-right{ padding: 52px 22px; }
 }
+
+.create-error{
+  margin-top: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #DC2626;
+}

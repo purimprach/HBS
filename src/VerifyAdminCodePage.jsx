@@ -3,6 +3,27 @@ import "./VerifyAdminCodePage.css";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, KeyRound } from "lucide-react";
 
+const ADMIN_INVITE_CODE = "GT2026";
+const VERIFIED_EMAIL_KEY = "hbs_admin_verified_email_v1";
+const ADMINS_KEY = "hbs_admin_accounts_v1";
+
+function safeParse(raw, fallback) {
+  try {
+    const x = JSON.parse(raw);
+    return x == null ? fallback : x;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeEmail(s) {
+  return (s || "").trim().toLowerCase();
+}
+
+function normalizeCode(s) {
+  return (s || "").trim().toUpperCase();
+}
+
 export default function VerifyAdminCodePage() {
   const navigate = useNavigate();
 
@@ -12,9 +33,41 @@ export default function VerifyAdminCodePage() {
   const [showVerifyPopup, setShowVerifyPopup] = useState(false);
   const [showContactPopup, setShowContactPopup] = useState(false);
 
+  // ✅ error message
+  const [errorMsg, setErrorMsg] = useState("");
+
   const handleVerify = (e) => {
     e.preventDefault();
-    // TODO: verify จริง
+    setErrorMsg("");
+
+    const code = normalizeCode(inviteCode);
+    const normalizedEmail = normalizeEmail(email);
+
+    // ✅ เช็คอีเมล (กันช่องว่าง/ตัวพิมพ์ใหญ่)
+    if (!normalizedEmail) {
+      setErrorMsg("Please enter a valid email.");
+      return;
+    }
+
+    // ✅ เช็ค invite code
+    if (code !== ADMIN_INVITE_CODE) {
+      setErrorMsg("Invalid invite code (use GT2026)");
+      return;
+    }
+
+    // ✅ กันอีเมลซ้ำตั้งแต่หน้า verify (สำคัญ)
+    const admins = safeParse(localStorage.getItem(ADMINS_KEY), []);
+    const emailExists = admins.some(
+      (a) => normalizeEmail(a.email) === normalizedEmail
+    );
+
+    if (emailExists) {
+      setErrorMsg("This email already has admin account.");
+      return;
+    }
+
+    // ✅ ผ่านทุกอย่าง -> เซฟ verified email แล้วแสดง popup
+    localStorage.setItem(VERIFIED_EMAIL_KEY, normalizedEmail);
     setShowVerifyPopup(true);
   };
 
@@ -61,7 +114,10 @@ export default function VerifyAdminCodePage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
                 placeholder="Enter your email"
                 required
               />
@@ -72,10 +128,16 @@ export default function VerifyAdminCodePage() {
               <input
                 type="text"
                 value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
+                onChange={(e) => {
+                  setInviteCode(e.target.value);
+                  if (errorMsg) setErrorMsg("");
+                }}
                 placeholder="Enter your invite code"
                 required
               />
+
+              {/* ✅ error ใต้ช่อง */}
+              {errorMsg && <div className="verify-error">{errorMsg}</div>}
             </div>
 
             <button type="submit" className="verify-submit">
@@ -102,7 +164,10 @@ export default function VerifyAdminCodePage() {
       {/* ===================== */}
       {showVerifyPopup && (
         <div className="verify-modal-overlay" onClick={closeAllPopups}>
-          <div className="verify-modal-card" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="verify-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="verify-check-circle">✓</div>
             <div className="verify-modal-text">Verify complete</div>
             <button
@@ -155,25 +220,25 @@ export default function VerifyAdminCodePage() {
 
               <div className="contact-box">
                 <div className="contact-row">
-                    <span className="contact-name">K. Purimprach : </span>
-                    <a
+                  <span className="contact-name">K. Purimprach : </span>
+                  <a
                     href="mailto:purimprach.san@gmail.com"
                     className="contact-email"
-                    >
+                  >
                     purimprach.san@gmail.com
-                    </a>
+                  </a>
                 </div>
 
                 <div className="contact-row">
-                    <span className="contact-name">K. Supakit : </span>
-                    <a
+                  <span className="contact-name">K. Supakit : </span>
+                  <a
                     href="mailto:supakit.gtt@gmail.com"
                     className="contact-email"
-                    >
-                    supagit.gtt@gmail.com
-                    </a>
+                  >
+                    supakit.gtt@gmail.com
+                  </a>
                 </div>
-                </div>
+              </div>
 
               <div className="contact-footer">GT Technologies&nbsp; Co., Ltd.</div>
             </div>

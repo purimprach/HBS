@@ -68,6 +68,22 @@ const EVENT_OPTIONS = [
 const GAMES_KEY = "hbs_games";
 const ADMIN_DRAFT_KEY = "hbs_admin_game_draft_v1";
 
+const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+
+function safeParse(raw, fallback) {
+  try {
+    const x = JSON.parse(raw);
+    return x == null ? fallback : x;
+  } catch {
+    return fallback;
+  }
+}
+
+function normalizeEmail(s) {
+  return (s || "").trim().toLowerCase();
+}
+
+
 /* =========================
    Helpers สำหรับ Step 2
    ========================= */
@@ -135,6 +151,17 @@ export default function AdminGameSettingsPage() {
   const navigate = useNavigate();
   const step2Ref = useRef(null);
   const step3Ref = useRef(null);
+
+  const adminSession = useMemo(() => {
+    return safeParse(localStorage.getItem(ADMIN_SESSION_KEY), null);
+  }, []);
+
+  const adminEmail = normalizeEmail(adminSession?.email);
+
+  // กันหลุด: ถ้าไม่มี session ให้เด้งไป login (เผื่อ user เข้า url ตรง)
+  useEffect(() => {
+    if (!adminEmail) navigate("/admin-login", { replace: true });
+  }, [adminEmail, navigate]);
 
   // ✅ Step 3 edit mode
   const [isEditingScoring, setIsEditingScoring] = useState(false);
@@ -577,6 +604,11 @@ export default function AdminGameSettingsPage() {
   };
 
   const handleCreateGame = () => {
+    if (!adminEmail) {
+      alert("ไม่พบผู้ดูแลระบบ (กรุณา Login ใหม่)");
+      navigate("/admin-login");
+      return;
+    }
     if (totalWeight !== 100) {
       alert(`น้ำหนักรวมต้องเท่ากับ 100% (ปัจจุบัน ${totalWeight}%)`);
       return;
@@ -592,10 +624,23 @@ export default function AdminGameSettingsPage() {
     // ✅ สร้างเกม = ถือว่า Step3 ผ่านเงื่อนไขและบันทึกแล้ว
     setIsStep3Saved(true);
 
+    // ✅ NEW: เอาชื่อ admin จาก session (fallback ถ้าไม่มี)
+    const adminName =
+      (adminSession?.username || "").trim() ||
+      (adminSession?.name || "").trim() ||
+      "Admin";
+
     const gamePayload = {
       id: newCode,
       code: newCode,
       name: gameName,
+
+      // ✅ ผูกข้อมูลผู้สร้างเกม
+      ownerAdminId: adminSession?.id || null,
+      ownerAdminEmail: adminEmail,
+      ownerAdminUsername: (adminSession?.username || "").trim(),
+      ownerAdminName: adminName, // ✅ ใช้แสดงผล (fallback จาก username/name)
+
       settings: {
         info: { hotelSize, location, scenario },
         mode: { type: mode, teamSize: teamSize, minTeams: minTeams, maxTeams: maxTeams },
@@ -603,6 +648,7 @@ export default function AdminGameSettingsPage() {
         economics: { years: yearEconSettings, quarterConfig: quarterSettings },
         scoring: scoring,
       },
+
       status: "waiting",
       createdAt: new Date().toISOString(),
     };

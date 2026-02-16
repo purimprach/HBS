@@ -346,3 +346,9 @@
 .contact-email:hover{
   text-decoration: underline;
 }
+.verify-error{
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #DC2626;
+  font-weight: 600;
+}

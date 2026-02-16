@@ -1,0 +1,265 @@
+/* src/NotificationBell.css */
+
+.noti-wrap{
+  position: relative;
+  display: inline-flex;
+}
+
+/* bell button */
+.noti-bellBtn{
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  border: 2px solid #111;
+  background: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.noti-bellBtn:hover{
+  background: #f7faf9;
+}
+
+/* red badge */
+.noti-badge{
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+}
+
+/* popover */
+.noti-pop{
+  position: absolute;
+  top: 52px;
+  right: 0;
+  width: 420px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.12);
+  max-height: 420px;          /* ✅ เพิ่มความสูงรวมของ popup ลงมาอีก */
+  overflow: hidden;
+  z-index: 50;
+}
+
+/* green header */
+.noti-head{
+  background: #2f855a;
+  color: #fff;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.noti-title{
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.noti-close{
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.noti-close:hover{
+  background: rgba(255,255,255,0.18);
+}
+
+/* mark all read */
+.noti-markall{
+  width: 100%;
+  text-align: right;
+  padding: 12px 30px;
+  background: #fff;
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+  color: #1f7a52;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.noti-markall:disabled{
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* body + scroll */
+.noti-body{
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px 12px 14px;
+  background: #fff;
+}
+
+.noti-empty{
+  color: #94a3b8;
+  padding: 40px 0;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* card item */
+.noti-item{
+  width: 100%;
+  text-align: left;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 14px 14px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  display: block;
+}
+
+.noti-item:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+}
+
+/* type colors (เหมือนภาพขวา: แดง/ส้ม/เขียว) */
+.noti-item.danger{
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239,68,68,0.15) inset;
+}
+.noti-item.warning{
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245,158,11,0.15) inset;
+}
+.noti-item.info{
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px rgba(34,197,94,0.15) inset;
+}
+
+/* read/unread 느낌 */
+.noti-item.unread{
+  background: #ffffff;
+}
+.noti-item.read{
+  opacity: 0.75;
+}
+
+/* text */
+.noti-msg{
+  font-size: 14px;
+  line-height: 1.35rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.noti-game{
+  color: #64748b;
+  font-weight: 700;
+}
+
+/* footer meta */
+.noti-meta{
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.noti-time{
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 700;
+}
+/* ===== Card item base ===== */
+.noti-item{
+  width: 100%;
+  text-align: left;
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;     /* จะถูก override ตาม type */
+  background: #fff;              /* read = ขาว */
+  padding: 14px 14px 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  display: block;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+}
+
+.noti-item:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+}
+
+/* ===== Border color by type ===== */
+.noti-item.danger{ border-color: #ef4444; }
+.noti-item.warning{ border-color: #f59e0b; }
+.noti-item.info{ border-color: #22c55e; }
+
+/* ===== READ/UNREAD behavior ===== */
+/* read -> white background */
+.noti-item.read{
+  background: #fff;
+}
+
+/* unread -> light background matching border */
+.noti-item.unread.danger{ background: rgba(239, 68, 68, 0.10); }
+.noti-item.unread.warning{ background: rgba(245, 158, 11, 0.12); }
+.noti-item.unread.info{ background: rgba(34, 197, 94, 0.10); }
+
+/* optional: ให้ unread ดู “เด้ง” กว่า read */
+.noti-item.unread .noti-msg{
+  color: #0f172a;
+  font-weight: 700;
+}
+
+/* optional: read จางลงนิด */
+.noti-item.read .noti-msg{
+  color: #334155;
+  font-weight: 600;
+}
+.noti-pop{
+  transform-origin: top right;
+  animation: notiDrop .18s ease;
+}
+
+@keyframes notiDrop{
+  from{
+    opacity:0;
+    transform: translateY(-6px) scale(.98);
+  }
+  to{
+    opacity:1;
+    transform: translateY(0) scale(1);
+  }
+}
+/* โซนรายการแจ้งเตือนด้านใน (ที่มีการ scroll) */
+/* กล่อง popup */
+.noti-pop{
+  height: 430px !important;     /* ✅ บังคับให้ยาวขึ้นจริง */
+  max-height: none !important;
+  overflow: hidden;
+}
+
+/* Scroll area */
+.noti-list{
+  height: 360px !important;     /* ✅ ปรับให้เห็น 3 กล่องพอดี (ค่อยจูน) */
+  max-height: none !important;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+

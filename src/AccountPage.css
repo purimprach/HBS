@@ -114,8 +114,8 @@
 /* Grid Dashboard */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1fr 0.95fr;
+  gap: 10px;
   align-items: start;
 }
 @media (max-width: 1024px) {
@@ -763,19 +763,6 @@
 .pill-btn.danger:disabled{
   opacity: 0.5;
 }
-/* =========================================
-   ✅ Join Team: Invite details box (เหมือนรูป)
-   ========================================= */
-.team-invite-box{
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto 24px;
-  background-color: #ecfdf5; /* เขียวอ่อน */
-  border-radius: 4px;
-  padding: 18px 18px;
-  line-height: 1.9;
-  font-weight: 600;
-}
 
 /* ปุ่ม deny/accept (ถ้าคุณยังไม่กำหนดสีไว้) */
 .btn-deny{
@@ -806,8 +793,8 @@
   margin: 0 auto 24px;
   background-color: #ecfdf5;
   border-radius: 4px;
-  padding: 18px;
-  line-height: 1.9;
+  padding: 12px;
+  line-height: 1.5;
   font-weight: 600;
 }
 
@@ -1539,8 +1526,8 @@ button.pill-btn.danger .trash-icon{
 /* ทำให้ Join Game + Join Team อยู่ข้างกัน */
 .join-top-row{
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 16px; /* ปรับได้ตามชอบ */
+  grid-template-columns: 0.9fr 1fr;
+  gap: 10px; /* ปรับได้ตามชอบ */
   align-items: stretch;
 }
 

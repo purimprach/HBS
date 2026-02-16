@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import "./AdminDashboardLayout.css";
 import {
@@ -12,14 +12,50 @@ import {
   Globe,
 } from "lucide-react";
 
+/* =========================
+   LocalStorage Keys
+   ========================= */
+const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+
+function safeParse(raw, fallback) {
+  try {
+    const x = JSON.parse(raw);
+    return x == null ? fallback : x;
+  } catch {
+    return fallback;
+  }
+}
+
 export default function AdminDashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ ให้เมนู "โฮสต์/เกมที่ใช้งานอยู่" ติด active ทั้งหน้า list และหน้าห้อง lobby
+  // ✅ อ่าน session ครั้งแรก
+  const admin = useMemo(() => {
+    return safeParse(localStorage.getItem(ADMIN_SESSION_KEY), null);
+  }, []);
+
+  // ✅ Guard: ถ้าไม่มี session -> เด้งกลับ login
+  useEffect(() => {
+    if (!admin) {
+      navigate("/admin-login", { replace: true });
+    }
+  }, [admin, navigate]);
+
+  // ✅ กัน flash: ถ้าไม่มี admin อย่า render layout
+  if (!admin) return null;
+
+  const adminName = admin?.username || "Admin";
+  const avatarText = (adminName || "AD").slice(0, 2).toUpperCase();
+
   const isHostActive =
     location.pathname.startsWith("/admin/active-games") ||
     location.pathname.startsWith("/admin/lobby");
+
+  const handleLogout = () => {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+    navigate("/admin-login", { replace: true });
+  };
 
   return (
     <div className="adl-shell">
@@ -42,7 +78,6 @@ export default function AdminDashboardLayout() {
             <span>สร้างการตั้งค่าเกม</span>
           </NavLink>
 
-          {/* ✅ ใช้ NavLink ปกติ แต่บังคับ active เองให้ครอบ lobby ด้วย */}
           <NavLink
             to="/admin/active-games"
             className={`adl-item ${isHostActive ? "active" : ""}`}
@@ -67,8 +102,6 @@ export default function AdminDashboardLayout() {
             <Settings size={18} />
             <span>การตั้งค่า</span>
           </NavLink>
-
-          {/* (Optional) ถ้าต้องการให้ Log out อยู่ล่างสุดใน sidebar ให้ย้ายปุ่มไปไว้ตรงนี้ */}
         </nav>
       </aside>
 
@@ -85,18 +118,14 @@ export default function AdminDashboardLayout() {
             </button>
 
             <div className="adl-user">
-              <div className="adl-avatar">AD</div>
+              <div className="adl-avatar">{avatarText}</div>
               <div className="adl-user-text">
-                <div className="adl-user-name">Admin</div>
+                <div className="adl-user-name">{adminName}</div>
                 <div className="adl-user-role">Game Host</div>
               </div>
             </div>
 
-            <button
-              className="adl-logout"
-              type="button"
-              onClick={() => navigate("/admin-login")}
-            >
+            <button className="adl-logout" type="button" onClick={handleLogout}>
               <LogOut size={16} />
               <span>Log Out</span>
             </button>

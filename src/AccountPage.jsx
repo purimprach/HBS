@@ -129,6 +129,13 @@ function readGames() {
   return safeJSONParse(localStorage.getItem(GAMES_KEY), []);
 }
 
+function findGameByCode(code) {
+  const c = (code || "").trim().toUpperCase();
+  if (!c) return null;
+  const games = readGames();
+  return games.find((g) => (g.code || "").toUpperCase() === c) || null;
+}
+
 function readUsers() {
   const raw = localStorage.getItem(USERS_KEY);
   const parsed = safeJSONParse(raw, []);
@@ -188,7 +195,10 @@ function removeInvitesByHostDraft(games, hostPlayerId, gameCode, draftTeamId) {
 function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostName) {
   if (!hostPlayerId || !gameCode || !teamId) return games;
 
-  const gameIdx = games.findIndex((g) => g.code === gameCode);
+  const code = (gameCode || "").trim().toUpperCase();
+  const gameIdx = games.findIndex(
+    (g) => (g.code || "").trim().toUpperCase() === code
+  );
   if (gameIdx === -1) return games;
 
   const game = games[gameIdx];
@@ -203,41 +213,56 @@ function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostN
 
   const teamNm = team.name || "your team";
   const gameNm = game.name || "Hotel Business Simulator";
-  const gameCd = game.code || gameCode;
+  const gameCd = game.code || code;
   const byName = hostName || team.leaderName || "Host";
 
-  // 1) แจ้งทุกคนใน invites (ทั้ง pending/accepted) ให้เป็น removed
-  team.invites = team.invites.map((inv) => {
-  const st = inv.status;
-  if (st === "pending" || st === "accepted") {
-    return {
-      ...inv,
-      status: "removed",
-      removedReason: "delete_team", // ✅ เพิ่มบรรทัดนี้
-      removedAt: new Date().toISOString(),
-      removedByName: byName,
-      removedByRole: "CEO",
-      teamName: teamNm,
-      removedMessage: `CEO: ${byName} has deleted the team "${teamNm}"
-      from the game "${gameNm}" (Code: ${gameCd}).
-
-      All team members have been removed.`,
-      noticeSeen: false,
-    };
-  }
-  return inv;
-});
+  // 1) แจ้งทุกคนใน invites (pending/accepted) -> removed
+  team.invites = (team.invites || []).map((inv) => {
+    const st = inv.status;
+    if (st === "pending" || st === "accepted") {
+      return {
+        ...inv,
+        status: "removed",
+        removedReason: "delete_team",
+        removedAt: new Date().toISOString(),
+        removedByName: byName,
+        removedByRole: "CEO",
+        teamName: teamNm,
+        removedMessage:
+          `CEO: ${byName} has deleted the team "${teamNm}"\n` +
+          `from the game "${gameNm}" (Code: ${gameCd}).\n\n` +
+          `All team members have been removed.`,
+        noticeSeen: false,
+      };
+    }
+    return inv;
+  });
 
   // 2) รีเซ็ตผู้เล่นที่เคยอยู่ทีมนี้ให้หลุดทีม
   game.players = game.players.map((p) =>
     p.teamId === teamId ? { ...p, teamId: null } : p
   );
 
-  // 3) ไม่ลบทีมทิ้งทันที แต่ mark ว่าถูกลบ (เพื่อให้ scanSystemNotice เจอ)
-  team.isDeleted = true;
-  team.deletedAt = new Date().toISOString();
+  // ✅ 3) ลบทีมออกจาก hbs_games จริงๆ (ไม่ให้ค้างใน AdminLobby)
+  game.teams = game.teams.filter((t) => t.id !== teamId);
 
   games[gameIdx] = game;
+
+  // ✅ 4) เผื่อมีทีมจริงใน hbs_teams_${code} (AdminLobby อ่านจาก key นี้ด้วย)
+  try {
+    const TEAMS_KEY = `hbs_teams_${code}`;
+    const realTeams = safeJSONParse(localStorage.getItem(TEAMS_KEY), []);
+    const nextRealTeams = (Array.isArray(realTeams) ? realTeams : []).filter(
+      (t) => (t?.id ?? "") !== teamId
+    );
+    localStorage.setItem(TEAMS_KEY, JSON.stringify(nextRealTeams));
+
+    // ให้ AdminLobby รีเฟรชในแท็บเดียวกันทันที
+    window.dispatchEvent(new Event("hbs:teams"));
+  } catch (e) {
+    console.error(e);
+  }
+
   return games;
 }
 
@@ -292,6 +317,7 @@ function AccountPage() {
   const [showOkModal, setShowOkModal] = useState(false);
   const [hostNotice, setHostNotice] = useState(null);
   const [roleNotice, setRoleNotice] = useState(null);
+  
 // { title, oldRole, newRole, at, byName, byRole, gameCode, teamId, email }
 
     // =========================
@@ -639,6 +665,26 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   setPendingInvite(scanPendingInvite());
 }, [currentPlayer, storageTick]);
 
+// ============================
+// ✅ GUARD: ถ้า admin ลบเกมแล้ว -> reset ฝั่งผู้เล่น
+// ============================
+  useEffect(() => {
+    if (!isJoined) return;
+
+    const code = (joinedGame?.code || joinCode || "").trim().toUpperCase();
+    if (!code) return;
+
+    const alive = findGameByCode(code);
+
+    if (!alive) {
+      forceResetBecauseGameMissing(code);
+      return;
+    }
+
+    setJoinedGame(alive);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageTick, isJoined, joinedGame?.code, joinCode]);
+
   // สแกนหา invite ที่ pending ของอีเมลนี้
   const scanPendingInvite = () => {
     const email = normalizeEmail(currentPlayer?.email);
@@ -655,6 +701,15 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
         );
 
         if (inv) {
+          const adminDisplay =
+            (g?.ownerAdminUsername || "").trim() ||
+            (g?.ownerAdminName || "").trim() ||
+            (g?.adminUsername || "").trim() ||
+            (g?.adminName || "").trim() ||
+            (g?.createdByUsername || "").trim() ||
+            (g?.createdByName || "").trim() ||
+            "-";
+
           found = {
             gameCode: g.code,
             gameName: g.name,
@@ -665,6 +720,9 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
             hostEmail: t.leaderEmail || "",
             role: inv.role || "",
             invitedAt: inv.invitedAt,
+
+            // ✅ เพิ่ม admin ตรงนี้
+            adminDisplay,
           };
           break;
         }
@@ -858,6 +916,47 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     draftTeamId,
 
   ]);
+
+  // ✅ Sync ชื่อทีมลง storage ทันที (draft team) เพื่อให้ Admin เห็นใน Lobby
+  useEffect(() => {
+    if (!isJoined) return;
+    if (!joinedGame?.code) return;
+
+    const name = (teamName || "").trim();
+    if (!name) return;
+
+    // ต้องมี draftTeamId ก่อน
+    const teamId = draftTeamId;
+    if (!teamId) return;
+
+    try {
+      const games = readGames();
+      const gameIdx = games.findIndex((g) => g.code === joinedGame.code);
+      if (gameIdx === -1) return;
+
+      const game = games[gameIdx];
+      game.teams = game.teams || [];
+
+      const t = game.teams.find((x) => x.id === teamId);
+      if (!t) return;
+
+      // อัปเดตเฉพาะตอนชื่อเปลี่ยนจริง
+      if ((t.name || "").trim() !== name) {
+        t.name = name;
+        t.isDraft = true; // ยังไม่พร้อมจนกด OK
+        t.updatedAt = new Date().toISOString();
+
+        games[gameIdx] = game;
+        writeGames(games);
+
+        // ถ้าอยากให้ UI หน้านี้รีเฟรชด้วย
+        setStorageTick((s) => s + 1);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamName, isJoined, joinedGame?.code, draftTeamId]);
 
   // รีเซ็ต Team Setup ตอนเปิด (ยึดตาม mode ของเกมที่ join)
   useEffect(() => {
@@ -1550,7 +1649,7 @@ async function shareInviteText(text) {
     writeGamesAndRefresh(games);
 
     setIsJoined(true);
-    setJoinedGame(game);
+    setJoinedGame(games[gameIndex]);
     // หลัง setJoinedGame(game);
     let draftId = draftTeamId || makeTeamId();
     setDraftTeamId(draftId);
@@ -1582,17 +1681,25 @@ async function shareInviteText(text) {
   // ✅ NEW: Edit Code -> reset flow so user can join another game code
   function resetTeamAndGame_NoConfirm() {
     try {
+      const code = (joinedGame?.code || "").trim().toUpperCase();
       const games = readGames();
+
+      // ถ้าเกมถูกลบแล้วจริง ๆ -> reset ฝั่งตัวเองทันที
+      if (code && !findGameByCode(code)) {
+        forceResetBecauseGameMissing(code);
+        return;
+      }
 
       const newGames = deleteTeamAndNotifyMembers(
         games,
         currentPlayer?.id,
-        joinedGame?.code,
+        code,
         draftTeamId,
         currentPlayer?.name
       );
 
       writeGamesAndRefresh(newGames);
+      window.dispatchEvent(new Event("hbs:teams"));
     } catch (e) {
       console.error(e);
     }
@@ -1607,10 +1714,33 @@ async function shareInviteText(text) {
     setTeamRoles({ you: "CEO" });
     setDraftTeamId(null);
     setIsTeamNameLocked(false);
+    setPendingInvite(null);
 
     if (currentPlayer?.id) {
       localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
     }
+  }
+
+  function forceResetBecauseGameMissing(missingCode) {
+    // 1) reset state ฝั่งผู้เล่น
+    setIsJoined(false);
+    setJoinedGame(null);
+    setShowTeamSetup(false);
+    setJoinCode("");
+    setTeamName("");
+    setTeamMembers([]);
+    setTeamRoles({ you: "CEO" });
+    setDraftTeamId(null);
+    setIsTeamNameLocked(false);
+    setPendingInvite(null);
+
+    // 2) ล้าง draft ที่ค้าง
+    if (currentPlayer?.id) {
+      localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
+    }
+
+    // 3) แจ้งเตือน (เลือกอย่างใดอย่างหนึ่ง)
+    alert(`เกม ${missingCode || ""} ถูกลบโดย Admin แล้ว`);
   }
 
   const finalizeTeamAndGo = () => {
@@ -2048,14 +2178,31 @@ async function shareInviteText(text) {
                   Join
                 </button>
 
-                {isJoined && joinedGame && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: "#374151" }}>
-                    ✅ Joined: <strong>{joinedGame.name}</strong> —{" "}
-                    <span style={{ color: "#6B7280" }}>
-                      Mode: {getModeLabelEN(joinedGame?.settings?.mode)}
-                    </span>
+                {isJoined && joinedGame && (() => {
+                  const adminDisplay =
+                    (joinedGame?.ownerAdminUsername || "").trim() ||
+                    (joinedGame?.ownerAdminName || "").trim() ||
+                    (joinedGame?.adminUsername || "").trim() ||
+                    (joinedGame?.adminName || "").trim() ||
+                    (joinedGame?.createdByUsername || "").trim() ||
+                    (joinedGame?.createdByName || "").trim() ||
+                    "-";
+
+                  return (
+                    <div style={{ marginTop: 10, fontSize: 12, color: "#374151" }}>
+                    <div>
+                      ✅ Joined: <strong>{joinedGame.name}</strong>
+                    </div>
+
+                    <div style={{ marginTop: 4, color: "#6B7280" }}>
+                      👑 Admin:{" "}
+                      <strong style={{ color: "#374151" }}>
+                        {adminDisplay}
+                      </strong>
+                    </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* ✅ Join Team (Invite inbox) */}
@@ -2066,16 +2213,23 @@ async function shareInviteText(text) {
                   <>
                     <div className="team-invite-box">
                       <div>
-                        Game Name : <strong>{pendingInvite.gameName}</strong>
+                        Game : <strong>{pendingInvite.gameName}</strong>
                       </div>
+
                       <div>
-                        Team Name : <strong>{pendingInvite.teamName}</strong>
+                        Team : <strong>{pendingInvite.teamName}</strong>
                       </div>
+
                       <div>
                         Role : <strong>{pendingInvite.role || "-"}</strong>
                       </div>
+
                       <div>
-                        Host name: <strong>{pendingInvite.hostName}</strong>
+                        Host : <strong>{pendingInvite.hostName}</strong>
+                      </div>
+
+                      <div>
+                        👑 Admin : <strong>{pendingInvite.adminDisplay || "-"}</strong>
                       </div>
                     </div>
 
