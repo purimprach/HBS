@@ -297,6 +297,33 @@ function pushRoleChangeNoticeToStorage({
   writeGames(games);
 }
 
+function updateInviteRoleInStorage({
+  gameCode,
+  teamId,
+  memberEmail,
+  newRole,
+}) {
+  if (!gameCode || !teamId || !memberEmail) return;
+
+  const games = readGames();
+  const gi = games.findIndex((g) => g.code === gameCode);
+  if (gi === -1) return;
+
+  const game = games[gi];
+  const team = (game.teams || []).find((t) => t.id === teamId);
+  if (!team) return;
+
+  const emailNorm = normalizeEmail(memberEmail);
+  const inv = (team.invites || []).find((x) => normalizeEmail(x.email) === emailNorm);
+  if (!inv) return;
+
+  // ✅ เปลี่ยน role ใน invites ให้ฝั่งผู้เล่นเห็นทันที
+  inv.role = newRole;
+
+  games[gi] = game;
+  writeGames(games);
+}
+
 
 function AccountPage() {
   const navigate = useNavigate();
@@ -319,7 +346,18 @@ function AccountPage() {
   // ✅ Remove Confirm Modal
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [removeTarget, setRemoveTarget] = useState(null); 
-  // { index, email }
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+function openLeaveConfirm() {
+  setShowLeaveModal(true);
+}
+function closeLeaveConfirm() {
+  setShowLeaveModal(false);
+}
+function confirmLeaveTeam() {
+  closeLeaveConfirm();
+  leaveTeamAndNotifyHost(); // leave จริง + broadcast
+}
+  
 function openRemoveConfirm(index) {
   const email = normalizeEmail(teamMembers[index]?.email);
   if (!email) return;
@@ -568,6 +606,7 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
         const inv = (t.invites || []).find(
           (x) =>
             normalizeEmail(x.email) === email &&
+            x.status === "accepted" &&
             x.noticeType === "role_changed" &&
             x.noticeSeen === false
         );
@@ -603,7 +642,7 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
           (x) =>
             normalizeEmail(x.email) === email &&
             x.status === "accepted" &&
-            x.teamUpdateType === "member_removed" &&
+            ["member_removed", "member_left"].includes(x.teamUpdateType) &&
             x.teamUpdateSeen === false
         );
 
@@ -657,7 +696,7 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     const inv = (t.invites || []).find(
       (x) =>
         normalizeEmail(x.email) === normalizeEmail(notice.email) &&
-        x.teamUpdateType === "member_removed"
+        ["member_removed", "member_left"].includes(x.teamUpdateType)
     );
     if (!inv) return;
 
@@ -1108,10 +1147,12 @@ useEffect(() => {
     const pid = currentPlayer?.id;
     if (!email || !pid) return;
 
-    const games = readGames();
+    // ✅ สำคัญ: หลัง Accept ผู้เล่นอาจ isJoined=false แต่มี inviteView อยู่
+    const gameCode = (joinedGame?.code || inviteView?.gameCode || "").trim().toUpperCase();
+    if (!gameCode) return;
 
-    // หาเกมที่ผู้เล่นอยู่ (ใช้ joinedGame ถ้ามี)
-    const gameIdx = games.findIndex((g) => g.code === joinedGame?.code);
+    const games = readGames();
+    const gameIdx = games.findIndex((g) => (g.code || "").trim().toUpperCase() === gameCode);
     if (gameIdx === -1) return;
 
     const game = games[gameIdx];
@@ -1121,20 +1162,19 @@ useEffect(() => {
     // หา player ในเกม
     const me = game.players.find((p) => p.playerId === pid);
     const myTeamId = me?.teamId;
-
-    if (!myTeamId) {
-      // ไม่ได้อยู่ทีมแล้ว
-      return;
-    }
+    if (!myTeamId) return;
 
     const team = game.teams.find((t) => t.id === myTeamId);
     if (!team) return;
 
-    // 🚫 กัน host กด leave (host ต้องใช้ delete เท่านั้น)
+    // 🚫 กัน host กด leave
     if (team.leaderPlayerId === pid) {
       alert("Host cannot leave. Please use Delete Team.");
       return;
     }
+
+    const teamNm = team.name || "your team";
+    const gameNm = game.name || "Hotel Business Simulator";
 
     // 1) หลุดทีมใน players
     if (me) me.teamId = null;
@@ -1146,23 +1186,35 @@ useEffect(() => {
     // 3) mark invite เป็น left เพื่อให้ host รับรู้
     const inv = (team.invites || []).find((x) => normalizeEmail(x.email) === email);
     if (inv) {
-      inv.status = "left";                  // ✅ สถานะใหม่
+      inv.status = "left";
       inv.leftAt = new Date().toISOString();
       inv.leftByEmail = email;
 
-      const hostName = team.leaderName || "Host";
-      const teamNm = team.name || "your team";
-      const gameNm = game.name || "Hotel Business Simulator";
-      inv.hostNoticeSeen = false;           // ✅ ให้ host เห็น 1 ครั้ง
-
+      inv.hostNoticeSeen = false;
       inv.hostNoticeMessage =
         `${email} has left the team "${teamNm}" in game "${gameNm}".`;
     }
 
+    // ✅ 4) BROADCAST ไปยังผู้เล่น accepted คนอื่น ๆ
+    (team.invites || []).forEach((x) => {
+      const xEmail = normalizeEmail(x.email);
+      if (!xEmail) return;
+
+      // แจ้งเฉพาะคนที่ accepted และไม่ใช่คนที่กดออก
+      if (x.status === "accepted" && xEmail !== email) {
+        x.teamUpdateType = "member_left";
+        x.teamUpdateSeen = false;
+        x.teamUpdateAt = new Date().toISOString();
+
+        x.teamUpdateMessage =
+          `Player: ${email} has left the team "${teamNm}".`;
+      }
+    });
+
     games[gameIdx] = game;
     writeGamesAndRefresh(games);
 
-    // 4) reset state หน้าตัวเอง -> กลับสภาพก่อน join
+    // ✅ 5) reset state ฝั่งตัวเอง กลับสภาพก่อน join
     setIsJoined(false);
     setJoinedGame(null);
     setShowTeamSetup(false);
@@ -1172,6 +1224,11 @@ useEffect(() => {
     setTeamRoles({ you: "CEO" });
     setDraftTeamId(null);
     setIsTeamNameLocked(false);
+
+    // ✅ สำคัญ: เคลียร์โหมด accepted view ด้วย
+    setPendingInvite(null);
+    setAcceptedInviteInfo(null);
+    setIsAcceptedInvite(false);
 
     // ล้าง draft กัน restore กลับมา
     if (currentPlayer?.id) {
@@ -1220,46 +1277,164 @@ useEffect(() => {
     return inv?.status || null; // pending/accepted/denied
   };
 
+  function getReservedRolesFromStorage() {
+    const { team } = getHostTeamFromStorage();
+    if (!team) return new Map(); // emailNorm -> role
+
+    const map = new Map();
+
+    (team.invites || []).forEach((inv) => {
+      const st = inv?.status;
+
+      // ✅ ล็อคเฉพาะ waiting/pending เท่านั้น
+      if (st !== "pending") return;
+
+      const email = normalizeEmail(inv.email);
+      const role = (inv.role || "").trim();
+      if (!email || !role) return;
+
+      map.set(email, role);
+    });
+
+    return map;
+  }
+
+  function updateInviteRoleInStorageByEmail(memberEmail, newRole) {
+    const email = normalizeEmail(memberEmail);
+    if (!email || !newRole) return;
+
+    const { games, gameIdx, game, team } = getHostTeamFromStorage();
+    if (gameIdx === -1 || !game || !team) return;
+
+    team.invites = team.invites || [];
+
+    const inv = team.invites.find((x) => normalizeEmail(x.email) === email);
+    if (!inv) return;
+
+    // ✅ อัปเดต role ใน invite
+    inv.role = newRole;
+    inv.roleUpdatedAt = new Date().toISOString();
+    inv.roleUpdatedByName = currentPlayer?.name || "Host";
+    inv.roleUpdatedByRole = teamRoles?.you || "CEO";
+
+    games[gameIdx] = game;
+    writeGamesAndRefresh(games);
+  }
+
+  useEffect(() => {
+    if (!isJoined) return;
+
+    setTeamMembers((prev) =>
+      prev.map((m) => {
+        if (!m?.email) return m;
+
+        const st = getInviteStatusFromStorage(m.email); // pending/accepted/denied/removed/null
+
+        // ✅ ถ้า accepted แล้ว ให้สะท้อนใน UI (กัน sent ค้าง)
+        if (st === "accepted" && m.status === "sent") {
+          return { ...m, status: "accepted" };
+        }
+
+        // ✅ ถ้า denied แล้วให้สะท้อน (optional)
+        if (st === "denied" && m.status === "sent") {
+          return { ...m, status: "denied" };
+        }
+
+        return m;
+      })
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageTick, isJoined, joinedGame?.code, draftTeamId]);
+  
   // -------------------------
   // Role swap
   // -------------------------
   const handleRoleChange = (currentMemberKey, newRole) => {
-    if (currentMemberKey === "you") return;    // host lock
-    if (newRole === "CEO") return;            // members cannot be CEO
+    if (currentMemberKey === "you") return; // host lock
+    if (newRole === "CEO") return;          // members cannot be CEO
+
+    // หา member ที่ถูกเปลี่ยน (คนที่ Host คลิก)
+    const memberA = teamMembers.find((m) => m.key === currentMemberKey);
+    const emailA = memberA?.email || "";
+    const statusA = getInviteStatusFromStorage(emailA);
+
+    // ✅ waiting/pending ห้ามเปลี่ยน
+    if (statusA === "pending") {
+      alert("You cannot change role while the player is Waiting.");
+      return;
+    }
 
     setTeamRoles((prevRoles) => {
-      const oldRole = prevRoles[currentMemberKey] || "";
+      const oldRoleA = prevRoles[currentMemberKey] || "";
 
-      // swap logic เดิม
-      const memberHoldingThisRole = Object.keys(prevRoles).find(
-        (key) => prevRoles[key] === newRole && key !== currentMemberKey
+      // หา key ของคนที่ “ถือ newRole อยู่เดิม” เพื่อทำ swap
+      const memberBKey = Object.keys(prevRoles).find(
+        (k) => k !== "you" && k !== currentMemberKey && prevRoles[k] === newRole
       );
 
-      let newState = { ...prevRoles, [currentMemberKey]: newRole };
-      if (memberHoldingThisRole) {
-        newState[memberHoldingThisRole] = oldRole;
+      const next = { ...prevRoles };
+
+      // 1) ตั้งค่า role ของ A
+      next[currentMemberKey] = newRole;
+
+      // 2) ถ้ามีคน B ถือ role นี้อยู่ -> swap ให้ B ไป oldRoleA
+      if (memberBKey) {
+        next[memberBKey] = oldRoleA; // อาจเป็น "" ได้ (ถ้า A เดิมยังไม่เลือก)
       }
 
-      // ✅ ถ้าคนนี้ accepted แล้ว -> แจ้งเตือนไปฝั่งผู้เล่น
-      const member = teamMembers.find((m) => m.key === currentMemberKey);
-      const memberEmail = member?.email || "";
-      const realStatus = getInviteStatusFromStorage(memberEmail);
+      // =========================
+      // ✅ เขียนลง storage + ยิง notice ให้ครบทุกคนที่ได้รับผล
+      // =========================
+      const gameCode = joinedGame?.code || "";
+      const teamId = draftTeamId || "";
 
-      if (realStatus === "accepted" && oldRole && newRole && oldRole !== newRole) {
-        pushRoleChangeNoticeToStorage({
-          joinedGame,
-          currentPlayer,
-          draftTeamId,
-          memberEmail,
-          oldRole,
-          newRole,
+      // helper ยิง 1 คน (เฉพาะ accepted)
+      const applyStorageAndNoticeForAccepted = (email, oldRole, newRoleX) => {
+        const realStatus = getInviteStatusFromStorage(email);
+        if (realStatus !== "accepted") return;
+
+        // ✅ 1) เซฟ role ลง team.invites[].role
+        updateInviteRoleInStorage({
+          gameCode,
+          teamId,
+          memberEmail: email,
+          newRole: newRoleX,
         });
 
-        // ให้หน้า host รีเฟรชทันที
-        setStorageTick((t) => t + 1);
+        // ✅ 2) ยิง notice role_changed (ของเดิมคุณ)
+        if (oldRole && newRoleX && oldRole !== newRoleX) {
+          pushRoleChangeNoticeToStorage({
+            joinedGame,
+            currentPlayer,
+            draftTeamId: teamId,
+            memberEmail: email,
+            oldRole,
+            newRole: newRoleX,
+          });
+        }
+      };
+
+      // --- A: คนที่ Host เปลี่ยน ---
+      applyStorageAndNoticeForAccepted(emailA, oldRoleA, newRole);
+
+      // --- B: คนที่โดน swap อัตโนมัติ ---
+      if (memberBKey) {
+        const memberB = teamMembers.find((m) => m.key === memberBKey);
+        const emailB = memberB?.email || "";
+        const oldRoleB = prevRoles[memberBKey] || "";    // เดิมของ B คือ newRole
+        const newRoleB = oldRoleA;                       // ใหม่ของ B คือ oldRoleA
+
+        // ถ้า oldRoleA เป็น "" แปลว่า A เดิมยังไม่มี role -> ไม่ควรไปยัด "" ให้ B ใน storage
+        // ดังนั้นทำเฉพาะเคสที่ newRoleB มีค่า
+        if (newRoleB) {
+          applyStorageAndNoticeForAccepted(emailB, oldRoleB, newRoleB);
+        }
       }
 
-      return newState;
+      // ✅ กระตุก UI
+      setStorageTick((t) => t + 1);
+
+      return next;
     });
   };
 
@@ -1538,12 +1713,15 @@ async function shareInviteText(text) {
   const handleEditClick = (index) => {
     const oldEmail = teamMembers[index]?.email;
 
-    // ✅ ลบ invite เก่าออกก่อน (กันค้าง acceptedCount)
     removeInviteFromStorageByEmail(oldEmail);
 
     const updatedMembers = [...teamMembers];
     updatedMembers[index].status = "typing";
     setTeamMembers(updatedMembers);
+
+    // ✅ ปลด role ของช่องนี้ เพื่อให้เลือกใหม่ได้จริง ๆ
+    const k = teamMembers[index]?.key;
+    if (k) setTeamRoles((prev) => ({ ...prev, [k]: "" }));
   };
 
   const [showExitModal, setShowExitModal] = useState(false);
@@ -1636,6 +1814,14 @@ async function shareInviteText(text) {
     const gameNm = game?.name || joinedGame?.name || "Hotel Business Simulator";
     const gameCode = game?.code || joinedGame?.code || "";
     inv.teamName = teamNm; // ✅ เพิ่มบรรทัดนี้
+    // ✅ FIX: ล้าง role-change notice เก่าทิ้ง (กันเด้งเป็น "เปลี่ยนตำแหน่ง")
+    delete inv.noticeType;
+    delete inv.oldRole;
+    delete inv.newRole;
+    delete inv.roleChangedAt;
+    delete inv.roleChangedByName;
+    delete inv.roleChangedByRole;
+    inv.noticeSeen = true; // ปิด role notice เก่า (เดี๋ยวเราจะเปิด removed notice ต่อ)
 
     inv.status = "removed";
     inv.removedAt = new Date().toISOString();
@@ -2331,10 +2517,6 @@ const getInvitedTeamData = () => {
                       </div>
 
                       <div>
-                        Role : <strong>{inviteView.role || "-"}</strong>
-                      </div>
-
-                      <div>
                         Host : <strong>{inviteView.hostName}</strong>
                       </div>
 
@@ -2554,14 +2736,26 @@ const getInvitedTeamData = () => {
 
                           const registeredNow = emailReady ? isEmailRegistered(emailNorm) : false;
                           const realStatus = getInviteStatusFromStorage(member.email);
-                          const isAccepted = realStatus === "accepted";
                           const isDenied = realStatus === "denied";
                           const roleValue = teamRoles[member.key];
                           const hasRole = !!roleValue;
                           const canShowAction = emailReady && hasRole && !isDupEmail;
                           const isSentUI = member.status === "sent";
                           const isUnregisteredUI = member.status === "unregistered";
+                          const isWaiting = realStatus === "pending";
+                          const isAccepted = realStatus === "accepted"; // (คุณมีอยู่แล้วก็ใช้ตัวเดิมได้)
 
+                          const isRoleLocked = isWaiting || (isSentUI && !isAccepted);
+                          const reservedMap = getReservedRolesFromStorage();
+                          const reservedEntries = Array.from(reservedMap.entries()); // [ [email, role], ... ]
+
+                          // role ที่คนอื่น "จอง" อยู่ (pending/accepted) ยกเว้นคนนี้เอง
+                          const takenByOthers = new Set(
+                            reservedEntries
+                              .filter(([em]) => em !== normalizeEmail(member.email))
+                              .map(([, role]) => role)
+                          );
+                         
                           return (
                             <div key={member.key} className="member-row">
                               <div className="col-label">{index === 0 ? "Other" : ""}</div>
@@ -2591,12 +2785,33 @@ const getInvitedTeamData = () => {
                                     className="role-select"
                                     value={roleValue || ""}
                                     onChange={(e) => handleRoleChange(member.key, e.target.value)}
-                                    disabled={!isJoined}
+                                    disabled={!isJoined || isRoleLocked || isDenied}
                                   >
                                     <option value="" disabled>Select Role</option>
-                                    {MEMBER_ROLES.map((role) => (
-                                      <option key={role} value={role}>{role}</option>
-                                    ))}
+
+                                    {(() => {
+                                      const reservedMap = getReservedRolesFromStorage(); // ✅ pending เท่านั้น (หลังคุณแก้ function แล้ว)
+                                      const reservedEntries = Array.from(reservedMap.entries());
+
+                                      // role ที่ถูก "pending" จองอยู่ โดยคนอื่น (ยกเว้นคนนี้)
+                                      const takenByPendingOthers = new Set(
+                                        reservedEntries
+                                          .filter(([em]) => em !== normalizeEmail(member.email))
+                                          .map(([, role]) => role)
+                                      );
+
+                                      // ✅ แสดงครบ 3 role เสมอ แต่ role ที่ pending จองไว้จะ disabled
+                                      return MEMBER_ROLES.map((role) => {
+                                        const disabledByPending =
+                                          takenByPendingOthers.has(role) && role !== roleValue; // คนนี้เลือกไว้แล้วให้ยังเลือกได้
+
+                                        return (
+                                          <option key={role} value={role} disabled={disabledByPending}>
+                                            {role}
+                                          </option>
+                                        );
+                                      });
+                                    })()}
                                   </select>
                                   <ChevronDown size={14} className="select-arrow" />
                                 </div>
@@ -2663,8 +2878,11 @@ const getInvitedTeamData = () => {
                   <button
                     className="team-exit-btn"
                     type="button"
-                    onClick={() => openExitModal(isHost ? "delete" : "leave")}
-                    disabled={!isJoined || isTeamSetupReadOnly}
+                    onClick={() => {
+                      if (isHost) openExitModal("delete");
+                      else openLeaveConfirm(); // ✅ ใช้ popup leave ของเรา
+                    }}
+                    disabled={isHost ? (!isJoined || isTeamSetupReadOnly) : (!isJoined && !isAcceptedInvite)} // ✅ accepted กดได้
                   >
                     {isHost ? "Delete Team" : "Leave Team"}
                   </button>
@@ -3037,6 +3255,52 @@ const getInvitedTeamData = () => {
                       if (exitMode === "delete") resetTeamAndGame_NoConfirm();
                       else leaveTeamAndNotifyHost();
                     }}
+                  >
+                    OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {showLeaveModal && (
+            <div className="remmodal-backdrop">
+              <div className="remmodal-card">
+                <div className="remmodal-header">
+                  <div className="remmodal-title">
+                    <span className="remmodal-usericon" aria-hidden="true">👤</span>
+                    Confirm Leave Team
+                  </div>
+
+                  <button
+                    className="remmodal-close"
+                    onClick={closeLeaveConfirm}
+                    aria-label="Close"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="remmodal-body">
+                  <div className="remmodal-question">
+                    Are you sure you want to leave team{" "}
+                    <b>"{(inviteView?.teamName || teamName || "this team").trim()}"</b>?
+                  </div>
+                </div>
+
+                <div className="remmodal-actions">
+                  <button
+                    className="remmodal-btn cancel"
+                    onClick={closeLeaveConfirm}
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    className="remmodal-btn confirm"
+                    onClick={confirmLeaveTeam}
+                    type="button"
                   >
                     OK
                   </button>
