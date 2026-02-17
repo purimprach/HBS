@@ -216,7 +216,13 @@ function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostN
   const gameCd = game.code || code;
   const byName = hostName || team.leaderName || "Host";
 
-  // 1) แจ้งทุกคนใน invites (pending/accepted) -> removed
+  // ✅ A) Soft delete: ทำเครื่องหมายว่าทีมถูกลบ (แต่ "ยังเก็บทีมไว้" เพื่อให้สแกน notice ได้)
+  team.isDeleted = true;
+  team.deletedAt = new Date().toISOString();
+  team.deletedByName = byName;
+  team.deletedByRole = "CEO";
+
+  // ✅ B) แจ้งทุกคนใน invites (pending/accepted) -> removed
   team.invites = (team.invites || []).map((inv) => {
     const st = inv.status;
     if (st === "pending" || st === "accepted") {
@@ -227,7 +233,7 @@ function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostN
         removedAt: new Date().toISOString(),
         removedByName: byName,
         removedByRole: "CEO",
-        teamName: teamNm,
+        teamName: inv.teamName || teamNm,
         removedMessage:
           `CEO: ${byName} has deleted the team "${teamNm}"\n` +
           `from the game "${gameNm}" (Code: ${gameCd}).\n\n` +
@@ -238,31 +244,12 @@ function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostN
     return inv;
   });
 
-  // 2) รีเซ็ตผู้เล่นที่เคยอยู่ทีมนี้ให้หลุดทีม
+  // ✅ C) รีเซ็ตผู้เล่นที่อยู่ทีมนี้ให้หลุดทีม
   game.players = game.players.map((p) =>
     p.teamId === teamId ? { ...p, teamId: null } : p
   );
 
-  // ✅ 3) ลบทีมออกจาก hbs_games จริงๆ (ไม่ให้ค้างใน AdminLobby)
-  game.teams = game.teams.filter((t) => t.id !== teamId);
-
   games[gameIdx] = game;
-
-  // ✅ 4) เผื่อมีทีมจริงใน hbs_teams_${code} (AdminLobby อ่านจาก key นี้ด้วย)
-  try {
-    const TEAMS_KEY = `hbs_teams_${code}`;
-    const realTeams = safeJSONParse(localStorage.getItem(TEAMS_KEY), []);
-    const nextRealTeams = (Array.isArray(realTeams) ? realTeams : []).filter(
-      (t) => (t?.id ?? "") !== teamId
-    );
-    localStorage.setItem(TEAMS_KEY, JSON.stringify(nextRealTeams));
-
-    // ให้ AdminLobby รีเฟรชในแท็บเดียวกันทันที
-    window.dispatchEvent(new Event("hbs:teams"));
-  } catch (e) {
-    console.error(e);
-  }
-
   return games;
 }
 
@@ -317,6 +304,7 @@ function AccountPage() {
   const [showOkModal, setShowOkModal] = useState(false);
   const [hostNotice, setHostNotice] = useState(null);
   const [roleNotice, setRoleNotice] = useState(null);
+  const [teamUpdateNotice, setTeamUpdateNotice] = useState(null);
   
 // { title, oldRole, newRole, at, byName, byRole, gameCode, teamId, email }
 
@@ -530,6 +518,11 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   // Join Team (Invite inbox)
   // -------------------------
   const [pendingInvite, setPendingInvite] = useState(null);
+  const [acceptedInviteInfo, setAcceptedInviteInfo] = useState(null);
+  const [isAcceptedInvite, setIsAcceptedInvite] = useState(false);
+  
+// { gameCode, gameName, teamId, teamName, hostName, hostEmail, role, invitedAt, adminDisplay }
+
   // { gameCode, gameName, teamId, teamName, teamNumber, hostName, hostEmail, role, invitedAt }
   const [systemNotice, setSystemNotice] = useState(null);
 // { title, message, at }
@@ -598,6 +591,38 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     return null;
   };
 
+  const scanTeamUpdateNotice = () => {
+    const email = normalizeEmail(currentPlayer?.email);
+    if (!email) return null;
+
+    const games = readGames();
+
+    for (const g of games) {
+      for (const t of (g.teams || [])) {
+        const inv = (t.invites || []).find(
+          (x) =>
+            normalizeEmail(x.email) === email &&
+            x.status === "accepted" &&
+            x.teamUpdateType === "member_removed" &&
+            x.teamUpdateSeen === false
+        );
+
+        if (inv) {
+          return {
+            title: "Team Update",
+            message: inv.teamUpdateMessage || "Your team was updated.",
+            at: inv.teamUpdateAt,
+            gameCode: g.code,
+            teamId: t.id,
+            email,
+          };
+        }
+      }
+    }
+
+    return null;
+  };
+
   function markRoleNoticeSeen(notice) {
     if (!notice) return;
 
@@ -616,6 +641,27 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     if (!inv) return;
 
     inv.noticeSeen = true;
+    writeGamesAndRefresh(games);
+  }
+
+  function markTeamUpdateSeen(notice) {
+    if (!notice) return;
+
+    const games = readGames();
+    const g = games.find((x) => x.code === notice.gameCode);
+    if (!g) return;
+
+    const t = (g.teams || []).find((x) => x.id === notice.teamId);
+    if (!t) return;
+
+    const inv = (t.invites || []).find(
+      (x) =>
+        normalizeEmail(x.email) === normalizeEmail(notice.email) &&
+        x.teamUpdateType === "member_removed"
+    );
+    if (!inv) return;
+
+    inv.teamUpdateSeen = true;
     writeGamesAndRefresh(games);
   }
 
@@ -647,23 +693,50 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
   const rn = scanRoleChangeNotice();
   const sn = scanSystemNotice();
   const hn = scanHostNotice();
+  const tn = scanTeamUpdateNotice();
 
   if (rn) {
     setSystemNotice(null);
     setHostNotice(null);
+    setTeamUpdateNotice(null);
     setRoleNotice(rn);
   } else if (sn) {
     setRoleNotice(null);
     setHostNotice(null);
+    setTeamUpdateNotice(null);
     setSystemNotice(sn);
+  } else if (tn) {
+    setRoleNotice(null);
+    setSystemNotice(null);
+    setHostNotice(null);
+    setTeamUpdateNotice(tn);
   } else if (hn) {
     setRoleNotice(null);
     setSystemNotice(null);
+    setTeamUpdateNotice(null);
     setHostNotice(hn);
   }
 
   setPendingInvite(scanPendingInvite());
 }, [currentPlayer, storageTick]);
+
+// ✅ RESET PLAYER STATE เมื่อโดนลบทีม
+useEffect(() => {
+  if (!systemNotice) return;
+
+  // ล้าง Join Team
+  setPendingInvite(null);
+  setAcceptedInviteInfo(null);
+  setIsAcceptedInvite(false);
+
+  // ล้าง draft team setup
+  if (currentPlayer?.id) {
+    localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
+  }
+
+  // refresh UI
+  setStorageTick((t) => t + 1);
+}, [systemNotice, currentPlayer]);
 
 // ============================
 // ✅ GUARD: ถ้า admin ลบเกมแล้ว -> reset ฝั่งผู้เล่น
@@ -696,6 +769,7 @@ function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamI
     for (const g of games) {
       for (let i = 0; i < (g.teams || []).length; i++) {
         const t = g.teams[i];
+        if (t.isDeleted) continue;
         const inv = (t.invites || []).find(
           (x) => normalizeEmail(x.email) === email && x.status === "pending"
         );
@@ -1576,6 +1650,24 @@ async function shareInviteText(text) {
 
     inv.noticeSeen = false; // ให้ฝั่งเพื่อนเห็น 1 ครั้ง
 
+    // ✅ BROADCAST: แจ้งทุกคนที่ accepted คนอื่น (เช่น 777) ว่ามีคนถูก remove
+    (team.invites || []).forEach((x) => {
+      const xEmail = normalizeEmail(x.email);
+      if (!xEmail) return;
+
+      // แจ้งเฉพาะคนที่ accepted และไม่ใช่คนที่ถูก remove
+      if (x.status === "accepted" && xEmail !== normalizeEmail(removedEmail)) {
+        x.teamUpdateType = "member_removed";
+        x.teamUpdateSeen = false;
+        x.teamUpdateAt = new Date().toISOString();
+
+        const hostNm = currentPlayer?.name || "Host";
+        const teamNm2 = team?.name || teamName?.trim() || "Hotel Team";
+        x.teamUpdateMessage =
+          `CEO: ${hostNm} has removed ${normalizeEmail(removedEmail)} from the team "${teamNm2}".`;
+      }
+    });
+
     games[gameIdx] = game;
     writeGamesAndRefresh(games);
 
@@ -1881,70 +1973,42 @@ async function shareInviteText(text) {
 
     const email = normalizeEmail(currentPlayer.email);
     const games = readGames();
-
     const gameIdx = games.findIndex((g) => g.code === pendingInvite.gameCode);
     if (gameIdx === -1) return;
 
     const game = games[gameIdx];
-    game.players = game.players || [];
-    game.teams = game.teams || [];
-
-    const team = game.teams.find((t) => t.id === pendingInvite.teamId);
+    const team = game.teams?.find((t) => t.id === pendingInvite.teamId);
     if (!team) return;
 
-    // mark invite accepted
-    team.invites = team.invites || [];
-    const inv = team.invites.find((x) => normalizeEmail(x.email) === email);
-    if (!inv) return;
+    // 1. อัปเดตสถานะใน storage
+    const inv = team.invites?.find((x) => normalizeEmail(x.email) === email);
+    if (inv) {
+      inv.status = "accepted";
+      inv.acceptedAt = new Date().toISOString();
+    }
 
-    inv.status = "accepted";
-    inv.acceptedAt = new Date().toISOString();
-
-    // ensure player exists + set teamId
+    // 2. ผูก Player เข้ากับทีม
     let p = game.players.find((pp) => pp.playerId === currentPlayer.id);
     if (!p) {
-      p = {
+      game.players.push({
         playerId: currentPlayer.id,
-        name: currentPlayer.name || "Player",
-        email: currentPlayer.email || "",
+        name: currentPlayer.name,
+        email: currentPlayer.email,
         teamId: team.id,
         ready: false,
-        joinedAt: new Date().toISOString(),
-      };
-      game.players.push(p);
+      });
     } else {
       p.teamId = team.id;
     }
 
-    const mode = game?.settings?.mode || {};
-    const limit = getTeamLimitFromMode(mode);
-
-    team.members = team.members || [];
-
-  // ถ้าตัวเองยังไม่อยู่ใน members -> คาดว่าจะเพิ่ม 1
-  const nextTotal = team.members.includes(currentPlayer.id)
-    ? team.members.length
-    : team.members.length + 1;
-
-  if (nextTotal > limit.maxTotal) {
-    alert("This team is already full.");
-    return;
-  }
-
-    // add to team.members
-    team.members = team.members || [];
-    if (!team.members.includes(currentPlayer.id)) {
-      team.members.push(currentPlayer.id);
-    }
-
-    games[gameIdx] = game;
     writeGamesAndRefresh(games);
 
-    setPendingInvite(null);
+    // ✅ สิ่งที่เพิ่มเข้ามา:
+    // ✅ จำ invite ไว้เพื่อใช้ render แบบ read-only หลัง accept
+    setAcceptedInviteInfo(pendingInvite);
 
-    // ✅ leaving this page
-    localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
-    navigate("/waiting-room", { state: { gameCode: game.code } });
+    setIsAcceptedInvite(true);
+    setPendingInvite(null);
   };
 
   const handleDenyInvite = () => {
@@ -2052,13 +2116,22 @@ async function shareInviteText(text) {
 
   const greetingName = currentPlayer?.name || "Player";
 
- const teamSetupModeLabel = useMemo(() => {
-    return getModeLabelEN(joinedGame?.settings?.mode);
-  }, [joinedGame, storageTick]); // ✅ เพิ่ม storageTick
+  const inviteView = pendingInvite || acceptedInviteInfo;
 
-  const teamLimit = useMemo(() => {
-    return getTeamLimitFromMode(joinedGame?.settings?.mode);
-  }, [joinedGame, storageTick]); // ✅ เพิ่ม storageTick
+  // เกมที่ใช้แสดง mode/limit ฝั่งผู้ถูกเชิญ (เพราะ joinedGame จะเป็น null)
+  const effectiveGame = useMemo(() => {
+    if (isJoined) return joinedGame;
+    if (inviteView?.gameCode) return findGameByCode(inviteView.gameCode);
+    return null;
+  }, [isJoined, joinedGame, inviteView?.gameCode, storageTick]);
+
+ const teamSetupModeLabel = useMemo(() => {
+  return getModeLabelEN(effectiveGame?.settings?.mode);
+}, [effectiveGame, storageTick]);
+
+const teamLimit = useMemo(() => {
+  return getTeamLimitFromMode(effectiveGame?.settings?.mode);
+}, [effectiveGame, storageTick]);
 
   const currentTotalMembers = 1 + teamMembers.length;
 
@@ -2080,6 +2153,11 @@ async function shareInviteText(text) {
   isJoined &&
   totalReady >= teamLimit.minTotal &&
   totalReady <= teamLimit.maxTotal;
+
+  // ✅ Team Setup visibility
+  const canViewTeamSetup = isJoined || !!inviteView || isAcceptedInvite;
+  const isTeamSetupReadOnly = (!isJoined && !!inviteView) || isAcceptedInvite;
+  const isTeamSetupLocked = !canViewTeamSetup;
 
   const okLabel = useMemo(() => {
     if (teamLimit.type === "single") return `${totalReady}/1`;
@@ -2111,6 +2189,38 @@ async function shareInviteText(text) {
   };
 }, [storageTick, joinedGame, draftTeamId, currentPlayer, teamName]);
 
+useEffect(() => {
+    // ถ้าเรากดยอมรับคำเชิญแล้ว ให้คอยเช็คว่า Host กดยืนยันทีมหรือยัง
+    if (isAcceptedInvite) {
+      const games = readGames();
+      // หาเกมและทีมที่เราอยู่
+      for (const g of games) {
+        const myTeam = g.teams?.find(t => 
+          t.invites?.some(inv => normalizeEmail(inv.email) === normalizeEmail(MY_EMAIL) && inv.status === 'accepted')
+        );
+
+        // ✅ ถ้าเจอทีมเรา และ Host กด OK แล้ว (isDraft เป็น false)
+        if (myTeam && myTeam.isDraft === false) {
+          setIsAcceptedInvite(false); // ล้างสถานะ
+          setAcceptedInviteInfo(null);
+          navigate("/waiting-room", { state: { gameCode: g.code } });
+          break;
+        }
+      }
+    }
+    // ใช้ storageTick เป็นตัวกระตุ้นให้ฟังก์ชันนี้ทำงานเมื่อมีการเปลี่ยนแปลงข้อมูลในเครื่อง
+  }, [storageTick, isAcceptedInvite, MY_EMAIL, navigate]);
+
+const getInvitedTeamData = () => {
+  if (!inviteView) return null;
+  const games = readGames();
+  const game = games.find((g) => g.code === inviteView.gameCode);
+  if (!game) return null;
+
+  const t = game.teams?.find((x) => x.id === inviteView.teamId) || null;
+  if (!t || t.isDeleted) return null; // ✅ สำคัญ
+  return t;
+};
 
   return (
     <div className="account-container">
@@ -2209,35 +2319,35 @@ async function shareInviteText(text) {
               <div className="card join-team-card">
                 <h3>Join Team</h3>
 
-                {pendingInvite ? (
+                {inviteView ? (
                   <>
                     <div className="team-invite-box">
                       <div>
-                        Game : <strong>{pendingInvite.gameName}</strong>
+                        Game : <strong>{inviteView.gameName}</strong>
                       </div>
 
                       <div>
-                        Team : <strong>{pendingInvite.teamName}</strong>
+                        Team : <strong>{inviteView.teamName}</strong>
                       </div>
 
                       <div>
-                        Role : <strong>{pendingInvite.role || "-"}</strong>
+                        Role : <strong>{inviteView.role || "-"}</strong>
                       </div>
 
                       <div>
-                        Host : <strong>{pendingInvite.hostName}</strong>
+                        Host : <strong>{inviteView.hostName}</strong>
                       </div>
 
                       <div>
-                        👑 Admin : <strong>{pendingInvite.adminDisplay || "-"}</strong>
+                        👑 Admin : <strong>{inviteView.adminDisplay || "-"}</strong>
                       </div>
                     </div>
 
                     <div className="join-team-actions">
-                      <button className="btn-deny" onClick={handleDenyInvite}>
+                      <button className="btn-deny" onClick={handleDenyInvite} disabled={isAcceptedInvite}>
                         Deny
                       </button>
-                      <button className="btn-accept" onClick={handleAcceptInvite}>
+                      <button className="btn-accept" onClick={handleAcceptInvite} disabled={isAcceptedInvite}>
                         Accept
                       </button>
                     </div>
@@ -2304,7 +2414,7 @@ async function shareInviteText(text) {
 
           <div className="right-column">
             {/* ✅ Team Setup (show always, lock when NOT joined) */}
-            <div className={`team-setup-card-inline ${!isJoined ? "locked" : ""}`}>
+            <div className={`team-setup-card-inline ${isTeamSetupLocked ? "locked" : ""}`}>
               <div className="team-setup-header-tag">
                 Team Setup {isJoined ? `: ${teamSetupModeLabel || ""}` : ""}
               </div>
@@ -2317,9 +2427,9 @@ async function shareInviteText(text) {
                     type="text"
                     placeholder="Enter Team name"
                     className="form-input teamname-input"
-                    value={teamName}
+                    value={isTeamSetupReadOnly ? (inviteView?.teamName || "") : teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    disabled={!isJoined}
+                    disabled={!isJoined || isTeamSetupReadOnly}
                   />
                 </div>
 
@@ -2334,185 +2444,217 @@ async function shareInviteText(text) {
                   </div>
 
                   <div className="members-grid-container">
-                    {/* Row 1: You */}
-                    <div className="member-row">
-                      <div className="col-label">You</div>
-
-                      <div className="col-input">
-                        <input
-                          type="text"
-                          value={MY_EMAIL}
-                          readOnly
-                          className="form-input readonly"
-                          disabled={!isJoined}
-                        />
-                      </div>
-
-                      <div className="col-role">
-                        <div className="role-fixed">
-                          {HOST_ROLE}
-                        </div>
-                      </div>
-
-                      <div className="col-action"></div>
-                    </div>
-
-                    {/* Other members (ของเดิมคุณ) */}
-                    {teamMembers.map((member, index) => {
-                      const emailNorm = normalizeEmail(member.email);
-
-                      const emailReady = member.status === "ready"; // ✅ ต้องอยู่ก่อน
-
-                      const isDupEmail =
-                        !!emailNorm &&
-                        (emailNorm === normalizeEmail(MY_EMAIL) ||
-                          teamMembers.some(
-                            (m, i) => i !== index && normalizeEmail(m.email) === emailNorm
-                          ));
-
-                      // ✅ อย่าใช้ emailReady ก่อนประกาศ
-                      const registeredNow = emailReady ? isEmailRegistered(emailNorm) : false;
-
-                      const realStatus = getInviteStatusFromStorage(member.email);
-                      const isAccepted = realStatus === "accepted";
-                      const isDenied = realStatus === "denied";
-
-                      const roleValue = teamRoles[member.key];
-                      const hasRole = !!roleValue;
-
-                      // ✅ โชว์ปุ่มเมื่อ: email ถูก + เลือก role แล้ว + ไม่ซ้ำ
-                      const canShowAction = emailReady && hasRole && !isDupEmail;
-
-                      const canSend = canShowAction;
-
-                      const isSentUI = member.status === "sent";
-                      const isUnregisteredUI = member.status === "unregistered";
-                      return (
-                        <div key={member.key} className="member-row">
-                          <div className="col-label">{index === 0 ? "Other" : ""}</div>
-
-                          <div className="col-input input-icon-wrapper">
+                    {/* ✅ Read-only preview สำหรับคนที่ถูกเชิญ (มีอยู่แล้วในโค้ดคุณ) */}
+                    {isTeamSetupReadOnly ? (
+                      <>
+                        {/* 1. แสดงแถวของ Host (CEO) เสมอ */}
+                        <div className="member-row">
+                          <div className="col-label">Host</div>
+                          <div className="col-input">
                             <input
                               type="text"
-                              placeholder="example@email.com"
-                              className={`form-input ${
-                                isSentUI || isUnregisteredUI ? "readonly" : ""
-                              }`}
-                              value={member.email}
-                              onChange={(e) => handleEmailChange(index, e.target.value)}
-                              onBlur={() => handleEmailBlur(index)}
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.currentTarget.blur(); // ✅ กด Enter = ยืนยันอีเมลเหมือน blur
-                                  }
-                                }}
-                              readOnly={isSentUI || isUnregisteredUI}
+                              value={inviteView?.hostEmail || ""}
+                              readOnly
+                              className="form-input readonly"
+                              disabled
+                            />
+                          </div>
+                          <div className="col-role">
+                            <div className="role-fixed">CEO</div>
+                          </div>
+                          <div className="col-action">
+                            <span className="status-pill accepted">Host</span>
+                          </div>
+                        </div>
+
+                        {/* 2. ดึงข้อมูลทีมจริงมาวนลูปแสดงเพื่อนร่วมทีมคนอื่นๆ */}
+                        {(() => {
+                          const invitedTeam = getInvitedTeamData();
+                          if (!invitedTeam) return null;
+
+                          // ✅ 1) กรองเฉพาะสถานะที่ต้องแสดงจริง
+                          const visibleInvites = (invitedTeam.invites || []).filter((inv) =>
+                            ["pending", "accepted", "denied"].includes(inv?.status)
+                            // ❌ removed จะไม่ผ่าน filter -> 888 หายไปจาก 777 ทันที
+                          );
+
+                          return visibleInvites.map((inv, idx) => {
+                            const isMe = normalizeEmail(inv.email) === normalizeEmail(MY_EMAIL);
+
+                            const pillClass =
+                              inv.status === "denied"
+                                ? "denied"
+                                : inv.status === "pending"
+                                ? "waiting"
+                                : "accepted";
+
+                            const pillText =
+                              inv.status === "pending"
+                                ? "Waiting"
+                                : inv.status === "denied"
+                                ? "Denied"
+                                : "Accepted";
+
+                            return (
+                              <div key={`${inv.email}-${inv.status}-${idx}`} className="member-row">
+                                <div className="col-label">{idx === 0 ? "Other" : ""}</div>
+
+                                <div className="col-input">
+                                  <input
+                                    type="text"
+                                    value={inv.email || ""}
+                                    readOnly
+                                    className={`form-input readonly ${isMe ? "highlight-me" : ""}`}
+                                    disabled
+                                  />
+                                </div>
+
+                                <div className="col-role">
+                                  <div className="role-fixed">{inv.role || "Member"}</div>
+                                </div>
+
+                                <div className="col-action">
+                                  <span className={`status-pill ${pillClass}`}>{pillText}</span>
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </>
+                    ) : (
+                      <>
+                        {/* ✅ ส่วนสำหรับ Host หรือคนที่ Join แล้ว (ส่วนที่หายไป) */}
+                        <div className="member-row">
+                          <div className="col-label">You</div>
+                          <div className="col-input">
+                            <input
+                              type="text"
+                              value={MY_EMAIL}
+                              readOnly
+                              className="form-input readonly"
                               disabled={!isJoined}
                             />
-                            {(isSentUI || isUnregisteredUI) && (
-                              <Edit3
-                                size={14}
-                                className="input-icon clickable"
-                                onClick={() => isJoined && handleEditClick(index)}
-                              />
-                            )}
                           </div>
-
                           <div className="col-role">
-                            <div className={`select-wrapper ${roleValue ? "purple" : "gray"}`}>
-                              <select
-                                className="role-select"
-                                value={roleValue || ""}
-                                onChange={(e) => handleRoleChange(member.key, e.target.value)}
+                            <div className="role-fixed">{HOST_ROLE}</div>
+                          </div>
+                          <div className="col-action"></div>
+                        </div>
+
+                        {/* ✅ วนลูปแสดงสมาชิกที่คุณแอดไว้ */}
+                        {teamMembers.map((member, index) => {
+                          const emailNorm = normalizeEmail(member.email);
+                          const emailReady = member.status === "ready";
+                          const isDupEmail =
+                            !!emailNorm &&
+                            (emailNorm === normalizeEmail(MY_EMAIL) ||
+                              teamMembers.some(
+                                (m, i) => i !== index && normalizeEmail(m.email) === emailNorm
+                              ));
+
+                          const registeredNow = emailReady ? isEmailRegistered(emailNorm) : false;
+                          const realStatus = getInviteStatusFromStorage(member.email);
+                          const isAccepted = realStatus === "accepted";
+                          const isDenied = realStatus === "denied";
+                          const roleValue = teamRoles[member.key];
+                          const hasRole = !!roleValue;
+                          const canShowAction = emailReady && hasRole && !isDupEmail;
+                          const isSentUI = member.status === "sent";
+                          const isUnregisteredUI = member.status === "unregistered";
+
+                          return (
+                            <div key={member.key} className="member-row">
+                              <div className="col-label">{index === 0 ? "Other" : ""}</div>
+                              <div className="col-input input-icon-wrapper">
+                                <input
+                                  type="text"
+                                  placeholder="example@email.com"
+                                  className={`form-input ${isSentUI || isUnregisteredUI ? "readonly" : ""}`}
+                                  value={member.email}
+                                  onChange={(e) => handleEmailChange(index, e.target.value)}
+                                  onBlur={() => handleEmailBlur(index)}
+                                  readOnly={isSentUI || isUnregisteredUI}
+                                  disabled={!isJoined}
+                                />
+                                {(isSentUI || isUnregisteredUI) && (
+                                  <Edit3
+                                    size={14}
+                                    className="input-icon clickable"
+                                    onClick={() => isJoined && handleEditClick(index)}
+                                  />
+                                )}
+                              </div>
+
+                              <div className="col-role">
+                                <div className={`select-wrapper ${roleValue ? "purple" : "gray"}`}>
+                                  <select
+                                    className="role-select"
+                                    value={roleValue || ""}
+                                    onChange={(e) => handleRoleChange(member.key, e.target.value)}
+                                    disabled={!isJoined}
+                                  >
+                                    <option value="" disabled>Select Role</option>
+                                    {MEMBER_ROLES.map((role) => (
+                                      <option key={role} value={role}>{role}</option>
+                                    ))}
+                                  </select>
+                                  <ChevronDown size={14} className="select-arrow" />
+                                </div>
+                              </div>
+
+                              <div className="col-action">
+                                {isDupEmail ? (
+                                  <span className="status-pill denied">Duplicate</span>
+                                ) : isAccepted ? (
+                                  <>
+                                    <span className="status-pill accepted">Accepted</span>
+                                    <button
+                                      type="button"
+                                      className="pill-btn danger"
+                                      onClick={() => isJoined && openRemoveConfirm(index)}
+                                      disabled={!isJoined}
+                                    >
+                                      <Trash2 size={14} /> Remove
+                                    </button>
+                                  </>
+                                ) : isSentUI ? (
+                                  <span className={`status-pill ${isDenied ? "denied" : "waiting"}`}>
+                                    {isDenied ? "Denied" : "Waiting"}
+                                  </span>
+                                ) : canShowAction ? (
+                                  <button
+                                    className={`pill-btn ${registeredNow ? "send" : "share"}`}
+                                    type="button"
+                                    onClick={() => registeredNow ? handleSendInvite(index) : openInviteModal(emailNorm, roleValue, false)}
+                                    disabled={!isJoined}
+                                  >
+                                    {registeredNow ? "Invite" : "Share"}
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        {/* ปุ่ม Add member สำหรับโหมด other */}
+                        {joinedGame?.settings?.mode?.type === "other" && (
+                          <div className="member-row">
+                            <div className="col-label"></div>
+                            <div className="col-input" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              <button
+                                type="button"
+                                className="pill-btn send"
+                                onClick={() => isJoined && handleAddMember()}
                                 disabled={!isJoined}
                               >
-                                <option value="" disabled>
-                                  Select Role
-                                </option>
-                                {MEMBER_ROLES.map((role) => (
-                                  <option key={role} value={role}>
-                                    {role}
-                                  </option>
-                                ))}
-                              </select>
-                              <ChevronDown size={14} className="select-arrow" />
+                                <PlusCircle size={14} /> Add member
+                              </button>
                             </div>
+                            <div className="col-role"></div>
+                            <div className="col-action"></div>
                           </div>
-
-                          <div className="col-action">
-                            {/* ✅ อีเมลซ้ำ */}
-                            {isDupEmail ? (
-                              <span className="status-pill denied">Duplicate</span>
-
-                            ) : isAccepted ? (
-                              <>
-                                <span className="status-pill accepted">Accepted</span>
-                                <button
-                                  type="button"
-                                  className="pill-btn danger"
-                                  onClick={() => isJoined && openRemoveConfirm(index)}
-                                  disabled={!isJoined}
-                                >
-                                  <Trash2 className="trash-icon" /> Remove
-                                </button>
-                              </>
-
-                            ) : isSentUI ? (
-                              isDenied ? (
-                                <span className="status-pill denied">Denied</span>
-                              ) : (
-                                <span className="status-pill waiting">Waiting</span>
-                              )
-
-                            ) : !canShowAction ? (
-                              // ✅ สำคัญ: ยังพิมพ์อีเมลไม่เสร็จ หรือยังไม่เลือก role -> ไม่โชว์ปุ่มอะไรเลย
-                              null
-
-                            ) : !registeredNow ? (
-                              // ✅ ครบแล้ว + ไม่อยู่ในระบบ -> Share
-                              <button
-                                className={`pill-btn ${canSend && isJoined ? "share" : "disabled"}`}
-                                type="button"
-                                disabled={!isJoined || !canSend}
-                                onClick={() => openInviteModal(emailNorm, roleValue, false)}
-                              >
-                                Share
-                              </button>
-                            ) : (
-                              // ✅ ครบแล้ว + อยู่ในระบบ -> Invite
-                              <button
-                                className={`pill-btn ${canSend && isJoined ? "send" : "disabled"}`}
-                                type="button"
-                                disabled={!isJoined || !canSend}
-                                onClick={() => isJoined && canSend && handleSendInvite(index)}
-                              >
-                                Invite
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Add member (เฉพาะ other) */}
-                    {joinedGame?.settings?.mode?.type === "other" && (
-                      <div className="member-row">
-                        <div className="col-label"></div>
-
-                        <div className="col-input" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                          <button
-                            type="button"
-                            className="pill-btn send"
-                            onClick={() => isJoined && handleAddMember()}
-                            disabled={!isJoined}
-                          >
-                            <PlusCircle size={14} /> Add member
-                          </button>
-                        </div>
-
-                        <div className="col-role"></div>
-                        <div className="col-action"></div>
-                      </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -2522,7 +2664,7 @@ async function shareInviteText(text) {
                     className="team-exit-btn"
                     type="button"
                     onClick={() => openExitModal(isHost ? "delete" : "leave")}
-                    disabled={!isJoined}
+                    disabled={!isJoined || isTeamSetupReadOnly}
                   >
                     {isHost ? "Delete Team" : "Leave Team"}
                   </button>
@@ -2531,14 +2673,14 @@ async function shareInviteText(text) {
                     className={`footer-btn ok ${canOk ? "active" : "disabled"}`}
                     onClick={handleOkClick}
                     type="button"
-                    disabled={!canOk}
+                    disabled={!canOk || isTeamSetupReadOnly}
                   >
                     OK ({okLabel})
                   </button>
                 </div>
 
                 {/* ✅ LOCK OVERLAY */}
-                {!isJoined && (
+                {isTeamSetupLocked && (
                   <div className="team-setup-lock">
                     <div className="lock-card">
                       <div className="lock-icon">🔒</div>
@@ -2779,6 +2921,51 @@ async function shareInviteText(text) {
               </div>
             </div>
           )}
+
+          {teamUpdateNotice && (
+            <div className="sysmodal-backdrop">
+              <div className="sysmodal-card">
+                <div className="sysmodal-header">
+                  <div className="sysmodal-title">
+                    <span className="sysmodal-icon" aria-hidden="true">👤</span>
+                    {teamUpdateNotice.title}
+                  </div>
+
+                  <button
+                    className="sysmodal-close"
+                    onClick={() => {
+                      markTeamUpdateSeen(teamUpdateNotice);
+                      setTeamUpdateNotice(null);
+                    }}
+                    aria-label="Close"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="sysmodal-body">
+                  <div className="sysmodal-message">
+                    {teamUpdateNotice.message}
+                  </div>
+                </div>
+
+                <div className="sysmodal-actions">
+                  <button
+                    className="sysmodal-btn"
+                    type="button"
+                    onClick={() => {
+                      markTeamUpdateSeen(teamUpdateNotice);
+                      setTeamUpdateNotice(null);
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ================= END REMOVED NOTICE MODAL ================= */}
           {hostNotice && (
             <div className="sysmodal-backdrop">

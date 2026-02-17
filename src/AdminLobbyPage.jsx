@@ -70,7 +70,11 @@ export default function AdminLobbyPage() {
     const games = safeParse(localStorage.getItem(GAMES_KEY), []);
     const g = (Array.isArray(games) ? games : []).find((x) => x.code === gameCode);
 
-    const validIds = new Set((g?.teams || []).map((t) => t.id));
+    const validIds = new Set(
+        (g?.teams || [])
+            .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
+            .map((t) => t.id)
+    );
     const list = safeParse(localStorage.getItem(teamsKey), []);
     const arr = Array.isArray(list) ? list : [];
 
@@ -156,7 +160,11 @@ export default function AdminLobbyPage() {
   const game = (Array.isArray(games) ? games : []).find((g) => g.code === gameCode);
   if (!game) return;
 
-  const validIds = new Set((game.teams || []).map((t) => t.id));
+  const validIds = new Set(
+    (game.teams || [])
+        .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
+        .map((t) => t.id)
+  );
   const key = TEAMS_KEY(gameCode);
 
   const list = safeParse(localStorage.getItem(key), []);

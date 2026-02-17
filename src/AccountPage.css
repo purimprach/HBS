@@ -633,13 +633,6 @@
   min-width: 80px;
 }
 
-/* Waiting ให้ดู soft */
-.status-pill.waiting {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 2px solid #ffeeba;
-}
-
 .status-pill.accepted {
   background-color: #86efac;
   color: #14532d;
@@ -776,14 +769,6 @@
   cursor: pointer;
 }
 
-/* =========================================
-   ✅ Status denied (ให้ host เห็น Denied ได้)
-   ========================================= */
-.status-pill.denied{
-  background-color: #FEE2E2;
-  color: #991B1B;
-  border: 1px solid #fecaca;
-}
 /* =========================
    Join Team Invite box (แบบรูป)
    ========================= */
@@ -812,13 +797,6 @@
 .btn-deny:hover,
 .btn-accept:hover{
   filter: brightness(0.95);
-}
-
-/* status denied */
-.status-pill.denied{
-  background-color: #FEE2E2;
-  color: #991B1B;
-  border: 1px solid #fecaca;
 }
 
 /* =========================
@@ -1143,18 +1121,11 @@ button.pill-btn.danger .trash-icon{
   border: 2px solid #16A34A;
 }
 
-/* Waiting (ส้ม) */
-.status-pill.waiting{
-  border-color: #F59E0B;
-  color: #F59E0B;
-  background: #ffffff;
-}
-
 /* Denied (แดง) */
 .status-pill.denied{
   color: #EF4444;
   background: #ffffff;
-  border: 2px solid #EF4444;
+  border: 3px solid #EF4444;
 }
 .invmodal-backdrop{
   position: fixed; inset: 0;
@@ -1632,4 +1603,38 @@ button.pill-btn.danger .trash-icon{
 }
 .rolemodal-closebtn:hover{
   background:#F9FAFB;
+}
+/* highlight-me สำหรับแถวของผู้เล่นเอง */
+.form-input.readonly.highlight-me {
+  border: 2px solid rgba(139, 92, 246, 0.5); /* สีม่วงจาง (Purple 500 @ 50%) */
+  background-color: rgba(139, 92, 246, 0.05); /* พื้นหลังม่วงอ่อนมากๆ */
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.2); /* เพิ่มเงาฟุ้งๆ ให้ดูเด่นขึ้น */
+  font-weight: 600; /* ปรับตัวหนังสือให้หนาขึ้นเล็กน้อย */
+}
+
+/* highlight-me สำหรับแถวของผู้เล่นเอง */
+.form-input.readonly.highlight-me {
+  border: 4px solid rgba(139, 92, 246, 0.5) !important;
+  background-color: rgba(139, 92, 246, 0.05) !important;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.2);
+  font-weight: 600;
+}
+
+/* 1. สำหรับรอตอบรับ (Waiting/Pending) -> ขอบเหลือง */
+.status-pill.waiting, 
+.status-pill.pending {
+  background-color: #ffffff !important;
+  color: #d97706 !important;
+  border: 3px solid #f59e0b !important;
+  box-sizing: border-box;
+  font-weight: 800;
+}
+
+/* 3. สำหรับยอมรับ (Accepted) -> ขอบเขียว */
+.status-pill.accepted {
+  background-color: #ffffff !important;
+  color: #16a34a !important;
+  border: 3px solid #16a34a !important;
+  box-sizing: border-box;
+  font-weight: 800;
 }
