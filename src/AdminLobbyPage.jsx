@@ -331,6 +331,54 @@ export default function AdminLobbyPage() {
     }
   };
 
+// ==================== Delete Team (REAL) ====================
+const deleteTeamHard = (teamId) => {
+    if (!teamId || !gameCode) return;
+
+    const ok = window.confirm("ยืนยันลบทีมนี้ถาวร?");
+    if (!ok) return;
+
+    // =========================
+    // 1) update hbs_games
+    // =========================
+    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
+    const gi = games.findIndex((g) => g.code === gameCode);
+
+    if (gi !== -1) {
+        const game = games[gi];
+
+        game.teams = (game.teams || []).map((t) =>
+        t?.id === teamId
+            ? { ...t, isDeleted: true, deletedAt: new Date().toISOString() }
+            : t
+        );
+
+        game.players = (game.players || []).map((p) =>
+        p?.teamId === teamId ? { ...p, teamId: null } : p
+        );
+
+        games[gi] = game;
+        localStorage.setItem(GAMES_KEY, JSON.stringify(games));
+    }
+
+    // =========================
+    // 2) update hbs_teams_<code>
+    // =========================
+    const tKey = TEAMS_KEY(gameCode);
+    const list = safeParse(localStorage.getItem(tKey), []);
+    const newArr = (Array.isArray(list) ? list : []).filter((t) => t?.id !== teamId);
+    localStorage.setItem(tKey, JSON.stringify(newArr));
+
+    // =========================
+    // 🔥 3) แจ้งทุกหน้าให้ sync ทันที
+    // =========================
+    window.dispatchEvent(new Event("hbs:games"));
+    window.dispatchEvent(new Event("hbs:teams"));
+
+    // refresh lobby UI
+    setTeams(readTeamsFromStorage());
+};
+
   if (!adminEmail) return null;
   if (!gameData) return <div className="p-10 text-center">กำลังโหลดข้อมูลห้อง...</div>;
 
@@ -499,9 +547,14 @@ export default function AdminLobbyPage() {
                           <span className="tcc-name">
                             {index + 1}. {team.name}
                           </span>
-                          <button className="btn-card-del" type="button" title="demo">
+                          <button
+                            className="btn-card-del"
+                            type="button"
+                            title="ลบทีมถาวร"
+                            onClick={() => deleteTeamHard(team.id)}
+                            >
                             <Trash2 size={16} />
-                          </button>
+                            </button>
                         </div>
                         <div className="tcc-actions">
                           <button className="btn-pill" type="button">
@@ -535,9 +588,14 @@ export default function AdminLobbyPage() {
                           <span className="tcc-name">
                             {index + 1}. {team.name}
                           </span>
-                          <button className="btn-card-del" type="button" title="demo">
+                          <button
+                            className="btn-card-del"
+                            type="button"
+                            title="ลบทีมถาวร"
+                            onClick={() => deleteTeamHard(team.id)}
+                            >
                             <Trash2 size={16} />
-                          </button>
+                            </button>
                         </div>
                         <div className="tcc-actions">
                           <button className="btn-pill" type="button">
