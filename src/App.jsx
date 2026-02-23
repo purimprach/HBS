@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
+import DevMultiClientPage from "./DevMultiClientPage";
 
 /* Utils */
 import ScrollToTop from "./ScrollToTop";
@@ -81,6 +82,7 @@ function App() {
       <Routes>
         {/* ================= PUBLIC / AUTH ================= */}
         <Route path="/" element={<FirstLoginPage />} />
+        <Route path="/dev-multi" element={<DevMultiClientPage />} />
 
         {/* ----- Player Auth ----- */}
         <Route path="/login" element={<LoginPlayerPage />} />

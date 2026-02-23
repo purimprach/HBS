@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="module">
+      const params = new URLSearchParams(location.search);
+      const client = params.get("client") || "default";
+
+      // ⭐ inject client id ให้ app รู้
+      window.__DEV_CLIENT_ID__ = client;
+    </script>
+
+    <!-- ⭐ ใช้ entry เดิมของ Vite -->
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
