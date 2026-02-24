@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./AccountPage.css";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -149,8 +149,6 @@ function isEmailRegistered(email) {
   if (!e) return false;
 
   const users = readUsers();
-  console.log("CHECK REGISTER:", e, "usersCount:", users.length, "sample:", users[0]);
-
   return users.some((u) => normalizeEmail(u?.email) === e);
 }
 
@@ -208,38 +206,37 @@ function deleteTeamAndNotifyMembers(games, hostPlayerId, gameCode, teamId, hostN
   const gameCd = game.code || code;
   const byName = hostName || team.leaderName || "Host";
 
-  // ✅ A) Soft delete: ทำเครื่องหมายว่าทีมถูกลบ (แต่ "ยังเก็บทีมไว้" เพื่อให้สแกน notice ได้)
-  team.isDeleted = true;
-  team.deletedAt = new Date().toISOString();
-  team.deletedByName = byName;
-  team.deletedByRole = "CEO";
+  // ✅ NEW: เก็บ notice ในระดับเกม (ไม่ผูกกับทีม)
+  game.systemNotices = game.systemNotices || [];
 
-  // ✅ B) แจ้งทุกคนใน invites (pending/accepted) -> removed
-  team.invites = (team.invites || []).map((inv) => {
-    const st = inv.status;
-    if (st === "pending" || st === "accepted") {
-      return {
-        ...inv,
-        status: "removed",
-        removedReason: "delete_team",
-        removedAt: new Date().toISOString(),
-        removedByName: byName,
-        removedByRole: "CEO",
-        teamName: inv.teamName || teamNm,
-        removedMessage:
-          `CEO: ${byName} has deleted the team "${teamNm}"\n` +
-          `from the game "${gameNm}" (Code: ${gameCd}).\n\n` +
-          `All team members have been removed.`,
-        noticeSeen: false,
-      };
-    }
-    return inv;
+  const affectedEmails = new Set();
+  (team.invites || []).forEach((inv) => {
+    const e = normalizeEmail(inv.email);
+    if (!e) return;
+    if (["pending", "accepted"].includes(inv.status)) affectedEmails.add(e);
   });
 
-  // ✅ C) รีเซ็ตผู้เล่นที่อยู่ทีมนี้ให้หลุดทีม
+  affectedEmails.forEach((email) => {
+    game.systemNotices.push({
+      id: `team_deleted_${teamId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      type: "team_deleted",
+      toEmail: email,
+      seen: false,
+      createdAt: new Date().toISOString(),
+      message:
+        `CEO: ${byName} has deleted the team "${teamNm}"\n` +
+        `from the game "${gameNm}" (Code: ${gameCd}).\n\n` +
+        `You have been removed from the team.`,
+    });
+  });
+
+  // ✅ ล้าง teamId ของผู้เล่นที่อยู่ทีมนี้
   game.players = game.players.map((p) =>
     p.teamId === teamId ? { ...p, teamId: null } : p
   );
+
+  // ✅ HARD DELETE: ลบทีมทิ้งจากเกม (ชื่อทีมก็หายไปด้วย)
+  game.teams = game.teams.filter((t) => t.id !== teamId);
 
   games[gameIdx] = game;
   return games;
@@ -324,6 +321,31 @@ function AccountPage() {
   const [hostNotice, setHostNotice] = useState(null);
   const [roleNotice, setRoleNotice] = useState(null);
   const [teamUpdateNotice, setTeamUpdateNotice] = useState(null);
+  const [hydrated, setHydrated] = useState(false); 
+  const didHydrateRef = useRef(false);
+  // ✅ NEW: สำหรับคนที่ join ทีมแล้ว (แต่ไม่ใช่ host) ให้เห็นแบบ read-only
+  const [memberView, setMemberView] = useState(null); 
+  // { gameCode, gameName, teamId, teamName, hostName, hostEmail, adminDisplay }
+
+  const [joinCode, setJoinCode] = useState("");
+  const [isJoined, setIsJoined] = useState(false);
+  const [joinedGame, setJoinedGame] = useState(null);
+  const [currentPlayer, setCurrentPlayer] = useState(null);
+
+  useEffect(() => {
+    const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
+
+    // ถ้ายังไม่ login จริง ให้เดโม่ไว้ก่อน
+    if (!p) {
+      setCurrentPlayer({
+        id: "demo-player",
+        name: "Jane",
+        email: "janeza@gmail.com",
+      });
+      return;
+    }
+    setCurrentPlayer(p);
+  }, []);
 
   useEffect(() => {
     const bump = () => setStorageTick((t) => t + 1);
@@ -336,6 +358,26 @@ function AccountPage() {
       window.removeEventListener("hbs:teams", bump);
     };
   }, []);
+
+  useEffect(() => {
+    if (!currentPlayer?.id) return;
+
+    // ถ้ายังไม่ได้ join เกม ก็ไม่ต้องทำ
+    if (!isJoined || !joinedGame?.code) return;
+
+    const games = readGames();
+    const g = games.find(
+      (x) =>
+        (x.code || "").toUpperCase() ===
+        (joinedGame.code || "").toUpperCase()
+    );
+    if (!g) return;
+
+    // ✅ ถ้า Host กด Confirm แล้ว -> phase เป็น waiting
+    if (g.phase === "waiting") {
+      navigate("/waiting-room", { state: { gameCode: g.code } });
+    }
+  }, [storageTick, isJoined, joinedGame?.code, currentPlayer?.id, navigate]);
   
   // =========================
   // Invite / Register Modal
@@ -488,8 +530,7 @@ function AccountPage() {
     window.dispatchEvent(new Event("hbs:teams"));
   }
 
-  function forceResetJoinState(reasonMsg) {
-    // reset state ฝั่งผู้เล่น
+  function resetAllUIState({ alertMsg } = {}) {
     setIsJoined(false);
     setJoinedGame(null);
     setShowTeamSetup(false);
@@ -500,17 +541,22 @@ function AccountPage() {
     setDraftTeamId(null);
     setIsTeamNameLocked(false);
 
-    // reset invite view
     setPendingInvite(null);
     setAcceptedInviteInfo(null);
     setIsAcceptedInvite(false);
+    setMemberView(null);
 
-    // ล้าง draft
+    localStorage.removeItem("hbs_active_game_code_v1");
+
     if (currentPlayer?.id) {
       localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
     }
 
-    if (reasonMsg) alert(reasonMsg);
+    if (alertMsg) alert(alertMsg);
+  }
+
+  function forceResetJoinState(reasonMsg) {
+    resetAllUIState({ alertMsg: reasonMsg });
   }
 
   function ensureDraftTeamInStorage(games, gameIdx, player, joinedGame, draftTeamId, teamName) {
@@ -547,38 +593,148 @@ function AccountPage() {
     return { games, draftId, team: t };
   }
 
+   // สแกนหา invite ที่ pending ของอีเมลนี้
+  function scanPendingInvite() {
+    const email = normalizeEmail(currentPlayer?.email);
+    if (!email) return null;
+
+    const games = readGames();
+    let found = null;
+
+    for (const g of games) {
+      for (let i = 0; i < (g.teams || []).length; i++) {
+        const t = g.teams[i];
+        if (t.isDeleted) continue;
+        const inv = (t.invites || []).find(
+          (x) => normalizeEmail(x.email) === email && x.status === "pending"
+        );
+
+        if (inv) {
+          const adminDisplay =
+            (g?.ownerAdminUsername || "").trim() ||
+            (g?.ownerAdminName || "").trim() ||
+            (g?.adminUsername || "").trim() ||
+            (g?.adminName || "").trim() ||
+            (g?.createdByUsername || "").trim() ||
+            (g?.createdByName || "").trim() ||
+            "-";
+
+          found = {
+            gameCode: g.code,
+            gameName: g.name,
+            teamId: t.id,
+            teamName: t.name,
+            teamNumber: i + 1,
+            hostName: t.leaderName || "Host",
+            hostEmail: t.leaderEmail || "",
+            role: inv.role || "",
+            invitedAt: inv.invitedAt,
+
+            // ✅ เพิ่ม admin ตรงนี้
+            adminDisplay,
+          };
+          break;
+        }
+      }
+      if (found) break;
+    }
+    return found;
+  };
+
+  function scanMyMembership() {
+    const pid = currentPlayer?.id;
+    if (!pid) return null;
+
+    const games = readGames();
+    for (const g of games) {
+      const me = (g.players || []).find((p) => p.playerId === pid);
+      if (!me?.teamId) continue;
+
+      const t = (g.teams || []).find((x) => x.id === me.teamId && !x.isDeleted);
+      if (!t) continue;
+
+      return { gameCode: g.code, game: g, team: t };
+    }
+    return null;
+  }
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const [currentPlayer, setCurrentPlayer] = useState(null);
-
+  // =========================
+  // ✅ HYDRATE ONCE (restore draft)
+  // =========================
   useEffect(() => {
-    const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
+    if (!currentPlayer?.id) return;
 
-    // ถ้ายังไม่ login จริง ให้เดโม่ไว้ก่อน
-    if (!p) {
-      setCurrentPlayer({
-        id: "demo-player",
-        name: "Jane",
-        email: "janeza@gmail.com",
-      });
-      return;
+    // ✅ run once จริง ๆ
+    if (didHydrateRef.current) return;
+    didHydrateRef.current = true;
+
+    const key = getDraftKeyForPlayer(currentPlayer.id);
+    const draftRaw = localStorage.getItem(key);
+    let draft = safeJSONParse(draftRaw, null);
+
+    const activeCode = (localStorage.getItem("hbs_active_game_code_v1") || "")
+      .trim()
+      .toUpperCase();
+
+    // migrate draft เก่า
+    if (draft?.joinedGame && !draft.joinedGameCode) {
+      draft = {
+        ...draft,
+        joinedGameCode: (draft.joinedGame?.code || "").trim().toUpperCase(),
+      };
+      delete draft.joinedGame;
+      localStorage.setItem(key, JSON.stringify(draft));
     }
-    setCurrentPlayer(p);
-  }, []);
+
+    if (draft) {
+      setJoinCode(draft.joinCode || "");
+
+      const code = (draft.joinedGameCode || "").trim().toUpperCase();
+      const freshGame = code ? findGameByCode(code) : null;
+
+      setIsJoined(!!draft.isJoined && !!freshGame);
+      setJoinedGame(freshGame || null);
+      setShowTeamSetup(!!draft.showTeamSetup && !!freshGame);
+
+      setTeamName(draft.teamName || "");
+      setIsTeamNameLocked(!!draft.isTeamNameLocked);
+      setTeamMembers(Array.isArray(draft.teamMembers) ? draft.teamMembers : []);
+      setTeamRoles(draft.teamRoles || { you: "CEO" });
+      setDraftTeamId(draft.draftTeamId || null);
+      setIsAcceptedInvite(!!draft.isAcceptedInvite);
+      setAcceptedInviteInfo(draft.acceptedInviteInfo || null);
+    } else if (activeCode) {
+      const g = findGameByCode(activeCode);
+      if (g) {
+        setJoinCode(activeCode);
+        setIsJoined(true);
+        setJoinedGame(g);
+        setShowTeamSetup(true);
+      }
+    }
+
+    // fallback membership (ถ้ามี teamId จริง)
+    const mem = scanMyMembership();
+    if (mem?.gameCode) {
+      const code = (mem.gameCode || "").trim().toUpperCase();
+      setJoinCode(code);
+      setIsJoined(true);
+      setJoinedGame(findGameByCode(code));
+      setShowTeamSetup(true);
+      localStorage.setItem("hbs_active_game_code_v1", code);
+    }
+
+    setHydrated(true);
+  }, [currentPlayer?.id]); // ✅ เอา storageTick ออก
 
   const MY_EMAIL = useMemo(
     () => currentPlayer?.email || "you@email.com",
     [currentPlayer]
   );
-
-  // -------------------------
-  // Join Game States
-  // -------------------------
-  const [joinCode, setJoinCode] = useState("");
-  const [isJoined, setIsJoined] = useState(false);
-  const [joinedGame, setJoinedGame] = useState(null);
 
   // -------------------------
   // Join Team (Invite inbox)
@@ -595,24 +751,24 @@ function AccountPage() {
     const games = readGames();
 
     for (const g of games) {
-      for (const t of (g.teams || [])) {
-        const inv = (t.invites || []).find(
-          (x) => normalizeEmail(x.email) === email && x.status === "removed" && !x.noticeSeen
-        );
-
-        if (inv) {
-          return {
-            title: inv.removedReason === "delete_team" ? "Team Deleted" : "Removed from Team",
-            reason: inv.removedReason || "removed",
-            gameCode: g.code,
-            teamId: t.id,
-            email,
-            teamName: inv.teamName || t.name || "your team",
-            removedBy: inv.removedByName || "host",
-            message: inv.removedMessage || "",
-            at: inv.removedAt,
-          };
-        }
+      const list = g.systemNotices || [];
+      const n = list.find(
+        (x) => normalizeEmail(x.toEmail) === email && x.seen === false
+      );
+      if (n) {
+        return {
+          id: n.id,
+          title:
+            n.type === "team_deleted"
+              ? "Team Deleted"
+              : n.type === "member_removed"
+              ? "Removed from Team"
+              : "System Notice",
+          message: n.message || "",
+          gameCode: g.code,
+          createdAt: n.createdAt,
+          toEmail: email,
+        };
       }
     }
     return null;
@@ -750,23 +906,17 @@ function AccountPage() {
 
   // ✅ เพิ่มฟังก์ชันนี้ใต้ scanSystemNotice
   function markRemovedNoticeSeen(notice) {
-    if (!notice) return;
+    if (!notice?.id || !notice?.gameCode) return;
 
     const games = readGames();
     const g = games.find((x) => x.code === notice.gameCode);
     if (!g) return;
 
-    const t = (g.teams || []).find((x) => x.id === notice.teamId);
-    if (!t) return;
+    g.systemNotices = g.systemNotices || [];
+    const n = g.systemNotices.find((x) => x.id === notice.id);
+    if (!n) return;
 
-    const inv = (t.invites || []).find(
-      (x) =>
-        normalizeEmail(x.email) === normalizeEmail(notice.email) &&
-        x.status === "removed"
-    );
-    if (!inv) return;
-
-    inv.noticeSeen = true;
+    n.seen = true;
     writeGamesAndRefresh(games);
   }
 
@@ -803,24 +953,6 @@ function AccountPage() {
     setPendingInvite(scanPendingInvite());
   }, [currentPlayer, storageTick]);
 
-  // ✅ RESET PLAYER STATE เมื่อโดนลบทีม
-  useEffect(() => {
-    if (!systemNotice) return;
-
-  // ล้าง Join Team
-  setPendingInvite(null);
-  setAcceptedInviteInfo(null);
-  setIsAcceptedInvite(false);
-
-  // ล้าง draft team setup
-  if (currentPlayer?.id) {
-    localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-  }
-
-  // refresh UI
-  setStorageTick((t) => t + 1);
-}, [systemNotice, currentPlayer]);
-
   // ============================
   // ✅ GUARD: ถ้าทีมถูกลบ (admin hard delete) -> reset ฝั่งผู้เล่น
   // ============================
@@ -840,7 +972,6 @@ function AccountPage() {
       if (myTeamId) {
         const teamAlive = (g.teams || []).some((t) => t?.id === myTeamId && !t?.isDeleted);
         if (!teamAlive) {
-          // ทีมถูกลบจริง -> force reset
           if (me) me.teamId = null;
           const gi = games.findIndex((x) => x.code === g.code);
           if (gi !== -1) {
@@ -848,26 +979,7 @@ function AccountPage() {
             writeGamesAndRefresh(games);
           }
 
-          // reset UI
-          setIsJoined(false);
-          setJoinedGame(null);
-          setShowTeamSetup(false);
-          setJoinCode("");
-          setTeamName("");
-          setTeamMembers([]);
-          setTeamRoles({ you: "CEO" });
-          setDraftTeamId(null);
-          setIsTeamNameLocked(false);
-
-          setPendingInvite(null);
-          setAcceptedInviteInfo(null);
-          setIsAcceptedInvite(false);
-
-          if (currentPlayer?.id) {
-            localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-          }
-
-          alert("ทีมของคุณถูกลบโดย Admin แล้ว ระบบออกจากทีมให้อัตโนมัติ");
+          resetAllUIState({ alertMsg: "ทีมของคุณถูกลบโดย Admin แล้ว ระบบออกจากทีมให้อัตโนมัติ" });
         }
       }
       return;
@@ -891,54 +1003,6 @@ function AccountPage() {
     }
   }, [storageTick, isJoined, joinedGame?.code, isAcceptedInvite, acceptedInviteInfo?.teamId, currentPlayer?.id]);
 
-  // สแกนหา invite ที่ pending ของอีเมลนี้
-  function scanPendingInvite() {
-    const email = normalizeEmail(currentPlayer?.email);
-    if (!email) return null;
-
-    const games = readGames();
-    let found = null;
-
-    for (const g of games) {
-      for (let i = 0; i < (g.teams || []).length; i++) {
-        const t = g.teams[i];
-        if (t.isDeleted) continue;
-        const inv = (t.invites || []).find(
-          (x) => normalizeEmail(x.email) === email && x.status === "pending"
-        );
-
-        if (inv) {
-          const adminDisplay =
-            (g?.ownerAdminUsername || "").trim() ||
-            (g?.ownerAdminName || "").trim() ||
-            (g?.adminUsername || "").trim() ||
-            (g?.adminName || "").trim() ||
-            (g?.createdByUsername || "").trim() ||
-            (g?.createdByName || "").trim() ||
-            "-";
-
-          found = {
-            gameCode: g.code,
-            gameName: g.name,
-            teamId: t.id,
-            teamName: t.name,
-            teamNumber: i + 1,
-            hostName: t.leaderName || "Host",
-            hostEmail: t.leaderEmail || "",
-            role: inv.role || "",
-            invitedAt: inv.invitedAt,
-
-            // ✅ เพิ่ม admin ตรงนี้
-            adminDisplay,
-          };
-          break;
-        }
-      }
-      if (found) break;
-    }
-    return found;
-  };
-
   function refreshInviteInboxNow() {
     if (isAcceptedInvite) return; // ✅ ถ้ายอมรับอยู่แล้ว ไม่ต้องโชว์ pending ใหม่ทับ
     setPendingInvite(scanPendingInvite());
@@ -948,9 +1012,7 @@ function AccountPage() {
     const onStorage = (e) => {
       if (e.key === GAMES_KEY) {
         setStorageTick((t) => t + 1);
-        setPendingInvite(scanPendingInvite());
-        setSystemNotice(scanSystemNotice());
-        setHostNotice(scanHostNotice());
+        return;
       }
 
       // ✅ สำคัญ: ถ้า USERS_KEY เปลี่ยน (สมัครใหม่) -> เด้ง storageTick เพื่อให้ host UI เปลี่ยนทันที (กรณีทำใน "อีกแท็บ")
@@ -1004,35 +1066,6 @@ function AccountPage() {
   const [teamRoles, setTeamRoles] = useState({ you: "CEO" });
   const [teamMembers, setTeamMembers] = useState([]); // [{key, email, status}]
 
-  // =========================
-  // 🔒 Lock Host = CEO + Prevent Members from being CEO
-  // =========================
-  useEffect(() => {
-    setTeamRoles((prev) => {
-      if (!prev) return prev;
-
-      let changed = false;
-      const next = { ...prev };
-
-      // 🔒 Host ต้องเป็น CEO เสมอ
-      if (next.you !== HOST_ROLE) {
-        next.you = HOST_ROLE;
-        changed = true;
-      }
-
-      // 🚫 สมาชิกคนอื่นห้ามเป็น CEO
-      Object.keys(next).forEach((k) => {
-        if (k !== "you" && next[k] === "CEO") {
-          next[k] = "";
-          changed = true;
-        }
-      });
-
-      return changed ? next : prev;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamMembers.length, HOST_ROLE]);
-
     // =========================
   // Auto-switch unregistered -> invite after register
   // =========================
@@ -1072,61 +1105,41 @@ function AccountPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageTick, showInviteModal]);
 
-  // ✅ NEW: Restore draft after login (keep this page state)
-  useEffect(() => {
-    if (!currentPlayer?.id) return;
-
-    const key = getDraftKeyForPlayer(currentPlayer.id);
-    const draftRaw = localStorage.getItem(key);
-    const draft = safeJSONParse(draftRaw, null);
-    if (!draft) return;
-
-    setJoinCode(draft.joinCode || "");
-    setIsJoined(!!draft.isJoined);
-    setJoinedGame(draft.joinedGame || null);
-    setShowTeamSetup(!!draft.showTeamSetup);
-
-    setTeamName(draft.teamName || "");
-    setTeamMembers(draft.teamMembers || []);
-    setTeamRoles(draft.teamRoles || { you: "CEO" });
-    setIsTeamNameLocked(!!draft.isTeamNameLocked);
-    setDraftTeamId(draft.draftTeamId || null);
-
-  }, [currentPlayer]);
-
-
   // ✅ NEW: Auto-save draft whenever state changes
   useEffect(() => {
     if (!currentPlayer?.id) return;
+    if (!hydrated) return;
 
     const key = getDraftKeyForPlayer(currentPlayer.id);
 
     const draft = {
       joinCode,
       isJoined,
-      joinedGame,
+      joinedGameCode: (joinedGame?.code || "").trim().toUpperCase(), 
       showTeamSetup,
       teamName,
       isTeamNameLocked,
       teamMembers,
       teamRoles,
       draftTeamId,
-
+      isAcceptedInvite,
+      acceptedInviteInfo,
     };
 
     localStorage.setItem(key, JSON.stringify(draft));
   }, [
-    currentPlayer,
+    currentPlayer?.id,
     joinCode,
     isJoined,
-    joinedGame,
+    joinedGame?.code,
     showTeamSetup,
     teamName,
     isTeamNameLocked,
     teamMembers,
     teamRoles,
     draftTeamId,
-
+    isAcceptedInvite,
+    acceptedInviteInfo,
   ]);
 
   // ✅ Sync ชื่อทีมลง storage ทันที (draft team) เพื่อให้ Admin เห็นใน Lobby
@@ -1206,7 +1219,7 @@ function AccountPage() {
   // -------------------------
   // Helpers: find host team in storage
   // -------------------------
-  const getHostTeamFromStorage = () => {
+  function getHostTeamFromStorage() {
     const code = joinedGame?.code;
     const hostId = currentPlayer?.id;
     if (!code || !hostId) {
@@ -1251,57 +1264,145 @@ function AccountPage() {
     return !!team && team.leaderPlayerId === currentPlayer.id;
   }, [isJoined, joinedGame, currentPlayer, storageTick, draftTeamId]);
 
+  useEffect(() => {
+    if (!currentPlayer?.id || !currentPlayer?.email) return;
+
+    // เฉพาะคนที่ join เกมแล้ว แต่ไม่ใช่ host
+    if (!isJoined || !joinedGame?.code || isHost) {
+      setMemberView(null);
+      return;
+    }
+
+    const games = readGames();
+    const g = games.find(
+      (x) => (x.code || "").toUpperCase() === (joinedGame.code || "").toUpperCase()
+    );
+    if (!g) {
+      setMemberView(null);
+      return;
+    }
+
+    const me = (g.players || []).find((p) => p.playerId === currentPlayer.id);
+    const myTeamId = me?.teamId;
+
+    if (!myTeamId) {
+      setMemberView(null);
+      return;
+    }
+
+    const t = (g.teams || []).find((x) => x.id === myTeamId && !x.isDeleted);
+    if (!t) {
+      setMemberView(null);
+      return;
+    }
+
+    const adminDisplay =
+      (g?.ownerAdminUsername || "").trim() ||
+      (g?.ownerAdminName || "").trim() ||
+      (g?.adminUsername || "").trim() ||
+      (g?.adminName || "").trim() ||
+      (g?.createdByUsername || "").trim() ||
+      (g?.createdByName || "").trim() ||
+      "-";
+
+    setMemberView({
+      gameCode: g.code,
+      gameName: g.name,
+      teamId: t.id,
+      teamName: t.name,
+      hostName: t.leaderName || "Host",
+      hostEmail: t.leaderEmail || "",
+      adminDisplay,
+    });
+  }, [storageTick, isJoined, joinedGame?.code, isHost, currentPlayer?.id, currentPlayer?.email]);
+
+  // =========================
+  // 🔒 Lock Host = CEO + Prevent Members from being CEO
+  // =========================
+  useEffect(() => {
+    // ✅ สำคัญ: ล็อค CEO เฉพาะ Host เท่านั้น
+    if (!isHost) return;
+
+    setTeamRoles((prev) => {
+      if (!prev) return prev;
+
+      let changed = false;
+      const next = { ...prev };
+
+      // Host ต้องเป็น CEO เสมอ
+      if (next.you !== HOST_ROLE) {
+        next.you = HOST_ROLE;
+        changed = true;
+      }
+
+      // สมาชิกคนอื่นห้ามเป็น CEO
+      Object.keys(next).forEach((k) => {
+        if (k !== "you" && next[k] === "CEO") {
+          next[k] = "";
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [teamMembers.length, HOST_ROLE, isHost]);
+
   function leaveTeamAndNotifyHost() {
     const email = normalizeEmail(currentPlayer?.email);
     const pid = currentPlayer?.id;
     if (!email || !pid) return;
 
-    // ✅ สำคัญ: หลัง Accept ผู้เล่นอาจ isJoined=false แต่มี inviteView อยู่
-    const gameCode = (joinedGame?.code || inviteView?.gameCode || "").trim().toUpperCase();
+    // ✅ เกมที่เกี่ยวข้อง (ยอมให้ใช้ acceptedInviteInfo เป็น fallback)
+    const gameCode = (joinedGame?.code || acceptedInviteInfo?.gameCode || "")
+      .trim()
+      .toUpperCase();
     if (!gameCode) return;
 
     const games = readGames();
-    const gameIdx = games.findIndex((g) => (g.code || "").trim().toUpperCase() === gameCode);
+    const gameIdx = games.findIndex(
+      (g) => (g.code || "").trim().toUpperCase() === gameCode
+    );
     if (gameIdx === -1) return;
 
     const game = games[gameIdx];
     game.players = game.players || [];
     game.teams = game.teams || [];
 
-    // หา player ในเกม
-    const me = game.players.find((p) => p.playerId === pid);
-    const myTeamId = me?.teamId;
-    if (!myTeamId) return;
+    // ✅ หา player record
+    const me = game.players.find((p) => p.playerId === pid) || null;
+
+    // ✅ 1) หาทีมของฉัน: ใช้ me.teamId ก่อน
+    let myTeamId = me?.teamId || null;
+
+    // ✅ 2) fallback: หา teamId จาก invites (เผื่อ teamId ยังไม่ถูก bind)
+    if (!myTeamId) {
+      const teamFromInvite = (game.teams || []).find((t) =>
+        (t.invites || []).some(
+          (inv) => normalizeEmail(inv.email) === email && inv.status === "accepted"
+        )
+      );
+      if (teamFromInvite) myTeamId = teamFromInvite.id;
+    }
+
+    // ✅ 3) fallback อีกชั้น: ใช้ acceptedInviteInfo ถ้ามี
+    if (!myTeamId && acceptedInviteInfo?.teamId) {
+      myTeamId = acceptedInviteInfo.teamId;
+    }
+
+    if (!myTeamId) {
+      alert("Cannot leave: your team was not found. Please re-login.");
+      return;
+    }
 
     const team = game.teams.find((t) => t.id === myTeamId);
 
-    // ✅ ถ้าทีมหายไปแล้ว (admin hard delete) -> รีเซ็ตฝั่งตัวเองทันที
-    if (!team) {
-      // reset player.teamId ในเกม (ถ้ามี)
+    // ✅ ถ้าทีมหายไปแล้ว
+    if (!team || team.isDeleted) {
       if (me) me.teamId = null;
       games[gameIdx] = game;
       writeGamesAndRefresh(games);
-
-      // reset state ฝั่งตัวเองกลับหน้าแรก
-      setIsJoined(false);
-      setJoinedGame(null);
-      setShowTeamSetup(false);
-      setJoinCode("");
-      setTeamName("");
-      setTeamMembers([]);
-      setTeamRoles({ you: "CEO" });
-      setDraftTeamId(null);
-      setIsTeamNameLocked(false);
-
-      setPendingInvite(null);
-      setAcceptedInviteInfo(null);
-      setIsAcceptedInvite(false);
-
-      if (currentPlayer?.id) {
-        localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-      }
-
-      alert("ทีมนี้ถูกลบโดย Admin แล้ว ระบบจึงออกจากทีมให้โดยอัตโนมัติ");
+      resetAllUIState({ alertMsg: "Team no longer exists. You have been removed." });
       return;
     }
 
@@ -1314,8 +1415,19 @@ function AccountPage() {
     const teamNm = team.name || "your team";
     const gameNm = game.name || "Hotel Business Simulator";
 
-    // 1) หลุดทีมใน players
-    if (me) me.teamId = null;
+    // ✅ ensure player record มีอยู่ (บางเคสไม่เคย push เข้า players)
+    if (!me) {
+      game.players.push({
+        playerId: pid,
+        name: currentPlayer?.name || "Player",
+        email: currentPlayer?.email || "",
+        teamId: null,
+        ready: false,
+        joinedAt: new Date().toISOString(),
+      });
+    } else {
+      me.teamId = null;
+    }
 
     // 2) เอาออกจาก members/roles
     team.members = (team.members || []).filter((id) => id !== pid);
@@ -1329,49 +1441,24 @@ function AccountPage() {
       inv.leftByEmail = email;
 
       inv.hostNoticeSeen = false;
-      inv.hostNoticeMessage =
-        `${email} has left the team "${teamNm}" in game "${gameNm}".`;
+      inv.hostNoticeMessage = `${email} left the team "${teamNm}" in game "${gameNm}".`;
     }
 
-    // ✅ 4) BROADCAST ไปยังผู้เล่น accepted คนอื่น ๆ
+    // ✅ 4) broadcast ให้สมาชิก accepted คนอื่น
     (team.invites || []).forEach((x) => {
       const xEmail = normalizeEmail(x.email);
       if (!xEmail) return;
-
-      // แจ้งเฉพาะคนที่ accepted และไม่ใช่คนที่กดออก
       if (x.status === "accepted" && xEmail !== email) {
         x.teamUpdateType = "member_left";
         x.teamUpdateSeen = false;
         x.teamUpdateAt = new Date().toISOString();
-
-        x.teamUpdateMessage =
-          `Player: ${email} has left the team "${teamNm}".`;
+        x.teamUpdateMessage = `Player: ${email} has left the team "${teamNm}".`;
       }
     });
 
     games[gameIdx] = game;
     writeGamesAndRefresh(games);
-
-    // ✅ 5) reset state ฝั่งตัวเอง กลับสภาพก่อน join
-    setIsJoined(false);
-    setJoinedGame(null);
-    setShowTeamSetup(false);
-    setJoinCode("");
-    setTeamName("");
-    setTeamMembers([]);
-    setTeamRoles({ you: "CEO" });
-    setDraftTeamId(null);
-    setIsTeamNameLocked(false);
-
-    // ✅ สำคัญ: เคลียร์โหมด accepted view ด้วย
-    setPendingInvite(null);
-    setAcceptedInviteInfo(null);
-    setIsAcceptedInvite(false);
-
-    // ล้าง draft กัน restore กลับมา
-    if (currentPlayer?.id) {
-      localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-    }
+    resetAllUIState();
   }
 
   function removeInviteFromStorageByEmail(emailToRemove) {
@@ -1733,7 +1820,7 @@ function AccountPage() {
       await sendInviteEmailAPI({
         toEmail: emailToSend,
         subject: `[HBS] You are invited to join team "${details.teamName}"`,
-        text: details.text,               // ข้อความเดียวกับใน modal ได้เลย
+        text: details.text,
         inviteLink: details.inviteLink,
         gameCode: details.gameCode,
         gameName: details.gameName,
@@ -1743,11 +1830,8 @@ function AccountPage() {
         adminEmail: details.adminEmail,
       });
 
-      // optional: toast/alert
-      // alert("Invite sent (in game + email).");
     } catch (err) {
-      console.error(err);
-      alert(`Invite saved in game, but email failed: ${err.message}`);
+      console.warn("Email failed (ignored in dev):", err?.message);
     }
 
   };
@@ -1958,8 +2042,8 @@ function AccountPage() {
     delete inv.roleChangedAt;
     delete inv.roleChangedByName;
     delete inv.roleChangedByRole;
-    inv.noticeSeen = true; // ปิด role notice เก่า (เดี๋ยวเราจะเปิด removed notice ต่อ)
 
+    inv.removedNoticeSeen = false;
     inv.status = "removed";
     inv.removedAt = new Date().toISOString();
     inv.removedByName = hostName;
@@ -1971,7 +2055,17 @@ function AccountPage() {
       `${hostName} (${hostRole}) has removed you from the team "${teamNm}"\n` +
       `in the game "${gameNm}" (Code: ${gameCode}).`;
 
-    inv.noticeSeen = false; // ให้ฝั่งเพื่อนเห็น 1 ครั้ง
+    // ✅ NEW: ยิง system notice ไปที่ผู้เล่นที่ถูก remove (ให้ฝั่ง 777 เด้ง modal)
+    game.systemNotices = game.systemNotices || [];
+
+    game.systemNotices.push({
+      id: `member_removed_${team.id}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      type: "member_removed",
+      toEmail: email,                 // ✅ email ของคนที่ถูก remove
+      seen: false,
+      createdAt: new Date().toISOString(),
+      message: inv.removedMessage || `You were removed from team "${teamNm}".`,
+    });
 
     // ✅ BROADCAST: แจ้งทุกคนที่ accepted คนอื่น (เช่น 777) ว่ามีคนถูก remove
     (team.invites || []).forEach((x) => {
@@ -2023,7 +2117,7 @@ function AccountPage() {
 
   /* =========================
      Join Game
-     ========================= */
+  ========================= */
   const handleJoinClick = () => {
     const code = joinCode.trim().toUpperCase();
     if (!code) return;
@@ -2045,11 +2139,13 @@ function AccountPage() {
     }
 
     const game = games[gameIndex];
+
+    // --- 1) เตรียมข้อมูลพื้นฐาน ---
     game.players = game.players || [];
     game.teams = game.teams || [];
 
-    const already = game.players.some((p) => p.playerId === player.id);
-    if (!already) {
+    const alreadyInGame = game.players.some((p) => p.playerId === player.id);
+    if (!alreadyInGame) {
       game.players.push({
         playerId: player.id,
         name: player.name || "Player",
@@ -2060,56 +2156,48 @@ function AccountPage() {
       });
     }
 
-    games[gameIndex] = game;
-    writeGamesAndRefresh(games);
-
-    setIsJoined(true);
-    setJoinedGame(games[gameIndex]);
-
-    // ✅ สร้าง draftTeamId เสมอ (single/team/other)
+    // --- 2) สร้าง/ensure draft team ---
     let draftId = draftTeamId || makeTeamId();
-    setDraftTeamId(draftId);
-
-    // ✅ โหมด single: ตั้งชื่อทีมเริ่มต้นเป็น username ถ้ายังว่าง
     const modeType = game?.settings?.mode?.type;
-    if (modeType === "single") {
-      setTeamName((prev) => {
-        const p = (prev || "").trim();
-        if (p) return prev;
-        return (player?.name || "Player").trim();
-      });
+
+    let initialTeamName = teamName || "";
+    if (modeType === "single" && !initialTeamName.trim()) {
+      initialTeamName = (player?.name || "Player").trim();
     }
 
-    // ✅ ensure draft team ลง storage
-    try {
-      const games2 = readGames();
-      const idx2 = games2.findIndex((g) => g.code === game.code);
-      if (idx2 !== -1) {
-        const ensured = ensureDraftTeamInStorage(
-          games2,
-          idx2,
-          player,
-          game,
-          draftId,
-          // ✅ ใช้ชื่อทีมล่าสุด (ถ้า single และ teamName ยังไม่ทัน set ก็ fallback เป็นชื่อ player)
-          (modeType === "single"
-            ? ((teamName || "").trim() || (player?.name || "Player"))
-            : teamName
-          )
-        );
-        writeGamesAndRefresh(ensured.games);
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    const ensured = ensureDraftTeamInStorage(
+      games,
+      gameIndex,
+      player,
+      game,
+      draftId,
+      initialTeamName
+    );
 
-    // ✅ สำคัญ: ไม่ navigate ทันทีแล้ว
-    // เปิด Team Setup ทุกโหมดยกเว้นคุณอยากซ่อนเอง
+    // --- 3) เขียน storage แบบถูกต้อง + broadcast ---
+    writeGamesAndRefresh(ensured.games);
+    localStorage.setItem("hbs_active_game_code_v1", code);
+
+    // --- 4) ✅ อัปเดต state ให้ “ปลดล็อกหน้า” ---
+    const freshGame =
+      ensured.games.find((g) => (g.code || "").toUpperCase() === code) || null;
+
+    setDraftTeamId(ensured.draftId);
+    setTeamName(initialTeamName);
+
+    setIsJoined(true);                 // ✅ สำคัญมาก (ไม่งั้นจะล็อกค้าง)
+    setJoinedGame(freshGame);
     setShowTeamSetup(true);
+
   };
 
   // ✅ NEW: Edit Code -> reset flow so user can join another game code
   function resetTeamAndGame_NoConfirm() {
+    if (!isHost) {
+      resetAllUIState();
+      return;
+    }
+
     try {
       const code = (joinedGame?.code || "").trim().toUpperCase();
       const games = readGames();
@@ -2134,43 +2222,12 @@ function AccountPage() {
       console.error(e);
     }
 
-    // รีเซ็ต state เหมือนเดิม
-    setIsJoined(false);
-    setJoinedGame(null);
-    setShowTeamSetup(false);
-    setJoinCode("");
-    setTeamName("");
-    setTeamMembers([]);
-    setTeamRoles({ you: "CEO" });
-    setDraftTeamId(null);
-    setIsTeamNameLocked(false);
-    setPendingInvite(null);
-
-    if (currentPlayer?.id) {
-      localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-    }
+    // ✅ reset ทีเดียวให้ครบทุก state/keys
+    resetAllUIState();
   }
 
   function forceResetBecauseGameMissing(missingCode) {
-    // 1) reset state ฝั่งผู้เล่น
-    setIsJoined(false);
-    setJoinedGame(null);
-    setShowTeamSetup(false);
-    setJoinCode("");
-    setTeamName("");
-    setTeamMembers([]);
-    setTeamRoles({ you: "CEO" });
-    setDraftTeamId(null);
-    setIsTeamNameLocked(false);
-    setPendingInvite(null);
-
-    // 2) ล้าง draft ที่ค้าง
-    if (currentPlayer?.id) {
-      localStorage.removeItem(getDraftKeyForPlayer(currentPlayer.id));
-    }
-
-    // 3) แจ้งเตือน (เลือกอย่างใดอย่างหนึ่ง)
-    alert(`เกม ${missingCode || ""} ถูกลบโดย Admin แล้ว`);
+    resetAllUIState({ alertMsg: `เกม ${missingCode || ""} ถูกลบโดย Admin แล้ว` });
   }
 
   const finalizeTeamAndGo = () => {
@@ -2178,7 +2235,11 @@ function AccountPage() {
     const player = currentPlayer;
 
     const idx = games.findIndex((g) => g.code === joinedGame?.code);
-    if (idx === -1) { alert("ไม่พบเกมในระบบ"); return; }
+    if (idx === -1) {
+      alert("ไม่พบเกมในระบบ");
+      return;
+    }
+
     const game = games[idx];
 
     const teamId = draftTeamId;
@@ -2218,8 +2279,10 @@ function AccountPage() {
     team.name = finalTeamName;
     team.isDraft = false;
 
-    // ✅ NEW: ผูก host เข้ากับทีมด้วย (สำคัญมากสำหรับโหมด single)
-    const hostPlayer = (game.players || []).find((p) => p.playerId === player.id);
+    // ✅ NEW: ผูก host เข้ากับทีมด้วย
+    const hostPlayer = (game.players || []).find(
+      (p) => p.playerId === player.id
+    );
     if (hostPlayer) hostPlayer.teamId = teamId;
 
     // ✅ ผูกสมาชิก accepted เข้าทีม
@@ -2232,10 +2295,21 @@ function AccountPage() {
         if (p) p.teamId = teamId;
       });
 
+    // ===================================================
+    // ⭐⭐⭐ จุดสำคัญที่สุด (STEP ต่อไปของระบบคุณ)
+    // บอกทุกคนว่าเกมเข้าสู่ Waiting Phase แล้ว
+    // ===================================================
+    game.phase = "waiting";
+    game.waitingStartedAt = new Date().toISOString(); // optional แต่แนะนำ
+
+    // ===================================================
+
     games[idx] = game;
     writeGamesAndRefresh(games);
 
     localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
+
+    // 👉 ไปหน้า WaitingListPage
     navigate("/waiting-room", { state: { gameCode: joinedGame.code } });
   };
 
@@ -2249,10 +2323,11 @@ function AccountPage() {
     if (!game) return false;
 
     const myTeamId = draftTeamId;
-
     const lower = trimmed.toLowerCase();
 
     return (game.teams || []).some((t) => {
+      // ✅ 1) ignore ทีมที่ถูกลบ
+      if (t?.isDeleted) return false;
       if (!t?.name) return false;
 
       // ✅ ไม่เทียบกับทีมของตัวเอง (draft/ทีมที่กำลังแก้)
@@ -2324,38 +2399,48 @@ function AccountPage() {
 
       const game = games[gameIdx];
       const team = game.teams?.find((t) => t.id === pendingInvite.teamId);
-      if (!team) return;
+      if (!team || team.isDeleted) return;
 
-      // 1. อัปเดตสถานะใน storage
+      // 1) update invite -> accepted
       const inv = team.invites?.find((x) => normalizeEmail(x.email) === email);
       if (inv) {
         inv.status = "accepted";
         inv.acceptedAt = new Date().toISOString();
       }
 
-      // 2. ผูก Player เข้ากับทีม
-      let p = game.players.find((pp) => pp.playerId === currentPlayer.id);
+      // 2) bind player -> team
+      let p = (game.players || []).find((pp) => pp.playerId === currentPlayer.id);
       if (!p) {
+        game.players = game.players || [];
         game.players.push({
           playerId: currentPlayer.id,
           name: currentPlayer.name,
           email: currentPlayer.email,
           teamId: team.id,
           ready: false,
+          joinedAt: new Date().toISOString(),
         });
       } else {
         p.teamId = team.id;
       }
 
+      games[gameIdx] = game;
       writeGamesAndRefresh(games);
 
-      // ✅ lock view เป็น accepted
+      // ✅ สำคัญ: ทำให้ member “เข้าระบบเกม” ทันที เพื่อให้ memberView ทำงาน
+      const code = (pendingInvite.gameCode || "").trim().toUpperCase();
+      setJoinCode(code);
+      setIsJoined(true);
+      setJoinedGame(findGameByCode(code));
+      setShowTeamSetup(true);
+      localStorage.setItem("hbs_active_game_code_v1", code);
+
+      // ✅ lock view เป็น accepted (ยังเก็บไว้ได้)
       setAcceptedInviteInfo(pendingInvite);
       setIsAcceptedInvite(true);
 
-      // ✅ เคลียร์ inbox แล้วรีสแกนทันที (กัน UI ค้าง)
+      // เคลียร์ inbox
       setPendingInvite(null);
-      refreshInviteInboxNow();
     };
 
   const handleDenyInvite = () => {
@@ -2464,8 +2549,12 @@ function AccountPage() {
     : allAnnouncements.slice(0, 2);
 
   const greetingName = currentPlayer?.name || "Player";
+  const inviteView = pendingInvite || acceptedInviteInfo || memberView;
+  const joinedCode = (joinedGame?.code || "").trim().toUpperCase();
+  const typedCode = (joinCode || "").trim().toUpperCase();
+  const isJoiningNewCode = typedCode && typedCode !== joinedCode;
 
-  const inviteView = pendingInvite || acceptedInviteInfo;
+  const canClickJoin = typedCode && (!isJoined || isJoiningNewCode);
 
   // เกมที่ใช้แสดง mode/limit ฝั่งผู้ถูกเชิญ (เพราะ joinedGame จะเป็น null)
   const effectiveGame = useMemo(() => {
@@ -2505,7 +2594,7 @@ const teamLimit = useMemo(() => {
 
   // ✅ Team Setup visibility
   const canViewTeamSetup = isJoined || !!inviteView || isAcceptedInvite;
-  const isTeamSetupReadOnly = (!isJoined && !!inviteView) || isAcceptedInvite;
+  const isTeamSetupReadOnly = (!isJoined && !!inviteView) || isAcceptedInvite || (isJoined && !isHost);
   const isTeamSetupLocked = !canViewTeamSetup;
 
   const okLabel = useMemo(() => {
@@ -2682,8 +2771,13 @@ const pendingRoleMap = useMemo(() => {
 
                 <button
                   className={`join-btn ${!isJoined && joinCode.trim() !== "" ? "active" : ""}`}
-                  disabled={isJoined || joinCode.trim() === ""}
-                  onClick={handleJoinClick}
+                  disabled={!canClickJoin}
+                  onClick={() => {
+                    if (isJoined && isJoiningNewCode) {
+                      resetAllUIState();
+                    }
+                    handleJoinClick();
+                  }}
                 >
                   Join
                 </button>
@@ -2744,7 +2838,7 @@ const pendingRoleMap = useMemo(() => {
                         <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
                           <span className="status-pill accepted">Accepted</span>
                         </div>
-                      ) : (
+                      ) : pendingInvite ? (
                         <>
                           <button className="btn-deny" onClick={handleDenyInvite}>
                             Deny
@@ -2753,6 +2847,10 @@ const pendingRoleMap = useMemo(() => {
                             Accept
                           </button>
                         </>
+                      ) : (
+                        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
+                          <span className="status-pill accepted">In a team</span>
+                        </div>
                       )}
                     </div>
                   </>
@@ -2760,20 +2858,16 @@ const pendingRoleMap = useMemo(() => {
                   <>
                     <div className="team-invite-placeholder" />
                     <div className="join-team-actions">
-                      {isAcceptedInvite ? (
-                        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
-                          <span className="status-pill accepted">Accepted</span>
-                        </div>
-                      ) : (
-                        <>
-                          <button className="btn-deny" onClick={handleDenyInvite}>
-                            Deny
-                          </button>
-                          <button className="btn-accept" onClick={handleAcceptInvite}>
-                            Accept
-                          </button>
-                        </>
-                      )}
+                      <button className="btn-deny" disabled title="No invitation yet">
+                        Deny
+                      </button>
+                      <button className="btn-accept" disabled title="No invitation yet">
+                        Accept
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: 8, fontSize: 12, color: "#6B7280" }}>
+                      No invitations yet.
                     </div>
                   </>
                 )}
@@ -2839,7 +2933,7 @@ const pendingRoleMap = useMemo(() => {
                     type="text"
                     placeholder="Enter Team name"
                     className="form-input teamname-input"
-                    value={isTeamSetupReadOnly ? (inviteView?.teamName || "") : teamName}
+                    value={isTeamSetupReadOnly ? (inviteView?.teamName || teamName || "") : teamName}
                     onChange={(e) => setTeamName(e.target.value)}
                     disabled={!isJoined || isTeamSetupReadOnly}
                   />
@@ -3383,6 +3477,7 @@ const pendingRoleMap = useMemo(() => {
                     onClick={() => {
                       markRemovedNoticeSeen(systemNotice);
                       setSystemNotice(null);
+                      resetAllUIState(); // ✅ สำคัญ: กลับสเตตเริ่มต้นทันที
                     }}
                     aria-label="Close"
                     type="button"
@@ -3404,6 +3499,7 @@ const pendingRoleMap = useMemo(() => {
                     onClick={() => {
                       markRemovedNoticeSeen(systemNotice);
                       setSystemNotice(null);
+                      resetAllUIState(); // ✅ สำคัญ
                     }}
                   >
                     Close
@@ -3628,4 +3724,4 @@ const pendingRoleMap = useMemo(() => {
   );
 }
 
-export default AccountPage;
+export default AccountPage; 
