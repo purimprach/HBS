@@ -354,3 +354,7 @@
     .timer-info-group { align-items: center; }
     .timer-sub-text { margin-left: 0; }
 }
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
