@@ -320,6 +320,28 @@ function updateInviteRoleInStorage({
   writeGames(games);
 }
 
+function enforceUniqueMemberRoles(prevRoles, memberKeys) {
+  const allowed = new Set(["Finance", "Marketing", "HR"]);
+  const next = { ...(prevRoles || {}), you: "CEO" };
+
+  const used = new Set();
+  memberKeys.forEach((k) => {
+    const r = (next[k] || "").trim();
+    if (!r) return;
+
+    if (!allowed.has(r)) {
+      next[k] = "";
+      return;
+    }
+    if (used.has(r)) {
+      next[k] = ""; // ซ้ำ -> เคลียร์ช่องหลัง
+      return;
+    }
+    used.add(r);
+  });
+
+  return next;
+}
 
 function AccountPage() {
   const navigate = useNavigate();
@@ -338,6 +360,7 @@ function AccountPage() {
   const [isJoined, setIsJoined] = useState(false);
   const [joinedGame, setJoinedGame] = useState(null);
   const [currentPlayer, setCurrentPlayer] = useState(null);
+  const [showTeamNameWarning, setShowTeamNameWarning] = useState(false);
 
   useEffect(() => {
     const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
@@ -489,23 +512,25 @@ function AccountPage() {
   }
 
   function ensureDraftTeamIdReady(currentName) {
-    const nameToUse = (currentName || teamName || "").trim() || "Draft Team";
+    const nameToUse = (currentName || teamName || "").trim(); // ✅ ไม่ fallback
 
     // ถ้ามีแล้ว -> แค่อัปเดตชื่อใน storage ให้ล่าสุด
     if (draftTeamId) {
       try {
-        const games = readGames();
-        const idx = games.findIndex((g) => g.code === joinedGame?.code);
-        if (idx !== -1) {
-          const ensured = ensureDraftTeamInStorage(
-            games,
-            idx,
-            currentPlayer,
-            joinedGame,
-            draftTeamId,
-            nameToUse
-          );
-          writeGamesAndRefresh(ensured.games);
+        if (nameToUse) { // ✅ มีชื่อจริงค่อย sync ลง storage
+          const games = readGames();
+          const idx = games.findIndex((g) => g.code === joinedGame?.code);
+          if (idx !== -1) {
+            const ensured = ensureDraftTeamInStorage(
+              games,
+              idx,
+              currentPlayer,
+              joinedGame,
+              draftTeamId,
+              nameToUse
+            );
+            writeGamesAndRefresh(ensured.games);
+          }
         }
       } catch (e) {
         console.error(e);
@@ -591,7 +616,7 @@ function AccountPage() {
     if (!t) {
       t = {
         id: draftId,
-        name: teamName?.trim() || "Draft Team",
+        name: (teamName || "").trim(),
         leaderPlayerId: player.id,
         leaderName: player.name || "Host",
         leaderEmail: player.email || "",
@@ -604,7 +629,8 @@ function AccountPage() {
       game.teams.push(t);
     } else {
       // update ชื่อทีมเผื่อเปลี่ยน
-      t.name = teamName?.trim() || t.name;
+      const nextName = (teamName || "").trim();
+      if (nextName) t.name = nextName; // ✅ อัปเดตเฉพาะตอนมีชื่อจริง  
       t.isDraft = true;
     }
 
@@ -802,50 +828,58 @@ function AccountPage() {
       setTeamName(storageName);
     }
 
-   const visibleInvs = (hostTeam.invites || []).filter((inv) =>
-  ["pending", "accepted", "denied"].includes(inv?.status)
-);
+  const visibleInvs = (hostTeam.invites || []).filter((inv) =>
+    ["pending", "accepted", "denied"].includes(inv?.status)
+  );
 
-// ✅ ถ้ามี invite ให้ restore แต่ "ห้ามทำให้ช่องหาย"
-if (visibleInvs.length > 0) {
+  if (visibleInvs.length > 0) {
+    const desiredOtherCount = Math.max(0, (teamLimit?.minTotal || 1) - 1);
+    const keys = ["member2", "member3", "member4"].slice(0, desiredOtherCount);
 
-  // จำนวนช่อง other ที่ควรมี (Team(3) => 2 ช่อง)
-  const desiredOtherCount = Math.max(0, (teamLimit?.minTotal || 1) - 1);
+    setTeamMembers((prev) => {
+      const prevSafe = Array.isArray(prev) ? prev : [];
+      const byKey = new Map(prevSafe.map((m) => [m.key, m]));
 
-  const keys = ["member2", "member3", "member4"].slice(0, desiredOtherCount);
+      // map slotKey -> invite
+      const invBySlot = new Map();
+      visibleInvs.forEach((inv) => {
+        if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
+      });
 
-  setTeamMembers((prev) => {
-    const prevSafe = Array.isArray(prev) ? prev : [];
-    const byKey = new Map(prevSafe.map((m) => [m.key, m]));
-
-    return keys.map((k, i) => {
-      const inv = visibleInvs[i];
-
-      // มี invite → ใส่ข้อมูล
-      if (inv) {
-        return {
-          key: k,
-          email: inv.email || "",
-          status: inv.status === "accepted" ? "accepted" : "sent",
-        };
-      }
-
-      // ไม่มี invite → คงช่องเดิมไว้
-      return byKey.get(k) || { key: k, email: "", status: "idle" };
-    });
-  });
-
-  setTeamRoles((prev) => {
-    const next = { ...(prev || {}), you: "CEO" };
-
-    keys.forEach((k, i) => {
-      const inv = visibleInvs[i];
-      next[k] = inv?.role || "";
+      return keys.map((k) => {
+        const inv = invBySlot.get(k);
+        if (inv) {
+          return {
+            key: k,
+            email: inv.email || "",
+            status: inv.status === "accepted" ? "accepted" : "sent",
+          };
+        }
+        // ไม่มี invite ของ slot นี้ -> คงช่องเดิมไว้
+        return byKey.get(k) || { key: k, email: "", status: "idle" };
+      });
     });
 
-    return next;
-  });
-}
+    setTeamRoles((prev) => {
+      const next = { ...(prev || {}), you: "CEO" };
+
+      const invBySlot = new Map();
+      visibleInvs.forEach((inv) => {
+        if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
+      });
+
+      keys.forEach((k) => {
+        const inv = invBySlot.get(k);
+        if (inv) {
+          next[k] = (inv.role || "").trim();
+        } else {
+          if (next[k] == null) next[k] = "";
+        }
+      });
+
+      return next;
+    });
+  }
 
   }, [
     hydrated,
@@ -1421,10 +1455,72 @@ if (visibleInvs.length > 0) {
   }
 
   const isHost = useMemo(() => {
-    if (!isJoined || !joinedGame || !currentPlayer?.id) return false;
-    const { team } = getHostTeamFromStorage();
-    return !!team && team.leaderPlayerId === currentPlayer.id;
-  }, [isJoined, joinedGame, currentPlayer, storageTick, draftTeamId]);
+    if (!isJoined || !joinedGame?.code || !currentPlayer?.id) return false;
+
+    const code = (joinedGame.code || "").trim().toUpperCase();
+    const games = readGames();
+    const g = games.find((x) => (x.code || "").trim().toUpperCase() === code);
+    if (!g) return false;
+
+    const myId = currentPlayer.id;
+    const myEmail = normalizeEmail(currentPlayer.email);
+
+    // ✅ ถือว่าเป็น Host ถ้า leaderPlayerId ตรง "หรือ" leaderEmail ตรง
+    return (g.teams || []).some((t) => {
+      if (!t || t.isDeleted) return false;
+      const leaderEmail = normalizeEmail(t.leaderEmail);
+      return t.leaderPlayerId === myId || (myEmail && leaderEmail === myEmail);
+    });
+  }, [isJoined, joinedGame?.code, currentPlayer?.id, currentPlayer?.email, storageTick]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!currentPlayer?.id || !currentPlayer?.email) return;
+    if (!isJoined || !joinedGame?.code) return;
+
+    const pid = currentPlayer.id;
+    const email = normalizeEmail(currentPlayer.email);
+    const code = (joinedGame.code || "").trim().toUpperCase();
+
+    const games = readGames();
+    const g = games.find((x) => (x.code || "").trim().toUpperCase() === code);
+
+    // เกมหาย
+    if (!g) {
+      resetAllUIState({ alertMsg: `เกม ${code} ถูกลบแล้ว` });
+      return;
+    }
+
+    const me = (g.players || []).find((p) => p.playerId === pid) || null;
+    const myTeamId = me?.teamId || null;
+
+    // ✅ ถ้ามี teamId แต่ทีมถูกลบ -> รีเซ็ต
+    if (myTeamId) {
+      const alive = (g.teams || []).some((t) => t?.id === myTeamId && !t?.isDeleted);
+      if (!alive) {
+        if (me) me.teamId = null;
+        const gi = games.findIndex((x) => x.code === g.code);
+        if (gi !== -1) {
+          games[gi] = g;
+          writeGamesAndRefresh(games);
+        }
+        resetAllUIState({ alertMsg: "ทีมของคุณถูกลบแล้ว ระบบออกจากทีมให้อัตโนมัติ" });
+      }
+      return;
+    }
+
+    // ✅ ถ้าไม่มี teamId → ต้องมี “ทีมของฉันที่เป็น host/draft” อยู่ ไม่งั้นคือค้างหลังลบทีม
+    const hasMyHostTeam = (g.teams || []).some((t) => {
+      if (!t || t.isDeleted) return false;
+      const leaderEmail = normalizeEmail(t.leaderEmail);
+      return t.leaderPlayerId === pid || (email && leaderEmail === email);
+    });
+
+    // ถ้าไม่มีทั้ง teamId และไม่มี host/draft team ของตัวเอง → reset
+    if (!hasMyHostTeam) {
+      resetAllUIState();
+    }
+  }, [hydrated, storageTick, isJoined, joinedGame?.code, currentPlayer?.id, currentPlayer?.email]);
 
   useEffect(() => {
     if (!currentPlayer?.id || !currentPlayer?.email) return;
@@ -1447,10 +1543,10 @@ if (visibleInvs.length > 0) {
     const me = (g.players || []).find((p) => p.playerId === currentPlayer.id);
     const myTeamId = me?.teamId;
 
-    if (!myTeamId) {
-      setMemberView(null);
-      return;
-    }
+    //if (!myTeamId) {
+   //   resetAllUIState({ alertMsg: "Team no longer exists. You have been removed." });
+   //   return;
+   // }
 
     const t = (g.teams || []).find((x) => x.id === myTeamId && !x.isDeleted);
     if (!t) {
@@ -1794,11 +1890,12 @@ if (visibleInvs.length > 0) {
       const teamId = draftTeamId || "";
 
       // helper ยิง 1 คน (เฉพาะ accepted)
-      const applyStorageAndNoticeForAccepted = (email, oldRole, newRoleX) => {
-        const realStatus = getInviteStatusFromStorage(email);
-        if (realStatus !== "accepted") return;
+      const applyStorageRoleForInvited = (email, oldRole, newRoleX) => {
+        if (!email || !newRoleX) return;
 
-        // ✅ 1) เซฟ role ลง team.invites[].role
+        const realStatus = getInviteStatusFromStorage(email);
+
+        // ✅ 1) เซฟ role ลง storage ทันที (ทั้ง pending + accepted)
         updateInviteRoleInStorage({
           gameCode,
           teamId,
@@ -1806,8 +1903,8 @@ if (visibleInvs.length > 0) {
           newRole: newRoleX,
         });
 
-        // ✅ 2) ยิง notice role_changed (ของเดิมคุณ)
-        if (oldRole && newRoleX && oldRole !== newRoleX) {
+        // ✅ 2) ยิง notice เฉพาะ accepted เท่านั้น
+        if (realStatus === "accepted" && oldRole && oldRole !== newRoleX) {
           pushRoleChangeNoticeToStorage({
             joinedGame,
             currentPlayer,
@@ -1820,7 +1917,7 @@ if (visibleInvs.length > 0) {
       };
 
       // --- A: คนที่ Host เปลี่ยน ---
-      applyStorageAndNoticeForAccepted(emailA, oldRoleA, newRole);
+      applyStorageRoleForInvited(emailA, oldRoleA, newRole);
 
       // --- B: คนที่โดน swap อัตโนมัติ ---
       if (memberBKey) {
@@ -1832,7 +1929,7 @@ if (visibleInvs.length > 0) {
         // ถ้า oldRoleA เป็น "" แปลว่า A เดิมยังไม่มี role -> ไม่ควรไปยัด "" ให้ B ใน storage
         // ดังนั้นทำเฉพาะเคสที่ newRoleB มีค่า
         if (newRoleB) {
-          applyStorageAndNoticeForAccepted(emailB, oldRoleB, newRoleB);
+          applyStorageRoleForInvited(emailB, oldRoleB, newRoleB);
         }
       }
 
@@ -1955,7 +2052,7 @@ if (visibleInvs.length > 0) {
       role: roleSelected,
       status: "pending",
       invitedAt: new Date().toISOString(),
-
+      slotKey: memberKey,
       // ✅ NEW: ส่งชื่อทีมไปด้วย
       teamName: teamCheck.name,
       teamId: team.id,
@@ -2277,6 +2374,7 @@ if (visibleInvs.length > 0) {
     });
   };
 
+
   /* =========================
      Join Game
   ========================= */
@@ -2513,7 +2611,7 @@ if (visibleInvs.length > 0) {
     const trimmedName = (teamName || "").trim();
 
     if (!trimmedName) {
-      alert("กรุณาใส่ชื่อทีมก่อนส่งคำเชิญ");
+      setShowTeamNameWarning(true); // ✅ ใช้ modal แทน alert
       return { ok: false, name: "" };
     }
 
@@ -2536,10 +2634,10 @@ if (visibleInvs.length > 0) {
       }
       // ✅ 1) ต้องมีชื่อทีมก่อน
       const trimmedName = (teamName || "").trim();
-      if (!trimmedName) {
-        alert("กรุณาใส่ชื่อทีม");
-        return;
-      }
+        if (!trimmedName) {
+          setShowTeamNameWarning(true);
+          return;
+        }
 
        // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room (ทีมในเกมเดียวกัน)
       if (isDuplicateTeamName(trimmedName)) {
@@ -2745,33 +2843,47 @@ if (visibleInvs.length > 0) {
   const isTeamSetupReadOnly = (!isJoined && !!inviteView) || isAcceptedInvite || (isJoined && !isHost);
   const isTeamSetupLocked = !canViewTeamSetup;
 
-useEffect(() => {
-  if (!hydrated) return;
+  useEffect(() => {
+    if (!hydrated) return;
+    if (!isJoined) return;
+    if (isTeamSetupReadOnly) return;
 
-  // ✅ ทีมจะต้องถูกสร้าง slot เมื่อ "เข้าร่วมเกมแล้ว" และ "ไม่ใช่ read-only"
-  if (!isJoined) return;
-  if (isTeamSetupReadOnly) return;
+    const keys = (teamMembers || []).map((m) => m.key).filter(Boolean);
+    if (!keys.length) return;
 
-  if (!effectiveGame?.settings?.mode) return;
+    setTeamRoles((prev) => {
+      const fixed = enforceUniqueMemberRoles(prev, keys);
+      return JSON.stringify(prev || {}) === JSON.stringify(fixed || {}) ? prev : fixed;
+    });
+  }, [hydrated, isJoined, isTeamSetupReadOnly, teamMembers]);
 
-  const otherCountMin = Math.max(0, (teamLimit?.minTotal || 1) - 1);
+  useEffect(() => {
+    if (!hydrated) return;
 
-  if (teamLimit.type === "team" || teamLimit.type === "other") {
-    ensureMemberSlots(otherCountMin);
-  }
+    // ✅ ทีมจะต้องถูกสร้าง slot เมื่อ "เข้าร่วมเกมแล้ว" และ "ไม่ใช่ read-only"
+    if (!isJoined) return;
+    if (isTeamSetupReadOnly) return;
 
-  if (teamLimit.type === "single") {
-    ensureMemberSlots(0);
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-  hydrated,
-  isJoined,
-  isTeamSetupReadOnly,
-  teamLimit.type,
-  teamLimit.minTotal,
-  effectiveGame?.code,
-]);
+    if (!effectiveGame?.settings?.mode) return;
+
+    const otherCountMin = Math.max(0, (teamLimit?.minTotal || 1) - 1);
+
+    if (teamLimit.type === "team" || teamLimit.type === "other") {
+      ensureMemberSlots(otherCountMin);
+    }
+
+    if (teamLimit.type === "single") {
+      ensureMemberSlots(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    hydrated,
+    isJoined,
+    isTeamSetupReadOnly,
+    teamLimit.type,
+    teamLimit.minTotal,
+    effectiveGame?.code,
+  ]);
 
   const currentTotalMembers = 1 + teamMembers.length;
 
@@ -2865,6 +2977,49 @@ const getInvitedTeamData = () => {
   return t;
 };
 
+function getMyInviteState() {
+  const email = normalizeEmail(currentPlayer?.email);
+  if (!email) return { accepted: false, waitingHostOk: false };
+
+  // ใช้ตัวที่มี gameCode/teamId อยู่
+  const info = pendingInvite || acceptedInviteInfo || memberView;
+  if (!info?.gameCode || !info?.teamId) return { accepted: false, waitingHostOk: false };
+
+  const games = readGames();
+  const g = games.find(
+    (x) => (x.code || "").toUpperCase() === (info.gameCode || "").toUpperCase()
+  );
+  const t = (g?.teams || []).find((x) => x?.id === info.teamId && !x?.isDeleted);
+  if (!t) return { accepted: false, waitingHostOk: false };
+
+  const inv = (t.invites || []).find((x) => normalizeEmail(x.email) === email);
+
+  const accepted = inv?.status === "accepted";
+  // accepted + team ยัง draft = รอ host กด OK
+  const waitingHostOk = accepted && t.isDraft !== false;
+
+  return { accepted, waitingHostOk };
+}
+
+function getMyAcceptedStatusInTeam() {
+  const email = normalizeEmail(currentPlayer?.email);
+  if (!email) return { accepted: false, waitingHostOk: false };
+
+  const info = acceptedInviteInfo || memberView; // ใช้ตัวไหนก็ได้ที่มี teamId/gameCode
+  if (!info?.gameCode || !info?.teamId) return { accepted: false, waitingHostOk: false };
+
+  const games = readGames();
+  const g = games.find((x) => (x.code || "").toUpperCase() === (info.gameCode || "").toUpperCase());
+  const t = (g?.teams || []).find((x) => x?.id === info.teamId && !x?.isDeleted);
+  if (!t) return { accepted: false, waitingHostOk: false };
+
+  const inv = (t.invites || []).find((x) => normalizeEmail(x.email) === email);
+  const accepted = inv?.status === "accepted";
+  const waitingHostOk = accepted && t.isDraft !== false; // draft=true/undefined = ยังไม่ OK
+
+  return { accepted, waitingHostOk };
+}
+
 // ✅ Host must read invites from the exact draftTeamId only
 const inviteStatusMap = useMemo(() => {
   const map = new Map(); // emailNorm -> status
@@ -2922,9 +3077,15 @@ function ensureMemberSlots(desiredOtherCount) {
 
     const next = keys.slice(0, target).map((k) => {
       const old = byKey.get(k);
-      return old
-        ? { ...old, key: k }
-        : { key: k, email: "", status: "idle" };
+
+      if (!old) return { key: k, email: "", status: "idle" };
+
+      const emailTrim = (old.email || "").trim();
+
+      // ✅ ถ้าอีเมลว่าง -> อย่าให้ status ค้างเป็น sent/unregistered
+      if (!emailTrim) return { ...old, key: k, email: "", status: "idle" };
+
+      return { ...old, key: k };
     });
 
     return next;
@@ -2946,6 +3107,8 @@ function ensureMemberSlots(desiredOtherCount) {
     return next;
   });
 }
+
+const myInviteState = getMyInviteState();
 
   return (
     <div className="account-container">
@@ -3070,11 +3233,7 @@ function ensureMemberSlots(desiredOtherCount) {
                     </div>
 
                     <div className="join-team-actions">
-                      {isAcceptedInvite ? (
-                        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
-                          <span className="status-pill accepted">Accepted</span>
-                        </div>
-                      ) : pendingInvite ? (
+                      {pendingInvite ? (
                         <>
                           <button className="btn-deny" onClick={handleDenyInvite}>
                             Deny
@@ -3083,6 +3242,10 @@ function ensureMemberSlots(desiredOtherCount) {
                             Accept
                           </button>
                         </>
+                      ) : myInviteState.waitingHostOk ? (
+                        <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
+                          <span className="status-pill accepted">Accepted</span>
+                        </div>
                       ) : (
                         <div style={{ width: "100%", display: "flex", justifyContent: "flex-end" }}>
                           <span className="status-pill accepted">In a team</span>
@@ -3167,7 +3330,7 @@ function ensureMemberSlots(desiredOtherCount) {
                   <label>Team name</label>
                   <input
                     type="text"
-                    placeholder="Enter Team name"
+                    placeholder="กรุณาใส่ชื่อทีม"
                     className="form-input teamname-input"
                     value={isTeamSetupReadOnly ? (inviteView?.teamName || teamName || "") : teamName}
                     onChange={(e) => setTeamName(e.target.value)}
@@ -3311,12 +3474,12 @@ function ensureMemberSlots(desiredOtherCount) {
                           const roleValue = teamRoles[member.key] || "";
                           const hasRole = !!roleValue;
 
-                          // ถ้าคุณยังอยากเก็บ "sent" เป็น UI ชั่วคราวก็ทำได้:
-                          const isSentUI = member.status === "sent"; // ✅ ไม่ใช้ isWaiting แล้ว
+                          // ✅ ให้ "Waiting" มาจาก storage เท่านั้น
+                          const isSentUI = isWaiting;
                           const isUnregisteredUI = member.status === "unregistered";
 
-                          // ✅ lock role ตอน waiting (pending) หรือ sent (แต่ยังไม่ accepted)
-                          const isRoleLocked = isWaiting || (isSentUI && !isAccepted);
+                          // ✅ lock role เฉพาะตอน pending จริง ๆ
+                          const isRoleLocked = isWaiting;
 
                           // ✅ ปุ่ม Invite/Share โผล่ทันทีเมื่อ email valid + เลือก role แล้ว
                           const canShowAction =
@@ -3372,25 +3535,11 @@ function ensureMemberSlots(desiredOtherCount) {
                                   >
                                     <option value="" disabled>Select Role</option>
 
-                                    {(() => {
-                                      const reservedEntries = Array.from(pendingRoleMap.entries());
-                                      const takenByPendingOthers = new Set(
-                                        reservedEntries
-                                          .filter(([em]) => em !== emailNorm)
-                                          .map(([, role]) => role)
-                                      );
-
-                                      return MEMBER_ROLES.map((role) => {
-                                        const disabledByPending =
-                                          takenByPendingOthers.has(role) && role !== roleValue;
-
-                                        return (
-                                          <option key={role} value={role} disabled={disabledByPending}>
-                                            {role}
-                                          </option>
-                                        );
-                                      });
-                                    })()}
+                                    {MEMBER_ROLES.map((role) => (
+                                      <option key={role} value={role}>
+                                        {role}
+                                      </option>
+                                    ))}
                                   </select>
                                   <ChevronDown size={14} className="select-arrow" />
                                 </div>
@@ -3950,6 +4099,43 @@ function ensureMemberSlots(desiredOtherCount) {
                     }}
                   >
                     Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {showTeamNameWarning && (
+            <div className="sysmodal-backdrop">
+              <div className="sysmodal-card sysmodal-success">
+                <div className="sysmodal-header">
+                  <div className="sysmodal-title">
+                    <span className="sysmodal-icon" aria-hidden="true">✅</span>
+                    กรุณาใส่ชื่อทีมก่อน
+                  </div>
+
+                  <button
+                    className="sysmodal-close"
+                    onClick={() => setShowTeamNameWarning(false)}
+                    aria-label="Close"
+                    type="button"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <div className="sysmodal-body">
+                  <div className="sysmodal-message">
+                    โปรดกรอกชื่อทีมก่อนส่งคำเชิญผู้เล่น
+                  </div>
+                </div>
+
+                <div className="sysmodal-actions">
+                  <button
+                    className="sysmodal-btn sysmodal-btn-success"
+                    type="button"
+                    onClick={() => setShowTeamNameWarning(false)}
+                  >
+                    เข้าใจแล้ว
                   </button>
                 </div>
               </div>

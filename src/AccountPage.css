@@ -1638,3 +1638,74 @@ button.pill-btn.danger .trash-icon{
   box-sizing: border-box;
   font-weight: 800;
 }
+/* ===== sysmodal success variant (green) ===== */
+.sysmodal-success .sysmodal-header{
+  background: linear-gradient(135deg,#22C55E,#16A34A);
+}
+
+.sysmodal-success .sysmodal-title{
+  color: #fff;
+}
+
+.sysmodal-success .sysmodal-close{
+  color: rgba(255,255,255,0.9);
+}
+
+.sysmodal-success .sysmodal-close:hover{
+  color: #fff;
+}
+
+/* ✅ 1) พื้นหลังตรงเครื่องหมายถูก = ขาวทึบ */
+.sysmodal-success .sysmodal-icon{
+  background: #ffffff;          /* ขาวทึบ */
+  color: #16A34A;               /* ให้ติ๊กเป็นเขียว */
+  border-radius: 18px;           /* ถ้าต้องการเหลี่ยมกว่านี้ ลดได้ */
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ✅ 2) กล่องเป็นเหลี่ยม (สี่เหลี่ยมจัตุรัส) */
+.sysmodal-card{
+  border-radius: 18px;          
+  overflow:hidden;
+  max-width: 320px;
+  min-height: 200px;
+}
+
+/* spacing เดิม */
+.sysmodal-body{
+  padding:20px 24px 12px 24px;
+}
+
+.sysmodal-message{
+  color:#374151;
+  font-size:14px;
+  text-align:center;
+}
+
+/* ✅ 3) ปุ่มให้สั้นลง (ไม่เต็มความกว้าง) */
+.sysmodal-actions{
+  display:flex;
+  justify-content:center;
+  padding: 0 24px 18px;
+}
+
+.sysmodal-btn-success{
+  background: #16A34A;
+  color: #fff;
+  border: 1px solid #16A34A;
+   margin-top: 24px;
+
+  width: auto;                  /* สำคัญ */
+  min-width: 150px;             /* ปรับสั้น/ยาวได้ */
+  padding: 10px 18px;           /* ให้กระชับ */
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.sysmodal-btn-success:hover{
+  filter: brightness(0.98);
+}
