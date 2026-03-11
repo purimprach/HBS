@@ -29,10 +29,63 @@ const GAMES_KEY = "hbs_games";
 const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
 
 // ✅ ทีมของแต่ละเกม แยกตาม code
-const TEAMS_KEY = (code) => `hbs_teams_${code}`;
+const TEAMS_KEY = (code) => `hbs_teams_${normCode(code)}`;
 
 // ✅ Timer ของแต่ละเกม
-const TIMER_KEY = (code) => `hbs_timer_${code}`;
+const normCode = (s) => String(s || "").trim().toUpperCase();
+const TIMER_KEY = (code) => `hbs_timer_${normCode(code)}`;
+
+function readTimerState(code) {
+  const key = TIMER_KEY(code);
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+
+  const st = safeParse(raw, null);
+  if (!st) return null;
+
+  const timeLeft = Number(st.timeLeft) || 0;
+  const isRunning = !!st.isRunning;
+  const lastUpdated = Number(st.lastUpdated) || Date.now();
+
+  if (isRunning) {
+    const elapsed = Math.floor((Date.now() - lastUpdated) / 1000);
+    return { timeLeft: Math.max(0, timeLeft - elapsed), isRunning, lastUpdated };
+  }
+  return { timeLeft, isRunning, lastUpdated };
+}
+
+function ensureTimerInitialized(code, defaultSeconds = 600) {
+  const key = TIMER_KEY(code);
+  if (localStorage.getItem(key)) return;
+
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      timeLeft: defaultSeconds,
+      isRunning: false,     // ✅ หยุดไว้ก่อนเสมอ
+      lastUpdated: Date.now(),
+    })
+  );
+  window.dispatchEvent(new Event("hbs:timer"));
+}
+
+function startTimerIfPaused(code) {
+  const key = TIMER_KEY(code);
+  const st = safeParse(localStorage.getItem(key), null);
+  if (!st) return;
+
+  if (!st.isRunning && Number(st.timeLeft) > 0) {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        ...st,
+        isRunning: true,
+        lastUpdated: Date.now(),
+      })
+    );
+    window.dispatchEvent(new Event("hbs:timer"));
+  }
+}
 
 function safeParse(raw, fallback) {
   try {
@@ -63,8 +116,14 @@ export default function AdminLobbyPage() {
   // ==================== Teams (Real) ====================
   const [teams, setTeams] = useState([]);
 
+  useEffect(() => {
+    const code = normCode(gameCode);
+    if (!code) return;
+    ensureTimerInitialized(code, 600);
+  }, [gameCode]);
+
   const readTeamsFromStorage = () => {
-    const teamsKey = TEAMS_KEY(gameCode);
+    const teamsKey = TEAMS_KEY(normCode(gameCode));
 
     // ===== 0) CLEAN orphan ใน hbs_teams_<code> โดยอิง hbs_games =====
     const games = safeParse(localStorage.getItem(GAMES_KEY), []);
@@ -135,6 +194,34 @@ export default function AdminLobbyPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameCode]);
 
+  useEffect(() => {
+    const code = normCode(gameCode);
+    if (!code) return;
+
+    const checkAndStart = () => {
+      const realList = safeParse(localStorage.getItem(TEAMS_KEY(code)), []);
+      const realCount = Array.isArray(realList) ? realList.length : 0;
+
+      if (realCount >= 1) {
+        startTimerIfPaused(code);
+      }
+    };
+
+    const onStorage = (e) => {
+      if (e.key === TEAMS_KEY(code)) checkAndStart();
+    };
+
+    checkAndStart();
+
+    window.addEventListener("hbs:teams", checkAndStart);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hbs:teams", checkAndStart);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [gameCode]);
+
   // ==================== Load Game Data ====================
   useEffect(() => {
     // 1) from route state (เร็ว)
@@ -153,31 +240,31 @@ export default function AdminLobbyPage() {
   }, [gameCode, location.state]);
 
   useEffect(() => {
-  if (!gameCode) return;
+    if (!gameCode) return;
 
-  // อ่านเกมล่าสุดจาก hbs_games
-  const games = safeParse(localStorage.getItem(GAMES_KEY), []);
-  const game = (Array.isArray(games) ? games : []).find((g) => g.code === gameCode);
-  if (!game) return;
+    // อ่านเกมล่าสุดจาก hbs_games
+    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
+    const game = (Array.isArray(games) ? games : []).find((g) => g.code === gameCode);
+    if (!game) return;
 
-  const validIds = new Set(
-    (game.teams || [])
-        .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
-        .map((t) => t.id)
-  );
-  const key = TEAMS_KEY(gameCode);
+    const validIds = new Set(
+      (game.teams || [])
+          .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
+          .map((t) => t.id)
+    );
+    const key = TEAMS_KEY(gameCode);
 
-  const list = safeParse(localStorage.getItem(key), []);
-  const arr = Array.isArray(list) ? list : [];
+    const list = safeParse(localStorage.getItem(key), []);
+    const arr = Array.isArray(list) ? list : [];
 
-  // ลบทีมที่ไม่มีอยู่ใน hbs_games แล้ว (พวก orphan ที่ค้างจากอดีต)
-  const cleaned = arr.filter((t) => validIds.has(t.id));
+    // ลบทีมที่ไม่มีอยู่ใน hbs_games แล้ว (พวก orphan ที่ค้างจากอดีต)
+    const cleaned = arr.filter((t) => validIds.has(t.id));
 
-  if (cleaned.length !== arr.length) {
-    localStorage.setItem(key, JSON.stringify(cleaned));
-    window.dispatchEvent(new Event("hbs:teams"));
-  }
-}, [gameCode]);
+    if (cleaned.length !== arr.length) {
+      localStorage.setItem(key, JSON.stringify(cleaned));
+      window.dispatchEvent(new Event("hbs:teams"));
+    }
+  }, [gameCode]);
 
   // ✅ Guard: ต้อง login + ต้องเป็นเจ้าของเกม
   useEffect(() => {
@@ -220,47 +307,74 @@ export default function AdminLobbyPage() {
       try {
         return JSON.parse(saved).isRunning;
       } catch {
-        return true;
+        return false;
       }
     }
-    return true;
+    return false;
   });
 
+  // ✅ ✅ วาง useEffect SYNC TIMER ตรงนี้เลย
   useEffect(() => {
-    let interval = null;
+    const code = normCode(gameCode);
+    if (!code) return;
 
-    if (isTimerRunning) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 0) {
-            clearInterval(interval);
-            return 0;
-          }
-          const newVal = prev - 1;
-          localStorage.setItem(
-            TIMER_KEY(gameCode),
-            JSON.stringify({
-              timeLeft: newVal,
-              isRunning: true,
-              lastUpdated: Date.now(),
-            })
-          );
-          return newVal;
-        });
-      }, 1000);
-    } else {
-      localStorage.setItem(
-        TIMER_KEY(gameCode),
-        JSON.stringify({
-          timeLeft: timeLeft,
-          isRunning: false,
-          lastUpdated: Date.now(),
-        })
-      );
-    }
+    const syncNow = () => {
+      const st = readTimerState(code);
+      if (!st) {
+        ensureTimerInitialized(code, 600);
+        const st2 = readTimerState(code);
+        if (st2) {
+          setTimeLeft(st2.timeLeft);
+          setIsTimerRunning(st2.isRunning);
+        }
+        return;
+      }
+      setTimeLeft(st.timeLeft);
+      setIsTimerRunning(st.isRunning);
+    };
+
+    syncNow();
+
+    const onTimer = () => syncNow();
+    const onStorage = (e) => {
+      if (e.key === TIMER_KEY(code)) syncNow();
+    };
+
+    window.addEventListener("hbs:timer", onTimer);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      window.removeEventListener("hbs:timer", onTimer);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [gameCode]);
+
+  useEffect(() => {
+    const code = normCode(gameCode);
+    if (!code) return;
+
+    if (!isTimerRunning) return; // ✅ ไม่วิ่งก็ไม่ต้องตั้ง interval
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        const next = Math.max(0, prev - 1);
+
+        localStorage.setItem(
+          TIMER_KEY(code),
+          JSON.stringify({
+            timeLeft: next,
+            isRunning: next > 0,     // หมดแล้วหยุด
+            lastUpdated: Date.now(),
+          })
+        );
+        window.dispatchEvent(new Event("hbs:timer"));
+
+        return next;
+      });
+    }, 1000);
 
     return () => clearInterval(interval);
-  }, [isTimerRunning, gameCode, timeLeft]);
+  }, [isTimerRunning, gameCode]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -269,31 +383,37 @@ export default function AdminLobbyPage() {
   };
 
   const adjustTime = (minutes) => {
-    setTimeLeft((prev) => {
-      const newVal = Math.max(0, prev + minutes * 60);
-      localStorage.setItem(
-        TIMER_KEY(gameCode),
-        JSON.stringify({
-          timeLeft: newVal,
-          isRunning: isTimerRunning,
-          lastUpdated: Date.now(),
-        })
-      );
-      return newVal;
-    });
+  const code = normCode(gameCode);
+  const st = readTimerState(code) || { timeLeft, isRunning: isTimerRunning, lastUpdated: Date.now() };
+
+  const newVal = Math.max(0, Number(st.timeLeft) + minutes * 60);
+
+  localStorage.setItem(
+    TIMER_KEY(code),
+    JSON.stringify({
+      timeLeft: newVal,
+      isRunning: !!st.isRunning,
+      lastUpdated: Date.now(),
+    })
+  );
+  window.dispatchEvent(new Event("hbs:timer"));
   };
 
   const toggleTimer = () => {
-    const newStatus = !isTimerRunning;
-    setIsTimerRunning(newStatus);
+    const code = normCode(gameCode);
+    const st = readTimerState(code) || { timeLeft, isRunning: isTimerRunning, lastUpdated: Date.now() };
+
+    const newStatus = !st.isRunning;
+
     localStorage.setItem(
-      TIMER_KEY(gameCode),
+      TIMER_KEY(code),
       JSON.stringify({
-        timeLeft: timeLeft,
+        timeLeft: Number(st.timeLeft) || 0,
         isRunning: newStatus,
         lastUpdated: Date.now(),
       })
     );
+    window.dispatchEvent(new Event("hbs:timer"));
   };
 
   // ==================== Copy Feedback ====================
@@ -387,15 +507,8 @@ const deleteTeamHard = (teamId) => {
   const notReadyTeamsReal = teams.filter((t) => t.status !== "ready");
 
   // ✅ mock ไว้ฝั่งละ 1 ทีม “เมื่อไม่มีทีมจริง”
-  const readyTeams =
-    readyTeamsReal.length > 0
-      ? readyTeamsReal
-      : [{ id: "mock_ready", name: "The Grand Hoteliers (Mock)", status: "ready" }];
-
-  const notReadyTeams =
-    notReadyTeamsReal.length > 0
-      ? notReadyTeamsReal
-      : [{ id: "mock_not_ready", name: "Stay Savvy (Mock)", status: "not_ready" }];
+  const readyTeams = readyTeamsReal;
+  const notReadyTeams = notReadyTeamsReal;
 
   // ✅ นับ “ตามที่แสดง” (รวม mock)
   const displayTeams = [...readyTeams, ...notReadyTeams];

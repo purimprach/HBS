@@ -3,7 +3,6 @@ import { ArrowLeft, Hotel, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPlayerPage.css';
 
-const PLAYERS_KEY = "hbs_players";
 const PLAYER_SESSION_KEY = "hbs_current_player";
 
 const LoginPlayerPage = () => {
@@ -14,33 +13,44 @@ const LoginPlayerPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
-    const players = JSON.parse(localStorage.getItem(PLAYERS_KEY) || "[]");
+    try {
+      const res = await fetch("http://localhost:5000/player-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
 
-    const foundUser = players.find(
-      (p) => p.email === email && p.password === password
-    );
+      const data = await res.json();
 
-    if (!foundUser) {
-      setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
-      return;
+      if (!res.ok) {
+        setError(data.message || "อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        return;
+      }
+
+      localStorage.setItem(
+        PLAYER_SESSION_KEY,
+        JSON.stringify({
+          id: data.player.id,
+          name: data.player.username,
+          email: data.player.email,
+          loginAt: new Date().toISOString(),
+        })
+      );
+
+      navigate("/account");
+    } catch (err) {
+      console.error(err);
+      setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
-
-    // ✅ Login สำเร็จ → เก็บ session กลางของระบบ
-    localStorage.setItem(
-      PLAYER_SESSION_KEY,
-      JSON.stringify({
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-        loginAt: new Date().toISOString(),
-      })
-    );
-
-    navigate("/account");
   };
 
   return (

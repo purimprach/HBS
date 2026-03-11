@@ -30,6 +30,67 @@ import {
 const GAMES_KEY = "hbs_games";
 const PLAYER_SESSION_KEY = "hbs_current_player";
 const ACTIVE_GAME_CODE_KEY = "hbs_active_game_code_v1";
+const TIMER_KEY = (code) => `hbs_timer_${code}`;
+
+function startTimerIfPaused(code) {
+  if (!code) return;
+  const key = TIMER_KEY(code);
+
+  const st = safeParse(localStorage.getItem(key), null);
+  if (!st) return;
+
+  if (!st.isRunning && Number(st.timeLeft) > 0) {
+    localStorage.setItem(
+      key,
+      JSON.stringify({
+        ...st,
+        isRunning: true,
+        lastUpdated: Date.now(),
+      })
+    );
+    window.dispatchEvent(new Event("hbs:timer"));
+  }
+}
+
+function readTimerState(code) {
+  if (!code) return { timeLeft: 0, isRunning: false, lastUpdated: Date.now() };
+
+  const raw = localStorage.getItem(TIMER_KEY(code));
+  if (!raw) return null;
+
+  const st = safeParse(raw, null);
+  if (!st) return null;
+
+  const timeLeft = Number(st.timeLeft) || 0;
+  const isRunning = !!st.isRunning;
+  const lastUpdated = Number(st.lastUpdated) || Date.now();
+
+  // ✅ คำนวณเวลาจริงแบบเดียวกับ AdminLobbyPage
+  if (isRunning) {
+    const elapsed = Math.floor((Date.now() - lastUpdated) / 1000);
+    return { timeLeft: Math.max(0, timeLeft - elapsed), isRunning, lastUpdated };
+  }
+  return { timeLeft, isRunning, lastUpdated };
+}
+
+function ensureTimerInitialized(code, defaultSeconds = 600) {
+  if (!code) return;
+
+  const key = TIMER_KEY(code);
+  if (localStorage.getItem(key)) return;
+
+  localStorage.setItem(
+    key,
+    JSON.stringify({
+      timeLeft: defaultSeconds,     // ✅ 10 นาที
+      isRunning: false,              // ✅ เริ่มนับถอยหลังทันที (ทีมแรกเข้ามา)
+      lastUpdated: Date.now(),
+    })
+  );
+
+  // ให้แท็บเดียวกัน sync
+  window.dispatchEvent(new Event("hbs:timer"));
+}
 
 function safeParse(raw, fallback) {
   try {
@@ -94,39 +155,89 @@ function getCEOName(game, team) {
 function getTeamMemberCount(game, team) {
   if (!game || !team) return 0;
 
-  // 1) ทางหลัก: นับจาก game.players ที่ผูก teamId (ถ้ามีข้อมูล)
-  const players = game.players || [];
-  const byPlayers = players.filter((p) => p.teamId === team.id);
-
-  if (byPlayers.length > 0) {
-    // unique เผื่อข้อมูลซ้ำ
-    const uniq = new Set(
-      byPlayers.map((p) => String(p.playerId || p.email || "").toLowerCase())
-    );
-    uniq.delete(""); // กันค่าว่าง
-    return uniq.size;
-  }
-
-  // 2) fallback: ถ้ามี team.members
-  if (Array.isArray(team.members) && team.members.length > 0) {
-    const uniq = new Set(
-      team.members.map((m) => String(m.playerId || m.email || m || "").toLowerCase())
-    );
-    uniq.delete("");
-    return uniq.size;
-  }
-
-  // 3) fallback: นับจาก invites ที่ accepted + 1 (หัวหน้าทีม)
+  // ใช้รายชื่อคนจาก Invites ที่สถานะเป็น 'accepted' เป็นหลัก
   const invites = team.invites || [];
-  const accepted = invites.filter((i) => i?.status === "accepted");
+  const acceptedMembers = invites.filter((i) => i?.status === "accepted");
 
+  // สร้าง Set เพื่อป้องกันอีเมลซ้ำ (Case-insensitive)
   const uniqEmails = new Set(
-    accepted.map((i) => String(i.email || "").toLowerCase())
+    acceptedMembers.map((i) => String(i.email || "").toLowerCase().trim())
   );
-  uniqEmails.delete("");
+  uniqEmails.delete(""); // ลบค่าว่างออกถ้ามี
 
-  // +1 เผื่อหัวหน้าทีม (คุณ) ที่มักไม่ได้อยู่ใน invites
+  // ผลลัพธ์คือ: หัวหน้าทีม (1 คน) + จำนวนสมาชิกที่ยอมรับคำเชิญแล้ว
   return 1 + uniqEmails.size;
+}
+
+function isTeamConfirmed(team) {
+  if (!team) return false;
+
+  // แบบที่คุณใช้ตอนนี้
+  if (!!team.confirmedAt) return true;
+
+  // เผื่อโปรเจกต์เคยใช้ชื่ออื่น
+  if (team.isConfirmed === true) return true;
+  if (team.confirmed === true) return true;
+  if (team.isReady === true) return true;
+
+  // เผื่อเซฟเป็น status string
+  const st = String(team.status || "").toLowerCase();
+  if (["confirmed", "ready", "done", "final"].includes(st)) return true;
+
+  return false;
+}
+
+function getLobbyDurationSec(game) {
+  // พยายามอ่านจาก settings ก่อน (ถ้ามี)
+  const fromSettings =
+    Number(game?.settings?.lobby?.durationSec) ||
+    Number(game?.settings?.structure?.lobbyDurationSec);
+
+  if (Number.isFinite(fromSettings) && fromSettings > 0) return fromSettings;
+
+  // fallback: ใช้ค่าเดิมที่คุณเคยตั้ง 9000 (150 นาที)
+  return 9000;
+}
+
+function ensureLobbyTimingInStorage(games, gameIndex, isHostNow) {
+  const g = games[gameIndex];
+  if (!g) return games;
+
+  // โครงสร้างที่เราจะใช้เก็บ
+  // g.lobby = { startAt, durationSec }
+  const existingStartAt = Number(g?.lobby?.startAt);
+  const existingDurationSec = Number(g?.lobby?.durationSec);
+
+  const durationSec =
+    (Number.isFinite(existingDurationSec) && existingDurationSec > 0)
+      ? existingDurationSec
+      : getLobbyDurationSec(g);
+
+  // ✅ ให้ “Host เท่านั้น” เป็นคน set startAt ครั้งแรก
+  if (!Number.isFinite(existingStartAt) || existingStartAt <= 0) {
+    if (isHostNow) {
+      g.lobby = {
+        ...(g.lobby || {}),
+        startAt: Date.now(),
+        durationSec,
+      };
+    } else {
+      // ยังไม่มี startAt และเราไม่ใช่ host -> ยังทำอะไรไม่ได้
+      g.lobby = {
+        ...(g.lobby || {}),
+        durationSec,
+      };
+    }
+  } else {
+    // มี startAt แล้ว -> แค่ ensure durationSec
+    g.lobby = {
+      ...(g.lobby || {}),
+      startAt: existingStartAt,
+      durationSec,
+    };
+  }
+
+  return games;
 }
 
 // Mock Data (ค่อยเปลี่ยนเป็น real ทีละส่วน)
@@ -146,7 +257,7 @@ function WaitingListPage() {
 
   // --- State ---
   const [isUserReady, setIsUserReady] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(9000);
+  const [timeLeft, setTimeLeft] = useState(0);
   const [gameData, setGameData] = useState(null);
   const isHost = currentRole === "CEO";
 
@@ -184,6 +295,8 @@ function WaitingListPage() {
 
         // ✅ เก็บเกมไว้ใช้ render
         setGameData(game);
+        // ✅ Step3: ถ้ายังไม่มี timer ของเกมนี้ ให้ทีมแรกที่เข้ามาตั้งต้น 10 นาที
+        ensureTimerInitialized((game.code || "").toUpperCase(), 600);
 
         // --- หา role จริงจากทีม ---
         const me = (game.players || []).find((p) => p.playerId === player.id);
@@ -199,12 +312,17 @@ function WaitingListPage() {
         }
 
         const role =
-        team.roles?.[player.id] ||
-        team.roles?.[player.email] ||
-        me.role ||
-        null;
+          team.roles?.[player.id] ||
+          team.roles?.[player.email] ||
+          me.role ||
+          null;
 
         setCurrentRole(role);
+        if (activeCode) {
+          const code = activeCode.trim().toUpperCase();
+          ensureTimerInitialized(code, 600);
+          startTimerIfPaused(code);
+        }
     }
 
     // โหลดครั้งแรก
@@ -229,42 +347,51 @@ function WaitingListPage() {
 
   // ✅ เพิ่มตรงนี้ครับ (ต่อจาก useEffect ตัวโหลดข้อมูลหลัก)
   useEffect(() => {
-  if (!gameData || !currentPlayer?.id) return;
+    const code = (localStorage.getItem(ACTIVE_GAME_CODE_KEY) || "").trim().toUpperCase();
+    if (!code) return;
 
-  // 1. หาว่าเราอยู่ทีมไหน
-  const me = (gameData.players || []).find(p => p.playerId === currentPlayer.id);
-  if (!me?.teamId) return;
+    const syncNow = () => {
+      const st = readTimerState(code);
+      if (!st) {
+        // ถ้ายังไม่มี (กรณี edge) -> init 10 นาที
+        ensureTimerInitialized(code, 600);
+        const st2 = readTimerState(code);
+        if (st2) setTimeLeft(st2.timeLeft);
+        return;
+      }
 
-  const myTeam = (gameData.teams || []).find(t => t.id === me.teamId);
+      setTimeLeft(st.timeLeft);
 
-  // 🚩 ถ้า CEO ปลดล็อกทีมให้กลับเป็น Draft (isDraft === true)
-  // หรือถ้า CEO ลบทีมทิ้ง (myTeam หายไป)
-  if (!myTeam || myTeam.isDraft === true) {
-    // ล้างรหัสเกมที่ค้างไว้
-    localStorage.removeItem("hbs_active_game_code_v1");
-    
-    // พาเด้งออกไปหน้า Account ทันที
-    navigate("/account", { replace: true });
-    
-    // แจ้งเตือนสั้นๆ
-    if (myTeam?.isDraft) {
-      alert("หัวหน้าทีมกำลังแก้ไขรายละเอียดทีม ระบบจะพาคุณกลับไปหน้าตั้งค่า");
-    }
-  }
-  }, [gameData, currentPlayer?.id, navigate]);
+      // ✅ หมดเวลา -> ไป HomePage อัตโนมัติ
+      if (st.timeLeft <= 0) {
+        navigate("/home", { replace: true });
+      }
+    };
+
+    syncNow();
+
+    // ✅ tick ทุก 1 วิ
+    const id = setInterval(syncNow, 1000);
+
+    // ✅ ฟัง event สำหรับแท็บเดียวกัน (Admin กดเพิ่ม/ลด/พัก/เริ่มทันที)
+    const onTimer = () => syncNow();
+    const onStorage = (e) => {
+      if (e.key === TIMER_KEY(code)) syncNow();
+    };
+
+    window.addEventListener("hbs:timer", onTimer);
+    window.addEventListener("storage", onStorage);
+
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("hbs:timer", onTimer);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, [navigate]);
 
   /* =========================
      TIMER
      ========================= */
-  useEffect(() => {
-    if (timeLeft > 0) {
-      const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-      return () => clearInterval(timerId);
-    } else if (timeLeft === 0) {
-      navigate("/home");
-    }
-  }, [timeLeft, navigate]);
-
   const getTimerStatus = (seconds) => {
     if (seconds <= 60 && seconds > 0) return "critical";
     if (seconds <= 120 && seconds > 0) return "warning";
@@ -317,9 +444,8 @@ function WaitingListPage() {
 
     setGameData(null);
     setCurrentRole(null);
-    
-    // ยิง Event ให้หน้า Account รับรู้การเปลี่ยนแปลง
-    window.dispatchEvent(new Event("storage"));
+  
+    // ยิง Event ให้หน้าอื่นรับรู้การเปลี่ยนแปลง (ในแท็บเดียวกัน)
     window.dispatchEvent(new Event("hbs:games"));
     window.dispatchEvent(new Event("hbs:teams"));
 
@@ -359,10 +485,15 @@ function WaitingListPage() {
     const myTeamId = me?.teamId || null;
 
     // 2) กรองทีม: เอาทีมที่ "confirm แล้ว" หรือ "เป็นทีมเรา" เท่านั้น
+    // แก้ไขส่วน filter ใน useMemo
     const filteredTeams = (gameData.teams || []).filter((t) => {
-        const isMine = myTeamId && t.id === myTeamId;
-        const isConfirmed = !!t.confirmedAt;
-        return isConfirmed || isMine;
+      const isMine = myTeamId && t.id === myTeamId;
+      
+      // ✅ เปลี่ยนจากเช็ค confirmed เป็นเช็คว่า "ไม่ใช่ Draft"
+      // ทีมที่ Host กด OK มาแล้วจะมี isDraft = false
+      const joined = t.isDraft === false; 
+      
+      return joined || isMine;
     });
 
     // 3) map -> row data (✅ members ต้องส่ง t.id)
@@ -376,16 +507,18 @@ function WaitingListPage() {
         (t.title || "").trim() ||
         "ทีมไม่มีชื่อ";
 
+        const confirmed = isTeamConfirmed(t);
+
         return {
-        teamId: t.id,
-        name: teamName,
-        captain,
-        members,
-        confirmedAt: t.confirmedAt
+          teamId: t.id,
+          name: teamName,
+          captain,
+          members,
+          confirmedAt: t.confirmedAt
             ? new Date(t.confirmedAt).getTime()
-            : Number.POSITIVE_INFINITY,
-        isUser: false,
-        statusText: t.confirmedAt ? "ยืนยัน" : "รอยืนยัน",
+            : (confirmed ? Date.now() : Number.POSITIVE_INFINITY), // ✅ ให้ทีมที่ confirmed แต่ไม่มี confirmedAt ไม่โดนจัดท้ายสุดตลอด
+          isUser: false,
+          statusText: confirmed ? "ยืนยัน" : "รอยืนยัน",
         };
     });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import "./AccountPage.css";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Settings,
   LogOut,
@@ -362,6 +362,13 @@ function AccountPage() {
   const [currentPlayer, setCurrentPlayer] = useState(null);
   const [showTeamNameWarning, setShowTeamNameWarning] = useState(false);
 
+  const location = useLocation();
+
+  useEffect(() => {
+    const msg = location.state?.toast;
+    if (msg) alert(msg);
+  }, [location.state]);
+  
   useEffect(() => {
     const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
 

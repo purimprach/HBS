@@ -3,13 +3,7 @@ import { ArrowLeft, Hotel, Eye, EyeOff } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "./LoginPlayerPage.css";
 
-// ✅ ให้ตรงกับ AccountPage (ตอนนี้คุณใช้ hbs_players)
-const USERS_KEY = "hbs_players";
 const PLAYER_SESSION_KEY = "hbs_current_player";
-
-function normalizeEmail(s) {
-  return (s || "").trim().toLowerCase();
-}
 
 export default function CreateAccountPage() {
   const navigate = useNavigate();
@@ -31,7 +25,7 @@ export default function CreateAccountPage() {
     if (emailFromInvite) setEmail(emailFromInvite);
   }, [location.search]);
 
-  const handleCreateAccount = (e) => {
+  const handleCreateAccount = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -39,49 +33,48 @@ export default function CreateAccountPage() {
       setError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
       return;
     }
+
     if (password !== confirmPassword) {
       setError("รหัสผ่านไม่ตรงกัน");
       return;
     }
 
-    const emailNorm = normalizeEmail(email);
-
-    let users = [];
     try {
-      users = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-      if (!Array.isArray(users)) users = [];
-    } catch {
-      users = [];
+      const res = await fetch("http://localhost:5000/player-signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "สมัครสมาชิกไม่สำเร็จ");
+        return;
+      }
+
+      localStorage.setItem(
+        PLAYER_SESSION_KEY,
+        JSON.stringify({
+          id: data.player.id,
+          name: data.player.username,
+          email: data.player.email,
+          loginAt: new Date().toISOString(),
+        })
+      );
+
+      alert("สมัครสมาชิกสำเร็จ 🎉");
+      navigate("/account", { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
-
-    const exists = users.some((u) => normalizeEmail(u?.email) === emailNorm);
-    if (exists) {
-      setError("อีเมลนี้ถูกใช้งานแล้ว");
-      return;
-    }
-
-    const newUser = {
-      id: crypto?.randomUUID ? crypto.randomUUID() : `u-${Date.now()}`,
-      name: username.trim(),
-      email: emailNorm,
-      password,
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
-
-    // ✅ ตั้ง session ให้เลย
-    localStorage.setItem(
-      PLAYER_SESSION_KEY,
-      JSON.stringify({
-        id: newUser.id, // ใช้ id เดียวกันไปเลย
-        name: newUser.name,
-        email: newUser.email,
-      })
-    );
-
-    alert("สมัครสมาชิกสำเร็จ 🎉");
-    navigate("/account", { replace: true });
   };
 
   return (
