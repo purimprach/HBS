@@ -1,11 +1,15 @@
+const adminRoutes = require("./routes/adminRoutes");
 const express = require("express");
 const cors = require("cors");
 const pool = require("./db");
 
 const app = express();
 
+require("dotenv").config();
+
 app.use(cors());
 app.use(express.json());
+app.use("/api/admin", adminRoutes);
 
 app.get("/", (req, res) => {
   res.send("API running");
@@ -84,10 +88,16 @@ app.post("/player-login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "กรุณากรอกอีเมลและรหัสผ่าน" });
+    }
+
     const emailNorm = email.trim().toLowerCase();
 
     const result = await pool.query(
-      "SELECT id, username, email, password_hash FROM users WHERE email = $1",
+      `SELECT id, username, email, password_hash
+       FROM users
+       WHERE email = $1 AND is_active = true`,
       [emailNorm]
     );
 
@@ -109,13 +119,14 @@ app.post("/player-login", async (req, res) => {
         email: user.email,
       },
     });
-
   } catch (err) {
     console.error("LOGIN ERROR:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
