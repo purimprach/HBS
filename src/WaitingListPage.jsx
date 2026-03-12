@@ -145,11 +145,35 @@ function resolvePlayerNameInGame(game, key) {
 }
 
 function getCEOName(game, team) {
-  const roles = team?.roles || {};
+  if (!team) return "-";
+
+  // 1) ใช้ leaderName ก่อนเลย ถ้ามี
+  if ((team.leaderName || "").trim()) {
+    return team.leaderName.trim();
+  }
+
+  // 2) fallback: ใช้ leaderPlayerId
+  if (team.leaderPlayerId) {
+    const byLeaderId = resolvePlayerNameInGame(game, team.leaderPlayerId);
+    if (byLeaderId && byLeaderId !== "-") return byLeaderId;
+  }
+
+  // 3) fallback: ใช้ leaderEmail
+  if ((team.leaderEmail || "").trim()) {
+    const byLeaderEmail = resolvePlayerNameInGame(game, team.leaderEmail);
+    if (byLeaderEmail && byLeaderEmail !== "-") return byLeaderEmail;
+  }
+
+  // 4) fallback: หาใน roles ว่าใครเป็น CEO
+  const roles = team.roles || {};
   const ceoEntry = Object.entries(roles).find(([, role]) => role === "CEO");
-  if (!ceoEntry) return "-";
-  const [key] = ceoEntry; // key = playerId หรือ email
-  return resolvePlayerNameInGame(game, key);
+  if (ceoEntry) {
+    const [key] = ceoEntry;
+    const byRole = resolvePlayerNameInGame(game, key);
+    if (byRole && byRole !== "-") return byRole;
+  }
+
+  return "-";
 }
 
 function getTeamMemberCount(game, team) {
@@ -321,7 +345,6 @@ function WaitingListPage() {
         if (activeCode) {
           const code = activeCode.trim().toUpperCase();
           ensureTimerInitialized(code, 600);
-          startTimerIfPaused(code);
         }
     }
 
@@ -344,6 +367,14 @@ function WaitingListPage() {
         window.removeEventListener("storage", onGames);
     };
   }, []);
+
+  useEffect(() => {
+    if (!gameData) return;
+
+    if (gameData.status === "playing" && Number(gameData.currentQuarter) === 1) {
+      navigate("/decision", { replace: true });
+    }
+  }, [gameData, navigate]);
 
   // ✅ เพิ่มตรงนี้ครับ (ต่อจาก useEffect ตัวโหลดข้อมูลหลัก)
   useEffect(() => {
@@ -399,6 +430,64 @@ function WaitingListPage() {
   };
 
   const handleConfirmReady = () => {
+    if (!currentPlayer?.id || !gameData?.code) return;
+
+    const games = readGames();
+    const gameIdx = games.findIndex(
+      (g) => (g.code || "").toUpperCase() === (gameData.code || "").toUpperCase()
+    );
+    if (gameIdx === -1) return;
+
+    const game = games[gameIdx];
+    game.players = game.players || [];
+    game.teams = game.teams || [];
+
+    const me = game.players.find((p) => p.playerId === currentPlayer.id);
+    if (!me?.teamId) return;
+
+    const team = game.teams.find((t) => t.id === me.teamId);
+    if (!team) return;
+
+    // 1) mark current player ready
+    me.ready = true;
+    me.readyAt = new Date().toISOString();
+
+    // 2) หา "สมาชิกทั้งหมดของทีม" แบบจริง
+    const acceptedEmails = new Set(
+      (team.invites || [])
+        .filter((inv) => inv.status === "accepted")
+        .map((inv) => String(inv.email || "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    const teamPlayers = (game.players || []).filter((p) => {
+      if (p.teamId !== team.id) return false;
+
+      const pEmail = String(p.email || "").trim().toLowerCase();
+
+      // host หรือ accepted member ที่อยู่ทีมนี้
+      return (
+        p.playerId === team.leaderPlayerId ||
+        acceptedEmails.has(pEmail)
+      );
+    });
+
+    // 3) ถ้าทุกคน ready แล้ว -> ทีม ready
+    const allReady =
+      teamPlayers.length > 0 &&
+      teamPlayers.every((p) => !!p.ready);
+
+    team.status = allReady ? "ready" : "not_ready";
+    team.confirmedAt = allReady ? new Date().toISOString() : null;
+    team.isConfirmed = allReady;
+
+    games[gameIdx] = game;
+    localStorage.setItem(GAMES_KEY, JSON.stringify(games));
+
+    window.dispatchEvent(new Event("hbs:games"));
+    window.dispatchEvent(new Event("hbs:teams"));
+
+    setGameData({ ...game });
     setIsUserReady(true);
   };
 
@@ -487,12 +576,11 @@ function WaitingListPage() {
     // 2) กรองทีม: เอาทีมที่ "confirm แล้ว" หรือ "เป็นทีมเรา" เท่านั้น
     // แก้ไขส่วน filter ใน useMemo
     const filteredTeams = (gameData.teams || []).filter((t) => {
+      if (!t || t.isDeleted) return false;
+
       const isMine = myTeamId && t.id === myTeamId;
-      
-      // ✅ เปลี่ยนจากเช็ค confirmed เป็นเช็คว่า "ไม่ใช่ Draft"
-      // ทีมที่ Host กด OK มาแล้วจะมี isDraft = false
-      const joined = t.isDraft === false; 
-      
+      const joined = t.isDraft === false;
+
       return joined || isMine;
     });
 
@@ -540,24 +628,7 @@ function WaitingListPage() {
         (a, b) => (a.confirmedAt || Infinity) - (b.confirmedAt || Infinity)
     );
 
-    // 6) เติม mock ให้ครบ 5
-    const usedNames = new Set(
-        realTeamsMarked.map((x) => x.name.replace(" (You)", ""))
-    );
-
-    const mockRows = MOCK_TEAMS.filter((m) => !usedNames.has(m.name)).map((m) => ({
-        teamId: `mock_${m.name}`,
-        name: m.name,
-        captain: m.ceo,
-        members: m.members,
-        confirmedAt: Number.POSITIVE_INFINITY,
-        isUser: false,
-        statusText: m.status,
-    }));
-
-    const combined = [...realTeamsMarked, ...mockRows].slice(0, 5);
-
-    return combined.map((t, idx) => ({ ...t, rank: idx + 1 }));
+   return realTeamsMarked.map((t, idx) => ({ ...t, rank: idx + 1 })); 
   }, [gameData, currentPlayer?.id, isUserReady]);
 
   const gameRules = [

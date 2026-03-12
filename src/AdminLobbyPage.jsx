@@ -346,32 +346,34 @@ export default function AdminLobbyPage() {
     };
   }, [gameCode]);
 
-  useEffect(() => {
-    const code = normCode(gameCode);
-    if (!code) return;
+ useEffect(() => {
+  const code = normCode(gameCode);
+  if (!code) return;
 
-    if (!isTimerRunning) return; // ✅ ไม่วิ่งก็ไม่ต้องตั้ง interval
+  if (!isTimerRunning) return;
 
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        const next = Math.max(0, prev - 1);
+  const interval = setInterval(() => {
+    const st = readTimerState(code);
+    if (!st) return;
 
-        localStorage.setItem(
-          TIMER_KEY(code),
-          JSON.stringify({
-            timeLeft: next,
-            isRunning: next > 0,     // หมดแล้วหยุด
-            lastUpdated: Date.now(),
-          })
-        );
-        window.dispatchEvent(new Event("hbs:timer"));
+    setTimeLeft(st.timeLeft);
+    setIsTimerRunning(st.isRunning);
 
-        return next;
-      });
-    }, 1000);
+    if (st.timeLeft <= 0) {
+      localStorage.setItem(
+        TIMER_KEY(code),
+        JSON.stringify({
+          timeLeft: 0,
+          isRunning: false,
+          lastUpdated: Date.now(),
+        })
+      );
+      window.dispatchEvent(new Event("hbs:timer"));
+    }
+  }, 1000);
 
-    return () => clearInterval(interval);
-  }, [isTimerRunning, gameCode]);
+  return () => clearInterval(interval);
+}, [isTimerRunning, gameCode]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -419,6 +421,27 @@ export default function AdminLobbyPage() {
     navigator.clipboard.writeText(gameData.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleStartGame = () => {
+    if (readyTeams.length < 2) {
+      alert("ต้องมีอย่างน้อย 2 ทีมที่พร้อมแล้ว จึงจะเริ่มเกมได้");
+      return;
+    }
+
+    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
+    const index = games.findIndex((g) => g.code === gameCode);
+
+    if (index === -1) return;
+
+    // เปลี่ยนสถานะเกม
+    games[index].status = "playing";
+    games[index].currentQuarter = 1;
+    localStorage.setItem(GAMES_KEY, JSON.stringify(games));
+    window.dispatchEvent(new Event("hbs:games"));
+
+    alert("เริ่มเกมเรียบร้อยแล้ว!");
+    navigate("/admin/active-games", { replace: true });
   };
 
   // ==================== End Game Modal Logic ====================
@@ -654,17 +677,24 @@ const deleteTeamHard = (teamId) => {
                     readyTeams.map((team, index) => (
                       <div className="team-card-clean" key={team.id}>
                         <div className="tcc-top">
-                          <span className="tcc-name">
-                            {index + 1}. {team.name}
-                          </span>
+                          <div className="tcc-name-wrap">
+                            <span className="tcc-name">
+                              {index + 1}. {team.name}
+                            </span>
+
+                            {team.status === "ready" && (
+                              <span className="team-ready-badge">ยืนยันแล้ว</span>
+                            )}
+                          </div>
+
                           <button
                             className="btn-card-del"
                             type="button"
                             title="ลบทีมถาวร"
                             onClick={() => deleteTeamHard(team.id)}
-                            >
+                          >
                             <Trash2 size={16} />
-                            </button>
+                          </button>
                         </div>
                         <div className="tcc-actions">
                           <button className="btn-pill" type="button">
@@ -729,10 +759,29 @@ const deleteTeamHard = (teamId) => {
               รายการเกมทั้งหมด
             </button>
 
-            <button className="btn-start-floating" type="button">
-              <span>เริ่มทันที</span>
-              <Play size={18} fill="currentColor" />
-            </button>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <button
+                className={`btn-start-floating ${readyTeams.length < 2 ? "btn-disabled-look" : ""}`}
+                type="button"
+                onClick={handleStartGame}
+                disabled={readyTeams.length < 2}
+              >
+                <span>เริ่มทันที</span>
+                <Play size={18} fill="currentColor" />
+              </button>
+
+              {readyTeams.length < 2 && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 13,
+                    color: "#6B7280"
+                  }}
+                >
+                  ต้องมีอย่างน้อย 2 ทีมที่พร้อมแล้ว
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

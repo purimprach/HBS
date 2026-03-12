@@ -368,7 +368,7 @@ function AccountPage() {
     const msg = location.state?.toast;
     if (msg) alert(msg);
   }, [location.state]);
-  
+
   useEffect(() => {
     const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
 
@@ -399,7 +399,6 @@ function AccountPage() {
   useEffect(() => {
     if (!currentPlayer?.id) return;
 
-    // ถ้ายังไม่ได้ join เกม ก็ไม่ต้องทำ
     if (!isJoined || !joinedGame?.code) return;
 
     const games = readGames();
@@ -410,9 +409,8 @@ function AccountPage() {
     );
     if (!g) return;
 
-    // ✅ ต้องให้ทีม "ไม่ใช่ Draft" (กด OK แล้ว) และ "เกมอยู่ในเฟส waiting" ถึงจะไปได้
-    const myTeamId = (g.players || []).find(p => p.playerId === currentPlayer?.id)?.teamId;
-    const myTeam = (g.teams || []).find(t => t.id === myTeamId);
+    const myTeamId = (g.players || []).find((p) => p.playerId === currentPlayer?.id)?.teamId;
+    const myTeam = (g.teams || []).find((t) => t.id === myTeamId);
 
     if (g.phase === "waiting" && myTeam && myTeam.isDraft === false) {
       navigate("/waiting-room", { state: { gameCode: g.code } });
@@ -2524,6 +2522,8 @@ function AccountPage() {
     // ✅ บันทึก Roles
     team.roles = team.roles || {};
     team.roles[player.id] = teamRoles.you || "CEO";
+    team.leaderName = player.name || "Host";
+    team.leaderEmail = player.email || "";
 
     teamMembers.forEach((m) => {
       const status = getInviteStatusFromStorage(m.email);
@@ -2580,6 +2580,7 @@ function AccountPage() {
 
     games[idx] = game;
     writeGamesAndRefresh(games);
+    setGameData({ ...game });
 
     localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
 
