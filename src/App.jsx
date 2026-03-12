@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom"; // ✅ เพิ่ม useNavigate
 import DevMultiClientPage from "./DevMultiClientPage";
+import ProtectedAdminRoute from "./ProtectedAdminRoute";
 
 /* Utils */
 import ScrollToTop from "./ScrollToTop";
@@ -114,7 +115,13 @@ function App() {
         </Route>
 
         {/* ================= ADMIN AREA ================= */}
-        <Route element={<AdminDashboardLayout />}>
+        <Route
+          element={
+            <ProtectedAdminRoute>
+              <AdminDashboardLayout />
+            </ProtectedAdminRoute>
+          }
+        >
           <Route path="/admin/game-settings" element={<AdminGameSettingsPage />} />
           <Route path="/admin/lobby/:gameCode" element={<AdminLobbyPage />} />
           <Route path="/admin/active-games" element={<AdminActiveGamesPage />} />

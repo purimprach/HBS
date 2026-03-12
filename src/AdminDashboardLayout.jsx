@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import "./AdminDashboardLayout.css";
 import {
@@ -15,7 +15,7 @@ import {
 /* =========================
    LocalStorage Keys
    ========================= */
-const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+const ADMIN_SESSION_KEY = "hbs_current_admin";
 
 function safeParse(raw, fallback) {
   try {
@@ -30,19 +30,22 @@ export default function AdminDashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ✅ อ่าน session ครั้งแรก
-  const admin = useMemo(() => {
-    return safeParse(localStorage.getItem(ADMIN_SESSION_KEY), null);
+  const [admin, setAdmin] = useState(null);
+  const [checkedAuth, setCheckedAuth] = useState(false);
+
+  useEffect(() => {
+    const session = safeParse(localStorage.getItem(ADMIN_SESSION_KEY), null);
+    setAdmin(session);
+    setCheckedAuth(true);
   }, []);
 
-  // ✅ Guard: ถ้าไม่มี session -> เด้งกลับ login
   useEffect(() => {
-    if (!admin) {
+    if (checkedAuth && !admin) {
       navigate("/admin-login", { replace: true });
     }
-  }, [admin, navigate]);
+  }, [checkedAuth, admin, navigate]);
 
-  // ✅ กัน flash: ถ้าไม่มี admin อย่า render layout
+  if (!checkedAuth) return null;
   if (!admin) return null;
 
   const adminName = admin?.username || "Admin";
@@ -53,13 +56,13 @@ export default function AdminDashboardLayout() {
     location.pathname.startsWith("/admin/lobby");
 
   const handleLogout = () => {
-    localStorage.removeItem(ADMIN_SESSION_KEY);
+    localStorage.removeItem("hbs_admin_token");
+    localStorage.removeItem("hbs_current_admin");
     navigate("/admin-login", { replace: true });
   };
 
   return (
     <div className="adl-shell">
-      {/* Sidebar */}
       <aside className="adl-sidebar">
         <div className="adl-side-header">
           <div className="adl-app">
@@ -105,9 +108,7 @@ export default function AdminDashboardLayout() {
         </nav>
       </aside>
 
-      {/* Main */}
       <main className="adl-main">
-        {/* Topbar */}
         <header className="adl-topbar">
           <div className="adl-top-left">Host / Active Game</div>
 
@@ -132,7 +133,6 @@ export default function AdminDashboardLayout() {
           </div>
         </header>
 
-        {/* Content */}
         <div className="adl-content">
           <Outlet />
         </div>

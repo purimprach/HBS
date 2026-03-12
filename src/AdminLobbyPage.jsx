@@ -22,11 +22,8 @@ import {
 } from "lucide-react";
 import "./AdminLobbyPage.css";
 
-/* =========================
-   LocalStorage Keys
-   ========================= */
 const GAMES_KEY = "hbs_games";
-const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+const ADMIN_SESSION_KEY = "hbs_current_admin";
 
 // ✅ ทีมของแต่ละเกม แยกตาม code
 const TEAMS_KEY = (code) => `hbs_teams_${normCode(code)}`;

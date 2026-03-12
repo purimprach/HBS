@@ -68,7 +68,7 @@ const EVENT_OPTIONS = [
 const GAMES_KEY = "hbs_games";
 const ADMIN_DRAFT_KEY = "hbs_admin_game_draft_v1";
 
-const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+const ADMIN_SESSION_KEY = "hbs_current_admin";
 
 function safeParse(raw, fallback) {
   try {
@@ -649,7 +649,7 @@ export default function AdminGameSettingsPage() {
         scoring: scoring,
       },
 
-      status: "waiting",
+      status: "lobby",
       createdAt: new Date().toISOString(),
     };
 

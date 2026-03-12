@@ -190,7 +190,19 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    console.log("password input:", password);
+    console.log("password hash:", user.password_hash);
+
+    console.log("=== ADMIN LOGIN DEBUG ===");
+    console.log("emailNorm:", emailNorm);
+    console.log("password from form:", password);
+    console.log("hash from DB:", user.password_hash);
+
+    const testMatch = await bcrypt.compare("123456", user.password_hash);
+    console.log("compare fixed 123456 vs DB hash:", testMatch);
+
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log("compare form password vs DB hash:", isMatch);
 
     if (!isMatch) {
       return res.status(401).json({

@@ -107,14 +107,14 @@ const MOCK_GAMES = [
 ];
 
 const STATUS_META = {
+  lobby: { label: "รอเริ่มเกม", Icon: Hourglass, dot: "dot-gray" },
   playing: { label: "กำลังเล่น", Icon: PlayCircle, dot: "dot-green" },
   paused: { label: "หยุดชั่วคราว", Icon: PauseCircle, dot: "dot-yellow" },
   ended: { label: "จบเกม", Icon: CheckCircle2, dot: "dot-gray" },
-  idle: { label: "รอเริ่มเกม", Icon: Hourglass, dot: "dot-gray" },
 };
 
 const GAMES_KEY = "hbs_games";
-const ADMIN_SESSION_KEY = "hbs_current_admin_v1";
+const ADMIN_SESSION_KEY = "hbs_current_admin";
 
 export default function AdminActiveGamesPage() {
   const navigate = useNavigate();
@@ -194,14 +194,14 @@ export default function AdminActiveGamesPage() {
     const totalActive = all.length;
     const playing = all.filter((g) => g.status === "playing").length;
     const paused = all.filter((g) => g.status === "paused").length;
-    const idle = all.filter((g) => g.status === "idle").length;
+    const lobby = all.filter((g) => g.status === "lobby").length;
 
     const totalPlayers = all.reduce(
       (sum, g) => sum + (g.teams?.current ?? 0),
       0
     );
 
-    return { totalActive, totalPlayers, playing, paused, idle };
+    return { totalActive, totalPlayers, playing, paused, lobby };
   }, [createdGames]);
 
   const handleCopy = async (text) => {
@@ -264,7 +264,7 @@ export default function AdminActiveGamesPage() {
         <SummaryCard
           icon={<Hourglass size={18} />}
           title="เกมที่รอเริ่มเกม"
-          value={summary.idle}
+          value={summary.lobby}
           unit="เกม"
           accent="gray"
         />
@@ -296,7 +296,7 @@ export default function AdminActiveGamesPage() {
           <Chip active={statusFilter === "paused"} onClick={() => setStatusFilter("paused")}>
             หยุดชั่วคราว
           </Chip>
-          <Chip active={statusFilter === "idle"} onClick={() => setStatusFilter("idle")}>
+          <Chip active={statusFilter === "lobby"} onClick={() => setStatusFilter("lobby")}>
             รอเริ่มเกม
           </Chip>
         </div>
@@ -317,7 +317,7 @@ export default function AdminActiveGamesPage() {
 
         <div className="ag-tbody">
           {games.map((g) => {
-            const meta = STATUS_META[g.status] || STATUS_META.idle;
+            const meta = STATUS_META[g.status] || STATUS_META.lobby;
             const Icon = meta.Icon;
             const pct = Math.round((g.progress ?? 0) * 100);
 

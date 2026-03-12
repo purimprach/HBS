@@ -1,92 +1,67 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import "./AdminLoginPage.css";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Lock } from "lucide-react";
-
-/* =========================
-   LocalStorage Keys
-   ========================= */
-const ADMINS_KEY = "hbs_admin_accounts_v1";
-const ADMIN_SESSION_KEY = "hbs_current_admin_v1"; // { id, username, email, createdAt, loginAt }
-
-function safeParse(raw, fallback) {
-  try {
-    const x = JSON.parse(raw);
-    return x == null ? fallback : x;
-  } catch {
-    return fallback;
-  }
-}
-
-function normalizeEmail(s) {
-  return (s || "").trim().toLowerCase();
-}
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
-  // ✅ form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // ✅ error
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const admins = useMemo(() => {
-    const data = safeParse(localStorage.getItem(ADMINS_KEY), []);
-    return Array.isArray(data) ? data : [];
-  }, []);
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true);
 
-    const eNorm = normalizeEmail(email);
-    const pw = password || "";
+    localStorage.removeItem("hbs_admin_token");
+    localStorage.removeItem("hbs_current_admin");
 
-    if (!eNorm) {
-      setErrorMsg("Please enter a valid email.");
-      return;
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email,
+          password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMsg(data.message || "Login failed");
+        return;
+      }
+
+      localStorage.setItem("hbs_admin_token", data.token);
+      localStorage.setItem("hbs_current_admin", JSON.stringify(data.admin));
+
+      const savedGames = JSON.parse(localStorage.getItem("hbs_games") || "[]");
+
+      if (savedGames.length > 0) {
+        window.location.href = "/admin/active-games";
+      } else {
+        window.location.href = "/admin/game-settings";
+      }
+
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Server connection error");
+    } finally {
+      setLoading(false);
     }
-    if (!pw) {
-      setErrorMsg("Please enter password.");
-      return;
-    }
-
-    // ✅ find admin
-    const found = admins.find((a) => normalizeEmail(a?.email) === eNorm);
-
-    if (!found) {
-      setErrorMsg("Account not found. Please signup first.");
-      return;
-    }
-
-    // ✅ demo check: password plain text (โปรเจกต์จริงควรใช้ hash)
-    if ((found.password || "") !== pw) {
-      setErrorMsg("Incorrect password.");
-      return;
-    }
-
-    // ✅ create session
-    const session = {
-      id: found.id,
-      username: found.username,
-      email: normalizeEmail(found.email),
-      createdAt: found.createdAt,
-      loginAt: new Date().toISOString(),
-    };
-    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(session));
-
-    navigate("/admin/game-settings");
   };
 
   return (
     <div className="admin-login-shell">
-      {/* Left image */}
       <div className="admin-login-left" />
 
-      {/* Right form */}
       <div className="admin-login-right">
         <button className="admin-back" type="button" onClick={() => navigate("/")}>
           <ChevronLeft size={18} />
@@ -152,11 +127,10 @@ export default function AdminLoginPage() {
               </button>
             </div>
 
-            {/* ✅ error message */}
             {errorMsg && <div className="admin-error">{errorMsg}</div>}
 
-            <button type="submit" className="admin-submit">
-              Login
+            <button type="submit" className="admin-submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
             </button>
 
             <div className="admin-footer">
