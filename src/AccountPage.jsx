@@ -2568,6 +2568,10 @@ function AccountPage() {
         );
         if (p) p.teamId = teamId;
       });
+      
+      team.members = (game.players || [])
+        .filter((p) => p.teamId === teamId)
+        .map((p) => p.playerId);
 
     // ===================================================
     // ⭐⭐⭐ จุดสำคัญที่สุด (STEP ต่อไปของระบบคุณ)

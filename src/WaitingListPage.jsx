@@ -445,41 +445,28 @@ function WaitingListPage() {
     const me = game.players.find((p) => p.playerId === currentPlayer.id);
     if (!me?.teamId) return;
 
-    const team = game.teams.find((t) => t.id === me.teamId);
+    const team = game.teams.find((t) => t.id === me.teamId && !t?.isDeleted);
     if (!team) return;
 
-    // 1) mark current player ready
+    // 1) mark player ready
     me.ready = true;
     me.readyAt = new Date().toISOString();
 
-    // 2) หา "สมาชิกทั้งหมดของทีม" แบบจริง
-    const acceptedEmails = new Set(
-      (team.invites || [])
-        .filter((inv) => inv.status === "accepted")
-        .map((inv) => String(inv.email || "").trim().toLowerCase())
-        .filter(Boolean)
+    // 2) หา "สมาชิกจริงของทีม" จาก players ที่ผูก teamId นี้
+    const actualTeamPlayers = game.players.filter(
+      (p) => p.teamId === team.id
     );
 
-    const teamPlayers = (game.players || []).filter((p) => {
-      if (p.teamId !== team.id) return false;
+    // 3) sync team.members ให้ตรงกับความจริง
+    team.members = actualTeamPlayers.map((p) => p.playerId);
 
-      const pEmail = String(p.email || "").trim().toLowerCase();
-
-      // host หรือ accepted member ที่อยู่ทีมนี้
-      return (
-        p.playerId === team.leaderPlayerId ||
-        acceptedEmails.has(pEmail)
-      );
-    });
-
-    // 3) ถ้าทุกคน ready แล้ว -> ทีม ready
+    // 4) ทุกคนในทีมต้อง ready ครบ
     const allReady =
-      teamPlayers.length > 0 &&
-      teamPlayers.every((p) => !!p.ready);
+      actualTeamPlayers.length > 0 &&
+      actualTeamPlayers.every((p) => !!p.ready);
 
     team.status = allReady ? "ready" : "not_ready";
     team.confirmedAt = allReady ? new Date().toISOString() : null;
-    team.isConfirmed = allReady;
 
     games[gameIdx] = game;
     localStorage.setItem(GAMES_KEY, JSON.stringify(games));
@@ -487,6 +474,7 @@ function WaitingListPage() {
     window.dispatchEvent(new Event("hbs:games"));
     window.dispatchEvent(new Event("hbs:teams"));
 
+    // sync state หน้า waiting ทันที
     setGameData({ ...game });
     setIsUserReady(true);
   };

@@ -139,34 +139,36 @@ export default function AdminLobbyPage() {
     if (cleaned.length !== arr.length) {
         localStorage.setItem(teamsKey, JSON.stringify(cleaned));
     }
+    
+    // ===== 1) ทีมจริงจาก hbs_games เป็นหลัก =====
+    const teamsFromGame = (Array.isArray(g?.teams) ? g.teams : [])
+      .filter((t) => !t?.isDeleted)
+      .map((t, idx) => ({
+        id: t.id ?? `team_${idx}`,
+        name: (t.name && String(t.name).trim()) ? t.name : `Team ${idx + 1}`,
 
-    // ===== 1) ทีมจริง (จาก TEAMS_KEY) =====
-    const realTeams = cleaned.map((t, idx) => ({
+        // ✅ แยก 2 เรื่องออกจากกัน
+        isJoined: t.isDraft === false,         // Host กด OK แล้ว
+        isConfirmed: t.status === "ready",     // สมาชิกใน WaitingPage กดยืนยันครบแล้ว
+
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+      }));
+
+    // ===== 2) fallback จาก hbs_teams_<code> เฉพาะกรณีไม่มีใน g.teams =====
+    const realTeams = cleaned
+      .filter((t) => !teamsFromGame.some((x) => x.id === t.id))
+      .map((t, idx) => ({
         id: t.id ?? `team_${idx}`,
         name: t.name ?? `Team ${idx + 1}`,
-        status: t.status === "ready" ? "ready" : "not_ready",
+        isJoined: true,
+        isConfirmed: t.status === "ready",
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
-    }));
+      }));
 
-    // ===== 2) ทีม draft จาก hbs_games =====
-    const draftArr = Array.isArray(g?.teams) ? g.teams : [];
-    const draftTeams = draftArr
-        .filter((t) => !t?.isDeleted) // กันทีมที่ถูกลบ
-        .map((t, idx) => ({
-        id: t.id ?? `draft_${idx}`,
-        name: (t.name && String(t.name).trim()) ? t.name : `Team ${idx + 1}`,
-        status: t.isDraft ? "not_ready" : "ready",
-        createdAt: t.createdAt,
-        updatedAt: t.updatedAt,
-        }));
-
-    // ===== 3) merge: ทีมจริงชนะ =====
-    const map = new Map();
-    for (const dt of draftTeams) map.set(dt.id, dt);
-    for (const rt of realTeams) map.set(rt.id, rt);
-
-    return Array.from(map.values());
+    // ===== 3) merge โดยใช้ hbs_games เป็นหลัก =====
+    return [...teamsFromGame, ...realTeams];
     };
 
   // ✅ listen teams updates (WaitingPage ควร dispatch Event("hbs:teams"))
@@ -523,8 +525,10 @@ const deleteTeamHard = (teamId) => {
   if (!gameData) return <div className="p-10 text-center">กำลังโหลดข้อมูลห้อง...</div>;
 
   // ==================== Team lists ====================
-  const readyTeamsReal = teams.filter((t) => t.status === "ready");
-  const notReadyTeamsReal = teams.filter((t) => t.status !== "ready");
+  // ✅ คอลัมน์ซ้าย = Host กด OK แล้ว (เข้าห้องรอแล้ว)
+  // ✅ คอลัมน์ขวา = ยังเป็น draft อยู่
+  const readyTeamsReal = teams.filter((t) => t.isJoined);
+  const notReadyTeamsReal = teams.filter((t) => !t.isJoined);
 
   // ✅ mock ไว้ฝั่งละ 1 ทีม “เมื่อไม่มีทีมจริง”
   const readyTeams = readyTeamsReal;
@@ -682,9 +686,9 @@ const deleteTeamHard = (teamId) => {
                               {index + 1}. {team.name}
                             </span>
 
-                            {team.status === "ready" && (
-                              <span className="team-ready-badge">ยืนยันแล้ว</span>
-                            )}
+                            <span className={team.isConfirmed ? "team-ready-badge" : "team-wait-badge"}>
+                              {team.isConfirmed ? "ยืนยันแล้ว" : "รอยืนยัน"}
+                            </span>
                           </div>
 
                           <button
