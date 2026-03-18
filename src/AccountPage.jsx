@@ -1,16 +1,35 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { readGames, writeGames, findGameByCode } from "./utils/gameStorage";
 import "./AccountPage.css";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import AccountPageModals from "./AccountPageModals";
+import AccountTeamSetupSection from "./AccountTeamSetupSection";
+
+import {
+  normalizeEmail,
+  isValidEmail,
+  makeTeamId,
+  isEmailRegistered,
+  getInvitedTeamData,
+  getMyInviteState,
+} from "./utils/accountTeamActions";
+
+import {
+  getDraftKeyForPlayer,
+  getModeLabelEN,
+  safeJSONParse,
+  clamp,
+  getTeamLimitFromMode,
+} from "./utils/accountHelpers";
+
 import {
   Settings,
   LogOut,
   Globe,
-  User,
   Clock,
   ChevronRight,
   Megaphone,
   Building2,
-  Share2,
   Edit3,
   ChevronDown,
   PlusCircle,
@@ -24,115 +43,13 @@ const GAMES_KEY = "hbs_games";
 const PLAYER_SESSION_KEY = "hbs_current_player"; // { id, name, email }
 const ACCOUNT_DRAFT_KEY_BASE = "hbs_account_draft_v1";
 const USERS_KEY = "hbs_players";
-// แนะนำให้ RegisterPage เซฟเป็น array เช่น [{ id, name, email }]
-
-function getDraftKeyForPlayer(playerId) {
-  return `${ACCOUNT_DRAFT_KEY_BASE}_${playerId || "unknown"}`;
-}
-
-function getModeLabelEN(modeObj) {
-    if (!modeObj) return "";
-    const type = modeObj.type;
-
-    if (type === "single") return "Single";
-
-    if (type === "team") {
-      const n = modeObj.teamSize;
-      return n ? `Team (${n} people)` : "Team";
-    }
-
-    if (type === "other") {
-      const min = modeObj.minTeams;
-      const max = modeObj.maxTeams;
-
-      if (min != null && max != null)
-        return `Team (${min}-${max} people)`;
-
-      if (max != null)
-        return `Team (1-${max} people)`;
-
-      return "Team";
-    }
-
-    return "";
-}
-
-function safeJSONParse(raw, fallback) {
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed === null ? fallback : parsed;
-  } catch {
-    return fallback;
-  }
-}
-
-function makeTeamId() {
-  return `team-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 7)}`;
-}
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
-function getTeamLimitFromMode(modeObj) {
-  const type = modeObj?.type;
-
-  if (type === "team") {
-    const teamSize = clamp(parseInt(modeObj?.teamSize || 4, 10) || 4, 2, 4);
-    return {
-      type,
-      minTotal: teamSize,
-      maxTotal: teamSize,
-      startTotal: teamSize,
-    };
-  }
-
-  if (type === "other") {
-    const minTeams = clamp(parseInt(modeObj?.minTeams ?? 1, 10) || 1, 1, 4);
-    const maxTeams = clamp(
-      parseInt(modeObj?.maxTeams ?? 4, 10) || 4,
-      minTeams,
-      4
-    );
-    return {
-      type,
-      minTotal: minTeams,
-      maxTotal: maxTeams,
-      startTotal: minTeams,
-    };
-  }
-
-  return { type: "single", minTotal: 1, maxTotal: 1, startTotal: 1 };
-}
-
-function normalizeEmail(s) {
-  return (s || "").trim().toLowerCase();
-}
-
-function isValidEmail(email) {
-  const e = normalizeEmail(email);
-  // แบบง่าย+พอใช้งานจริง (กัน "888" / "aaa@" / "a@b" ฯลฯ)
-  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
-}
-
-function readGames() {
-  return safeJSONParse(localStorage.getItem(GAMES_KEY), []);
-}
+const ACCOUNT_NOTICE_KEY = "hbs_account_notice";
 
 function hasMembershipInGame(game, playerId) {
   if (!game || !playerId) return false;
   const me = (game.players || []).find((p) => p.playerId === playerId);
   // ต้องมี teamId จริงถึงถือว่าอยู่ในห้อง/ทีม
   return !!me?.teamId;
-}
-
-function findGameByCode(code) {
-  const c = (code || "").trim().toUpperCase();
-  if (!c) return null;
-  const games = readGames();
-  return games.find((g) => (g.code || "").toUpperCase() === c) || null;
 }
 
 function readUsers() {
@@ -149,18 +66,6 @@ function readUsers() {
   if (parsed && typeof parsed === "object") return Object.values(parsed);
 
   return [];
-}
-
-function isEmailRegistered(email) {
-  const e = normalizeEmail(email);
-  if (!e) return false;
-
-  const users = readUsers();
-  return users.some((u) => normalizeEmail(u?.email) === e);
-}
-
-function writeGames(games) {
-  localStorage.setItem(GAMES_KEY, JSON.stringify(games));
 }
 
 function removeInvitesByHostDraft(games, hostPlayerId, gameCode, draftTeamId) {
@@ -350,10 +255,13 @@ function AccountPage() {
   const [hostNotice, setHostNotice] = useState(null);
   const [roleNotice, setRoleNotice] = useState(null);
   const [teamUpdateNotice, setTeamUpdateNotice] = useState(null);
-  const [hydrated, setHydrated] = useState(false); 
+  const [hydrated, setHydrated] = useState(false);
+  const [accountNotice, setAccountNotice] = useState("");
+
   const didHydrateRef = useRef(false);
+
   // ✅ NEW: สำหรับคนที่ join ทีมแล้ว (แต่ไม่ใช่ host) ให้เห็นแบบ read-only
-  const [memberView, setMemberView] = useState(null); 
+  const [memberView, setMemberView] = useState(null);
   // { gameCode, gameName, teamId, teamName, hostName, hostEmail, adminDisplay }
 
   const [joinCode, setJoinCode] = useState("");
@@ -363,6 +271,23 @@ function AccountPage() {
   const [showTeamNameWarning, setShowTeamNameWarning] = useState(false);
 
   const location = useLocation();
+
+  useEffect(() => {
+    const msg = localStorage.getItem(ACCOUNT_NOTICE_KEY);
+    if (!msg) return;
+
+    setAccountNotice(msg);
+    localStorage.removeItem(ACCOUNT_NOTICE_KEY);
+  }, []);
+
+  useEffect(() => {
+    const msg = location.state?.teamRemovedNotice;
+    if (!msg) return;
+
+    alert(msg);
+
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [location, navigate]);
 
   useEffect(() => {
     const msg = location.state?.toast;
@@ -416,7 +341,7 @@ function AccountPage() {
       navigate("/waiting-room", { state: { gameCode: g.code } });
     }
   }, [storageTick, isJoined, joinedGame?.code, currentPlayer?.id, navigate]);
-  
+
   // =========================
   // Invite / Register Modal
   // =========================
@@ -427,7 +352,7 @@ function AccountPage() {
 
   // ✅ Remove Confirm Modal
   const [showRemoveModal, setShowRemoveModal] = useState(false);
-  const [removeTarget, setRemoveTarget] = useState(null); 
+  const [removeTarget, setRemoveTarget] = useState(null);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   function pickLatestTeam(arr) {
@@ -453,8 +378,8 @@ function AccountPage() {
     const email = normalizeEmail(teamMembers[index]?.email);
     if (!email) return;
 
-  setRemoveTarget({ index, email });
-  setShowRemoveModal(true);
+    setRemoveTarget({ index, email });
+    setShowRemoveModal(true);
   }
   function closeRemoveConfirm() {
     setShowRemoveModal(false);
@@ -509,7 +434,7 @@ function AccountPage() {
       try {
         const data = await res.json();
         msg = data?.error || msg;
-      } catch {}
+      } catch { }
       throw new Error(msg);
     }
 
@@ -569,14 +494,8 @@ function AccountPage() {
   }
 
   function writeGamesAndRefresh(games) {
-    localStorage.setItem(GAMES_KEY, JSON.stringify(games));
-
-    // ✅ รีเฟรชหน้าเดียวกัน
+    writeGames(games);
     setStorageTick((t) => t + 1);
-
-    // ✅ บอกทุก component/ทุกหน้าใน "tab เดียวกัน" ให้รีเฟรช
-    window.dispatchEvent(new Event("hbs:games"));
-    window.dispatchEvent(new Event("hbs:teams"));
   }
 
   function resetAllUIState({ alertMsg } = {}) {
@@ -643,7 +562,7 @@ function AccountPage() {
     return { games, draftId, team: t };
   }
 
-   // สแกนหา invite ที่ pending ของอีเมลนี้
+  // สแกนหา invite ที่ pending ของอีเมลนี้
   function scanPendingInvite() {
     const email = normalizeEmail(currentPlayer?.email);
     if (!email) return null;
@@ -833,58 +752,58 @@ function AccountPage() {
       setTeamName(storageName);
     }
 
-  const visibleInvs = (hostTeam.invites || []).filter((inv) =>
-    ["pending", "accepted", "denied"].includes(inv?.status)
-  );
+    const visibleInvs = (hostTeam.invites || []).filter((inv) =>
+      ["pending", "accepted", "denied"].includes(inv?.status)
+    );
 
-  if (visibleInvs.length > 0) {
-    const desiredOtherCount = Math.max(0, (teamLimit?.minTotal || 1) - 1);
-    const keys = ["member2", "member3", "member4"].slice(0, desiredOtherCount);
+    if (visibleInvs.length > 0) {
+      const desiredOtherCount = Math.max(0, (teamLimit?.minTotal || 1) - 1);
+      const keys = ["member2", "member3", "member4"].slice(0, desiredOtherCount);
 
-    setTeamMembers((prev) => {
-      const prevSafe = Array.isArray(prev) ? prev : [];
-      const byKey = new Map(prevSafe.map((m) => [m.key, m]));
+      setTeamMembers((prev) => {
+        const prevSafe = Array.isArray(prev) ? prev : [];
+        const byKey = new Map(prevSafe.map((m) => [m.key, m]));
 
-      // map slotKey -> invite
-      const invBySlot = new Map();
-      visibleInvs.forEach((inv) => {
-        if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
+        // map slotKey -> invite
+        const invBySlot = new Map();
+        visibleInvs.forEach((inv) => {
+          if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
+        });
+
+        return keys.map((k) => {
+          const inv = invBySlot.get(k);
+          if (inv) {
+            return {
+              key: k,
+              email: inv.email || "",
+              status: inv.status === "accepted" ? "accepted" : "sent",
+            };
+          }
+          // ไม่มี invite ของ slot นี้ -> คงช่องเดิมไว้
+          return byKey.get(k) || { key: k, email: "", status: "idle" };
+        });
       });
 
-      return keys.map((k) => {
-        const inv = invBySlot.get(k);
-        if (inv) {
-          return {
-            key: k,
-            email: inv.email || "",
-            status: inv.status === "accepted" ? "accepted" : "sent",
-          };
-        }
-        // ไม่มี invite ของ slot นี้ -> คงช่องเดิมไว้
-        return byKey.get(k) || { key: k, email: "", status: "idle" };
+      setTeamRoles((prev) => {
+        const next = { ...(prev || {}), you: "CEO" };
+
+        const invBySlot = new Map();
+        visibleInvs.forEach((inv) => {
+          if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
+        });
+
+        keys.forEach((k) => {
+          const inv = invBySlot.get(k);
+          if (inv) {
+            next[k] = (inv.role || "").trim();
+          } else {
+            if (next[k] == null) next[k] = "";
+          }
+        });
+
+        return next;
       });
-    });
-
-    setTeamRoles((prev) => {
-      const next = { ...(prev || {}), you: "CEO" };
-
-      const invBySlot = new Map();
-      visibleInvs.forEach((inv) => {
-        if (inv?.slotKey) invBySlot.set(inv.slotKey, inv);
-      });
-
-      keys.forEach((k) => {
-        const inv = invBySlot.get(k);
-        if (inv) {
-          next[k] = (inv.role || "").trim();
-        } else {
-          if (next[k] == null) next[k] = "";
-        }
-      });
-
-      return next;
-    });
-  }
+    }
 
   }, [
     hydrated,
@@ -926,8 +845,8 @@ function AccountPage() {
             n.type === "team_deleted"
               ? "Team Deleted"
               : n.type === "member_removed"
-              ? "Removed from Team"
-              : "System Notice",
+                ? "Removed from Team"
+                : "System Notice",
           message: n.message || "",
           gameCode: g.code,
           createdAt: n.createdAt,
@@ -1134,16 +1053,29 @@ function AccountPage() {
       const myTeamId = me?.teamId;
 
       if (myTeamId) {
-        const teamAlive = (g.teams || []).some((t) => t?.id === myTeamId && !t?.isDeleted);
-        if (!teamAlive) {
+        const myTeam = (g.teams || []).find((t) => t?.id === myTeamId);
+
+        const teamRemoved =
+          !myTeam ||
+          myTeam?.isDeleted ||
+          myTeam?.removedByAdmin;
+
+        if (teamRemoved) {
           if (me) me.teamId = null;
+
           const gi = games.findIndex((x) => x.code === g.code);
           if (gi !== -1) {
             games[gi] = g;
             writeGamesAndRefresh(games);
           }
 
-          resetAllUIState({ alertMsg: "ทีมของคุณถูกลบโดย Admin แล้ว ระบบออกจากทีมให้อัตโนมัติ" });
+          const removedMsg =
+            "แอดมินได้นำทีมของท่านออกจากเกม กรุณาะจัดทีมใหม่อีกครั้ง";
+
+          resetAllUIState();
+
+          localStorage.setItem(ACCOUNT_NOTICE_KEY, removedMsg);
+          setAccountNotice(removedMsg);
         }
       }
       return;
@@ -1230,7 +1162,7 @@ function AccountPage() {
   const [teamRoles, setTeamRoles] = useState({ you: "CEO" });
   const [teamMembers, setTeamMembers] = useState([]); // [{key, email, status}]
 
-    // =========================
+  // =========================
   // Auto-switch unregistered -> invite after register
   // =========================
   useEffect(() => {
@@ -1251,7 +1183,7 @@ function AccountPage() {
   }, [storageTick, isJoined, joinedGame, draftTeamId]);
 
   // ✅ NEW: รีเช็คตอนกลับมาหน้า Account (แท็บเดียวกัน / ปิดโมดอลแล้ว)
-// เพราะ storage event จะไม่ยิงในแท็บเดียวกันเสมอ
+  // เพราะ storage event จะไม่ยิงในแท็บเดียวกันเสมอ
   useEffect(() => {
     if (!showInviteModal) {
       setTeamMembers((prev) =>
@@ -1279,7 +1211,7 @@ function AccountPage() {
     const draft = {
       joinCode,
       isJoined,
-      joinedGameCode: (joinedGame?.code || "").trim().toUpperCase(), 
+      joinedGameCode: (joinedGame?.code || "").trim().toUpperCase(),
       showTeamSetup,
       teamName,
       isTeamNameLocked,
@@ -1350,7 +1282,7 @@ function AccountPage() {
 
     // 1. ดึงข้อมูลทีมของ Host จาก Storage มาดูก่อน
     const { team } = getHostTeamFromStorage();
-    
+
     // 🚩 เช็คว่า: มีทีมนี้อยู่จริงไหม และ มีข้อมูลสมาชิก (Invites) ค้างอยู่หรือเปล่า
     if (team && Array.isArray(team.invites) && team.invites.length > 0) {
       // ✅ ดึงข้อมูลสมาชิกเดิมมาใส่ State
@@ -1359,7 +1291,7 @@ function AccountPage() {
         email: inv.email,
         status: inv.status === "accepted" ? "accepted" : "sent",
       }));
-      
+
       setTeamMembers(restoredMembers);
 
       // ✅ ดึงตำแหน่งเดิมมาใส่ State
@@ -1370,7 +1302,7 @@ function AccountPage() {
       });
       setTeamRoles(restoredRoles);
       setTeamName(team.name || "");
-      
+
       // ดึงข้อมูลเดิมมาใส่เสร็จแล้ว ให้หยุดการทำงาน (ไม่ต้องไป Init ใหม่ข้างล่าง)
       return;
     }
@@ -1548,12 +1480,9 @@ function AccountPage() {
     const me = (g.players || []).find((p) => p.playerId === currentPlayer.id);
     const myTeamId = me?.teamId;
 
-    //if (!myTeamId) {
-   //   resetAllUIState({ alertMsg: "Team no longer exists. You have been removed." });
-   //   return;
-   // }
-
-    const t = (g.teams || []).find((x) => x.id === myTeamId && !x.isDeleted);
+    const t = (g.teams || []).find(
+      (x) => x.id === myTeamId && !x.isDeleted && !x.removedByAdmin
+    );
     if (!t) {
       setMemberView(null);
       return;
@@ -1851,7 +1780,7 @@ function AccountPage() {
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageTick, isJoined, joinedGame?.code, draftTeamId]);
-  
+
   // -------------------------
   // Role swap
   // -------------------------
@@ -2100,7 +2029,7 @@ function AccountPage() {
 
   };
 
-   const handleShareInvite = (email, role) => {
+  const handleShareInvite = (email, role) => {
     if (!isJoined || !joinedGame) return;
 
     // ✅ NEW: ต้องมีชื่อทีม + ห้ามซ้ำ ก่อน share
@@ -2129,7 +2058,7 @@ function AccountPage() {
     const gameName = joinedGame?.name || "";
     const adminName = currentPlayer?.name || "Host";
     const adminEmail = currentPlayer?.email || "";
-    const teamId = ensureDraftTeamIdReady(teamName); 
+    const teamId = ensureDraftTeamIdReady(teamName);
     const teamNm = (teamName || "").trim() || "Hotel Team";
 
     const inviteLink = `${window.location.origin}/invite?code=${gameCode}&team=${teamId}`;
@@ -2194,7 +2123,7 @@ function AccountPage() {
       // user cancelled share -> ignore
     }
   }
-  
+
   const handleEditClick = (index) => {
     const oldEmail = teamMembers[index]?.email;
 
@@ -2210,16 +2139,16 @@ function AccountPage() {
   };
 
   const [showExitModal, setShowExitModal] = useState(false);
-    const [exitMode, setExitMode] = useState(null); // "delete" | "leave"
+  const [exitMode, setExitMode] = useState(null); // "delete" | "leave"
 
-    function openExitModal(mode) {
-      setExitMode(mode);
-      setShowExitModal(true);
-    }
-    function closeExitModal() {
-      setShowExitModal(false);
-      setExitMode(null);
-    }
+  function openExitModal(mode) {
+    setExitMode(mode);
+    setShowExitModal(true);
+  }
+  function closeExitModal() {
+    setShowExitModal(false);
+    setExitMode(null);
+  }
 
   // ✅ Add/remove member (only "other")
   const handleAddMember = () => {
@@ -2482,7 +2411,6 @@ function AccountPage() {
       );
 
       writeGamesAndRefresh(newGames);
-      window.dispatchEvent(new Event("hbs:teams"));
     } catch (e) {
       console.error(e);
     }
@@ -2568,10 +2496,10 @@ function AccountPage() {
         );
         if (p) p.teamId = teamId;
       });
-      
-      team.members = (game.players || [])
-        .filter((p) => p.teamId === teamId)
-        .map((p) => p.playerId);
+
+    team.members = (game.players || [])
+      .filter((p) => p.teamId === teamId)
+      .map((p) => p.playerId);
 
     // ===================================================
     // ⭐⭐⭐ จุดสำคัญที่สุด (STEP ต่อไปของระบบคุณ)
@@ -2584,7 +2512,6 @@ function AccountPage() {
 
     games[idx] = game;
     writeGamesAndRefresh(games);
-    setGameData({ ...game });
 
     localStorage.removeItem(getDraftKeyForPlayer(currentPlayer?.id));
 
@@ -2638,89 +2565,89 @@ function AccountPage() {
   /* =========================
      OK -> Create Team
      ========================= */
-    const handleOkClick = () => {
+  const handleOkClick = () => {
 
-      if (!joinedGame) {
-        alert("ยังไม่ได้ Join เกม");
-        return;
-      }
-      // ✅ 1) ต้องมีชื่อทีมก่อน
-      const trimmedName = (teamName || "").trim();
-        if (!trimmedName) {
-          setShowTeamNameWarning(true);
-          return;
-        }
+    if (!joinedGame) {
+      alert("ยังไม่ได้ Join เกม");
+      return;
+    }
+    // ✅ 1) ต้องมีชื่อทีมก่อน
+    const trimmedName = (teamName || "").trim();
+    if (!trimmedName) {
+      setShowTeamNameWarning(true);
+      return;
+    }
 
-       // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room (ทีมในเกมเดียวกัน)
-      if (isDuplicateTeamName(trimmedName)) {
-        alert("ชื่อทีมนี้ถูกใช้แล้ว กรุณาเปลี่ยนชื่อทีม");
-        return;
-      }
-      if (!canOk) {
-        alert(`Waiting accepted: ${totalReady}/${requiredTotal}`);
-        return;
-      }
+    // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room (ทีมในเกมเดียวกัน)
+    if (isDuplicateTeamName(trimmedName)) {
+      alert("ชื่อทีมนี้ถูกใช้แล้ว กรุณาเปลี่ยนชื่อทีม");
+      return;
+    }
+    if (!canOk) {
+      alert(`Waiting accepted: ${totalReady}/${requiredTotal}`);
+      return;
+    }
 
-      // ✅ แค่นี้พอ เปิด popup
-      setShowOkModal(true);
-    };
+    // ✅ แค่นี้พอ เปิด popup
+    setShowOkModal(true);
+  };
 
-    /* =========================
-      Accept / Deny Invite
-      ========================= */
-    const handleAcceptInvite = () => {
-      if (!pendingInvite || !currentPlayer?.id) return;
+  /* =========================
+    Accept / Deny Invite
+    ========================= */
+  const handleAcceptInvite = () => {
+    if (!pendingInvite || !currentPlayer?.id) return;
 
-      const email = normalizeEmail(currentPlayer.email);
-      const games = readGames();
-      const gameIdx = games.findIndex((g) => g.code === pendingInvite.gameCode);
-      if (gameIdx === -1) return;
+    const email = normalizeEmail(currentPlayer.email);
+    const games = readGames();
+    const gameIdx = games.findIndex((g) => g.code === pendingInvite.gameCode);
+    if (gameIdx === -1) return;
 
-      const game = games[gameIdx];
-      const team = game.teams?.find((t) => t.id === pendingInvite.teamId);
-      if (!team || team.isDeleted) return;
+    const game = games[gameIdx];
+    const team = game.teams?.find((t) => t.id === pendingInvite.teamId);
+    if (!team || team.isDeleted) return;
 
-      // 1) update invite -> accepted
-      const inv = team.invites?.find((x) => normalizeEmail(x.email) === email);
-      if (inv) {
-        inv.status = "accepted";
-        inv.acceptedAt = new Date().toISOString();
-      }
+    // 1) update invite -> accepted
+    const inv = team.invites?.find((x) => normalizeEmail(x.email) === email);
+    if (inv) {
+      inv.status = "accepted";
+      inv.acceptedAt = new Date().toISOString();
+    }
 
-      // 2) bind player -> team
-      let p = (game.players || []).find((pp) => pp.playerId === currentPlayer.id);
-      if (!p) {
-        game.players = game.players || [];
-        game.players.push({
-          playerId: currentPlayer.id,
-          name: currentPlayer.name,
-          email: currentPlayer.email,
-          teamId: team.id,
-          ready: false,
-          joinedAt: new Date().toISOString(),
-        });
-      } else {
-        p.teamId = team.id;
-      }
+    // 2) bind player -> team
+    let p = (game.players || []).find((pp) => pp.playerId === currentPlayer.id);
+    if (!p) {
+      game.players = game.players || [];
+      game.players.push({
+        playerId: currentPlayer.id,
+        name: currentPlayer.name,
+        email: currentPlayer.email,
+        teamId: team.id,
+        ready: false,
+        joinedAt: new Date().toISOString(),
+      });
+    } else {
+      p.teamId = team.id;
+    }
 
-      games[gameIdx] = game;
-      writeGamesAndRefresh(games);
+    games[gameIdx] = game;
+    writeGamesAndRefresh(games);
 
-      // ✅ สำคัญ: ทำให้ member “เข้าระบบเกม” ทันที เพื่อให้ memberView ทำงาน
-      const code = (pendingInvite.gameCode || "").trim().toUpperCase();
-      setJoinCode(code);
-      setIsJoined(true);
-      setJoinedGame(findGameByCode(code));
-      setShowTeamSetup(true);
-      localStorage.setItem("hbs_active_game_code_v1", code);
+    // ✅ สำคัญ: ทำให้ member “เข้าระบบเกม” ทันที เพื่อให้ memberView ทำงาน
+    const code = (pendingInvite.gameCode || "").trim().toUpperCase();
+    setJoinCode(code);
+    setIsJoined(true);
+    setJoinedGame(findGameByCode(code));
+    setShowTeamSetup(true);
+    localStorage.setItem("hbs_active_game_code_v1", code);
 
-      // ✅ lock view เป็น accepted (ยังเก็บไว้ได้)
-      setAcceptedInviteInfo(pendingInvite);
-      setIsAcceptedInvite(true);
+    // ✅ lock view เป็น accepted (ยังเก็บไว้ได้)
+    setAcceptedInviteInfo(pendingInvite);
+    setIsAcceptedInvite(true);
 
-      // เคลียร์ inbox
-      setPendingInvite(null);
-    };
+    // เคลียร์ inbox
+    setPendingInvite(null);
+  };
 
   const handleDenyInvite = () => {
     if (!pendingInvite) return;
@@ -2914,9 +2841,9 @@ function AccountPage() {
 
   // ✅ เปิดปุ่ม OK เมื่อครบตามที่ต้องมี
   const canOk =
-  isJoined &&
-  totalReady >= teamLimit.minTotal &&
-  totalReady <= teamLimit.maxTotal;
+    isJoined &&
+    totalReady >= teamLimit.minTotal &&
+    totalReady <= teamLimit.maxTotal;
 
   const okLabel = useMemo(() => {
     if (teamLimit.type === "single") return `Ready ${totalReady}`;
@@ -2927,203 +2854,192 @@ function AccountPage() {
 
   // ✅ Data สำหรับ OK Modal (เฉพาะ Accepted)
   const okModalData = useMemo(() => {
-  const { team } = getHostTeamFromStorage();
+    const { team } = getHostTeamFromStorage();
 
-  const accepted = (team?.invites || [])
-    .filter((x) => x.status === "accepted")
-    .map((x) => ({
-      email: x.email,
-      role: x.role || "-",
-    }));
+    const accepted = (team?.invites || [])
+      .filter((x) => x.status === "accepted")
+      .map((x) => ({
+        email: x.email,
+        role: x.role || "-",
+      }));
 
-  return {
-    gameName: joinedGame?.name || "-",
-    gameCode: joinedGame?.code || "-",
-    modeLabel: getModeLabelEN(joinedGame?.settings?.mode) || "-",
-    teamName: teamName?.trim() || "Hotel Team",
-    hostName: currentPlayer?.name || "Host",
-    hostEmail: currentPlayer?.email || "",
-    accepted,
-  };
-}, [storageTick, joinedGame, draftTeamId, currentPlayer, teamName]);
+    return {
+      gameName: joinedGame?.name || "-",
+      gameCode: joinedGame?.code || "-",
+      modeLabel: getModeLabelEN(joinedGame?.settings?.mode) || "-",
+      teamName: teamName?.trim() || "Hotel Team",
+      hostName: currentPlayer?.name || "Host",
+      hostEmail: currentPlayer?.email || "",
+      accepted,
+    };
+  }, [storageTick, joinedGame, draftTeamId, currentPlayer, teamName]);
 
-useEffect(() => {
-  if (!isAcceptedInvite) return;
-  if (!acceptedInviteInfo?.gameCode || !acceptedInviteInfo?.teamId) return;
+  useEffect(() => {
+    if (!isAcceptedInvite) return;
+    if (!acceptedInviteInfo?.gameCode || !acceptedInviteInfo?.teamId) return;
 
-  const games = readGames();
-  const g = games.find(
-    (x) =>
-      (x.code || "").toUpperCase() ===
-      (acceptedInviteInfo.gameCode || "").toUpperCase()
-  );
-  if (!g) return;
+    const games = readGames();
+    const g = games.find(
+      (x) =>
+        (x.code || "").toUpperCase() ===
+        (acceptedInviteInfo.gameCode || "").toUpperCase()
+    );
+    if (!g) return;
 
-  const t = (g.teams || []).find(
-    (x) => x.id === acceptedInviteInfo.teamId
-  );
-  if (!t) return;
+    const t = (g.teams || []).find(
+      (x) => x.id === acceptedInviteInfo.teamId
+    );
+    if (!t) return;
 
-  // ✅ Host กด OK แล้ว
-  if (t.isDraft === false) {
-    setIsAcceptedInvite(false);
-    setAcceptedInviteInfo(null);
-    navigate("/waiting-room", { state: { gameCode: g.code } });
+    // ✅ Host กด OK แล้ว
+    if (t.isDraft === false) {
+      setIsAcceptedInvite(false);
+      setAcceptedInviteInfo(null);
+      navigate("/waiting-room", { state: { gameCode: g.code } });
+    }
+  }, [
+    storageTick,
+    isAcceptedInvite,
+    acceptedInviteInfo?.gameCode,
+    acceptedInviteInfo?.teamId,
+    navigate,
+  ]);
+
+  // ✅ Host must read invites from the exact draftTeamId only
+  const inviteStatusMap = useMemo(() => {
+    const map = new Map(); // emailNorm -> status
+    if (!joinedGame?.code || !draftTeamId) return map;
+
+    const games = readGames();
+    const g = games.find((x) => (x.code || "").toUpperCase() === (joinedGame.code || "").toUpperCase());
+    if (!g) return map;
+
+    const t = (g.teams || []).find((x) => x?.id === draftTeamId);
+    if (!t) return map;
+
+    (t.invites || []).forEach((inv) => {
+      const em = normalizeEmail(inv.email);
+      if (!em) return;
+      map.set(em, inv.status);
+    });
+
+    return map;
+  }, [storageTick, joinedGame?.code, draftTeamId]);
+
+  const pendingRoleMap = useMemo(() => {
+    const map = new Map(); // emailNorm -> role (pending only)
+    if (!joinedGame?.code || !draftTeamId) return map;
+
+    const games = readGames();
+    const g = games.find((x) => (x.code || "").toUpperCase() === (joinedGame.code || "").toUpperCase());
+    if (!g) return map;
+
+    const t = (g.teams || []).find((x) => x?.id === draftTeamId);
+    if (!t) return map;
+
+    (t.invites || []).forEach((inv) => {
+      if (inv?.status !== "pending") return;
+      const em = normalizeEmail(inv.email);
+      const role = (inv.role || "").trim();
+      if (!em || !role) return;
+      map.set(em, role);
+    });
+
+    return map;
+  }, [storageTick, joinedGame?.code, draftTeamId]);
+
+  function ensureMemberSlots(desiredOtherCount) {
+    const keys = ["member2", "member3", "member4"];
+
+    setTeamMembers((prev) => {
+      const safePrev = Array.isArray(prev) ? prev : [];
+
+      // ตัดให้ไม่เกิน 3 ช่อง
+      const target = clamp(desiredOtherCount, 0, 3);
+
+      // map ตาม key เพื่อคง email/status เดิม
+      const byKey = new Map(safePrev.map((m) => [m.key, m]));
+
+      const next = keys.slice(0, target).map((k) => {
+        const old = byKey.get(k);
+
+        if (!old) return { key: k, email: "", status: "idle" };
+
+        const emailTrim = (old.email || "").trim();
+
+        // ✅ ถ้าอีเมลว่าง -> อย่าให้ status ค้างเป็น sent/unregistered
+        if (!emailTrim) return { ...old, key: k, email: "", status: "idle" };
+
+        return { ...old, key: k };
+      });
+
+      return next;
+    });
+
+    setTeamRoles((prev) => {
+      const next = { ...(prev || {}), you: "CEO" };
+      const target = clamp(desiredOtherCount, 0, 3);
+
+      keys.slice(0, target).forEach((k) => {
+        if (next[k] == null) next[k] = "";
+      });
+
+      // ลบ role ของช่องที่เกินออก (กันค้าง)
+      keys.slice(target).forEach((k) => {
+        if (k in next) delete next[k];
+      });
+
+      return next;
+    });
   }
-}, [
-  storageTick,
-  isAcceptedInvite,
-  acceptedInviteInfo?.gameCode,
-  acceptedInviteInfo?.teamId,
-  navigate,
-]);
 
-const getInvitedTeamData = () => {
-  if (!inviteView) return null;
-  const games = readGames();
-  const game = games.find((g) => g.code === inviteView.gameCode);
-  if (!game) return null;
-
-  const t = game.teams?.find((x) => x.id === inviteView.teamId) || null;
-  if (!t || t.isDeleted) return null; // ✅ สำคัญ
-  return t;
-};
-
-function getMyInviteState() {
-  const email = normalizeEmail(currentPlayer?.email);
-  if (!email) return { accepted: false, waitingHostOk: false };
-
-  // ใช้ตัวที่มี gameCode/teamId อยู่
-  const info = pendingInvite || acceptedInviteInfo || memberView;
-  if (!info?.gameCode || !info?.teamId) return { accepted: false, waitingHostOk: false };
-
-  const games = readGames();
-  const g = games.find(
-    (x) => (x.code || "").toUpperCase() === (info.gameCode || "").toUpperCase()
-  );
-  const t = (g?.teams || []).find((x) => x?.id === info.teamId && !x?.isDeleted);
-  if (!t) return { accepted: false, waitingHostOk: false };
-
-  const inv = (t.invites || []).find((x) => normalizeEmail(x.email) === email);
-
-  const accepted = inv?.status === "accepted";
-  // accepted + team ยัง draft = รอ host กด OK
-  const waitingHostOk = accepted && t.isDraft !== false;
-
-  return { accepted, waitingHostOk };
-}
-
-function getMyAcceptedStatusInTeam() {
-  const email = normalizeEmail(currentPlayer?.email);
-  if (!email) return { accepted: false, waitingHostOk: false };
-
-  const info = acceptedInviteInfo || memberView; // ใช้ตัวไหนก็ได้ที่มี teamId/gameCode
-  if (!info?.gameCode || !info?.teamId) return { accepted: false, waitingHostOk: false };
-
-  const games = readGames();
-  const g = games.find((x) => (x.code || "").toUpperCase() === (info.gameCode || "").toUpperCase());
-  const t = (g?.teams || []).find((x) => x?.id === info.teamId && !x?.isDeleted);
-  if (!t) return { accepted: false, waitingHostOk: false };
-
-  const inv = (t.invites || []).find((x) => normalizeEmail(x.email) === email);
-  const accepted = inv?.status === "accepted";
-  const waitingHostOk = accepted && t.isDraft !== false; // draft=true/undefined = ยังไม่ OK
-
-  return { accepted, waitingHostOk };
-}
-
-// ✅ Host must read invites from the exact draftTeamId only
-const inviteStatusMap = useMemo(() => {
-  const map = new Map(); // emailNorm -> status
-  if (!joinedGame?.code || !draftTeamId) return map;
-
-  const games = readGames();
-  const g = games.find((x) => (x.code || "").toUpperCase() === (joinedGame.code || "").toUpperCase());
-  if (!g) return map;
-
-  const t = (g.teams || []).find((x) => x?.id === draftTeamId);
-  if (!t) return map;
-
-  (t.invites || []).forEach((inv) => {
-    const em = normalizeEmail(inv.email);
-    if (!em) return;
-    map.set(em, inv.status);
+  const myInviteState = getMyInviteState({
+    currentPlayer,
+    pendingInvite,
+    acceptedInviteInfo,
+    memberView,
+    readGames,
+    normalizeEmail,
   });
-
-  return map;
-}, [storageTick, joinedGame?.code, draftTeamId]);
-
-const pendingRoleMap = useMemo(() => {
-  const map = new Map(); // emailNorm -> role (pending only)
-  if (!joinedGame?.code || !draftTeamId) return map;
-
-  const games = readGames();
-  const g = games.find((x) => (x.code || "").toUpperCase() === (joinedGame.code || "").toUpperCase());
-  if (!g) return map;
-
-  const t = (g.teams || []).find((x) => x?.id === draftTeamId);
-  if (!t) return map;
-
-  (t.invites || []).forEach((inv) => {
-    if (inv?.status !== "pending") return;
-    const em = normalizeEmail(inv.email);
-    const role = (inv.role || "").trim();
-    if (!em || !role) return;
-    map.set(em, role);
-  });
-
-  return map;
-}, [storageTick, joinedGame?.code, draftTeamId]);
-
-function ensureMemberSlots(desiredOtherCount) {
-  const keys = ["member2", "member3", "member4"];
-
-  setTeamMembers((prev) => {
-    const safePrev = Array.isArray(prev) ? prev : [];
-
-    // ตัดให้ไม่เกิน 3 ช่อง
-    const target = clamp(desiredOtherCount, 0, 3);
-
-    // map ตาม key เพื่อคง email/status เดิม
-    const byKey = new Map(safePrev.map((m) => [m.key, m]));
-
-    const next = keys.slice(0, target).map((k) => {
-      const old = byKey.get(k);
-
-      if (!old) return { key: k, email: "", status: "idle" };
-
-      const emailTrim = (old.email || "").trim();
-
-      // ✅ ถ้าอีเมลว่าง -> อย่าให้ status ค้างเป็น sent/unregistered
-      if (!emailTrim) return { ...old, key: k, email: "", status: "idle" };
-
-      return { ...old, key: k };
-    });
-
-    return next;
-  });
-
-  setTeamRoles((prev) => {
-    const next = { ...(prev || {}), you: "CEO" };
-    const target = clamp(desiredOtherCount, 0, 3);
-
-    keys.slice(0, target).forEach((k) => {
-      if (next[k] == null) next[k] = "";
-    });
-
-    // ลบ role ของช่องที่เกินออก (กันค้าง)
-    keys.slice(target).forEach((k) => {
-      if (k in next) delete next[k];
-    });
-
-    return next;
-  });
-}
-
-const myInviteState = getMyInviteState();
 
   return (
     <div className="account-container">
+      {accountNotice && (
+        <div
+          style={{
+            marginTop: "24px 0",
+            padding: "14px 16px",
+            borderRadius: "14px",
+            background: "#FFF7ED",
+            border: "1px solid #FDBA74",
+            color: "#9A3412",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
+          <div style={{ fontWeight: 600 }}>
+            {accountNotice}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setAccountNotice("")}
+            style={{
+              border: "none",
+              background: "#EA580C",
+              color: "white",
+              padding: "8px 12px",
+              borderRadius: "10px",
+              cursor: "pointer",
+              fontWeight: 500,
+            }}
+          >
+            ปิด
+          </button>
+        </div>
+      )}
       <nav className="account-header">
         <div className="header-left">
           <Building2 size={24} color="#1a1a1a" />
@@ -3205,17 +3121,17 @@ const myInviteState = getMyInviteState();
 
                   return (
                     <div style={{ marginTop: 10, fontSize: 12, color: "#374151" }}>
-                    <div>
-                      ✅ Joined: <strong>{joinedGame.name}</strong>
-                    </div>
+                      <div>
+                        ✅ Joined: <strong>{joinedGame.name}</strong>
+                      </div>
 
-                    <div style={{ marginTop: 4, color: "#6B7280" }}>
-                      👑 Admin:{" "}
-                      <strong style={{ color: "#374151" }}>
-                        {adminDisplay}
-                      </strong>
+                      <div style={{ marginTop: 4, color: "#6B7280" }}>
+                        👑 Admin:{" "}
+                        <strong style={{ color: "#374151" }}>
+                          {adminDisplay}
+                        </strong>
+                      </div>
                     </div>
-                  </div>
                   );
                 })()}
               </div>
@@ -3332,34 +3248,25 @@ const myInviteState = getMyInviteState();
           <div className="right-column">
             {/* ✅ Team Setup (show always, lock when NOT joined) */}
             <div className={`team-setup-card-inline ${isTeamSetupLocked ? "locked" : ""}`}>
-              <div className="team-setup-header-tag">
-                Team Setup {isJoined ? `: ${teamSetupModeLabel || ""}` : ""}
-              </div>
 
               <div className="team-form-body">
-                {/* ===== ใช้ฟอร์มเดิมของคุณได้เลย แต่เพิ่ม disabled={!isJoined} ===== */}
-                <div className="form-group">
-                  <label>Team name</label>
-                  <input
-                    type="text"
-                    placeholder="กรุณาใส่ชื่อทีม"
-                    className="form-input teamname-input"
-                    value={isTeamSetupReadOnly ? (inviteView?.teamName || teamName || "") : teamName}
-                    onChange={(e) => setTeamName(e.target.value)}
-                    disabled={!isJoined || isTeamSetupReadOnly}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <div className="member-grid-header">
-                    <div></div>
-                    <div></div>
-                    <div className="role-header-text">
-                      Role Selection <span className="q-mark">?</span>
-                    </div>
-                    <div></div>
-                  </div>
-
+                <AccountTeamSetupSection
+                  isJoined={isJoined}
+                  teamSetupModeLabel={teamSetupModeLabel}
+                  isTeamSetupReadOnly={isTeamSetupReadOnly}
+                  inviteView={inviteView}
+                  teamName={teamName}
+                  setTeamName={setTeamName}
+                  canOk={canOk}
+                  handleOkClick={handleOkClick}
+                  okLabel={okLabel}
+                  isHost={isHost}
+                  openExitModal={openExitModal}
+                  openLeaveConfirm={openLeaveConfirm}
+                  isAcceptedInvite={isAcceptedInvite}
+                  teamLimit={teamLimit}
+                  isTeamSetupLocked={isTeamSetupLocked}
+                >
                   <div className="members-grid-container">
                     {/* ✅ Read-only preview สำหรับคนที่ถูกเชิญ (มีอยู่แล้วในโค้ดคุณ) */}
                     {isTeamSetupReadOnly ? (
@@ -3386,7 +3293,7 @@ const myInviteState = getMyInviteState();
 
                         {/* 2. ดึงข้อมูลทีมจริงมาวนลูปแสดงเพื่อนร่วมทีมคนอื่นๆ */}
                         {(() => {
-                          const invitedTeam = getInvitedTeamData();
+                          const invitedTeam = getInvitedTeamData(inviteView, readGames);
                           if (!invitedTeam) return null;
 
                           // ✅ 1) กรองเฉพาะสถานะที่ต้องแสดงจริง
@@ -3402,15 +3309,15 @@ const myInviteState = getMyInviteState();
                               inv.status === "denied"
                                 ? "denied"
                                 : inv.status === "pending"
-                                ? "waiting"
-                                : "accepted";
+                                  ? "waiting"
+                                  : "accepted";
 
                             const pillText =
                               inv.status === "pending"
                                 ? "Waiting"
                                 : inv.status === "denied"
-                                ? "Denied"
-                                : "Accepted";
+                                  ? "Denied"
+                                  : "Accepted";
 
                             return (
                               <div key={`${inv.email}-${inv.status}-${idx}`} className="member-row">
@@ -3629,51 +3536,8 @@ const myInviteState = getMyInviteState();
                       </>
                     )}
                   </div>
-                </div>
+                </AccountTeamSetupSection>
 
-                <div className="team-bottom-bar">
-                  <button
-                    className="team-exit-btn"
-                    type="button"
-                    onClick={() => {
-                      if (isHost) openExitModal("delete");
-                      else openLeaveConfirm();
-                    }}
-                    disabled={isHost ? (!isJoined || isTeamSetupReadOnly) : (!isJoined && !isAcceptedInvite)}
-                  >
-                    {isHost ? "Delete Team" : "Leave Team"}
-                  </button>
-
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-                    <button
-                      className={`footer-btn ok ${canOk ? "active" : "disabled"}`}
-                      onClick={handleOkClick}
-                      type="button"
-                      disabled={!canOk || isTeamSetupReadOnly}
-                    >
-                      OK ({okLabel})
-                    </button>
-
-                    {teamLimit.type === "other" && (
-                      <div style={{ fontSize: 12, color: "#6B7280", marginTop: 6 }}>
-                        Min {teamLimit.minTotal} • Max {teamLimit.maxTotal} people
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* ✅ LOCK OVERLAY */}
-                {isTeamSetupLocked && (
-                  <div className="team-setup-lock">
-                    <div className="lock-card">
-                      <div className="lock-icon">🔒</div>
-                      <div className="lock-title">This section is Locked</div>
-                      <div className="lock-desc">
-                        Please enter <span className="lock-highlight">Game Code</span> to create team
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
             {/* History */}
@@ -3723,437 +3587,122 @@ const myInviteState = getMyInviteState();
             </div>
           </div>
         </div>
-           {/* ================= OK MODAL ================= */}
-          {showOkModal && (
-            <div className="okmodal-backdrop">
-              <div className="okmodal-card">
-                <h3>Confirm Team Setup</h3>
+        {/* ================= OK MODAL ================= */}
+        {showOkModal && (
+          <div className="okmodal-backdrop">
+            <div className="okmodal-card">
+              <h3>Confirm Team Setup</h3>
 
-                <p><b>Game:</b> {okModalData.gameName}</p>
-                <p><b>Team:</b> {okModalData.teamName}</p>
-                <p><b>Ready:</b> {totalReady}/{requiredTotal}</p>
+              <p><b>Game:</b> {okModalData.gameName}</p>
+              <p><b>Team:</b> {okModalData.teamName}</p>
+              <p><b>Ready:</b> {totalReady}/{requiredTotal}</p>
 
-                <h4>Accepted Members</h4>
-                {okModalData.accepted.length === 0 ? (
-                  <p>-</p>
-                ) : (
-                  okModalData.accepted.map((m) => (
-                    <div key={m.email}>
-                      {m.email} ({m.role})
-                    </div>
-                  ))
-                )}
+              <h4>Accepted Members</h4>
+              {okModalData.accepted.length === 0 ? (
+                <p>-</p>
+              ) : (
+                okModalData.accepted.map((m) => (
+                  <div key={m.email}>
+                    {m.email} ({m.role})
+                  </div>
+                ))
+              )}
 
-                <div className="okmodal-actions">
-                  <button
-                    className="okmodal-btn cancel"
-                    onClick={() => setShowOkModal(false)}
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    className="okmodal-btn confirm"
-                    onClick={() => {
-                      setShowOkModal(false);
-                      finalizeTeamAndGo();
-                    }}
-                  >
-                    Confirm
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {/* ================= END OK MODAL ================= */}
-          {showInviteModal && inviteModalData && (
-            <div className="invmodal-backdrop">
-              <div className="invmodal-card">
+              <div className="okmodal-actions">
                 <button
-                  className="invmodal-close"
-                  onClick={() => setShowInviteModal(false)}
-                  aria-label="Close"
-                  type="button"
+                  className="okmodal-btn cancel"
+                  onClick={() => setShowOkModal(false)}
                 >
-                  ✕
+                  Cancel
                 </button>
 
-                <h3>
-                  {inviteModalData.isRegistered ? "Invite Details" : "Email not registered yet"}
-                </h3>
-
-                <div className="invmodal-textbox">
-                  {inviteModalData.text}
-                </div>
-
-                <div className="invmodal-actions">
-                  <button
-                    className="invmodal-btn"
-                    type="button"
-                    onClick={() => copyInviteText(inviteModalData.text)}
-                  >
-                    Copy
-                  </button>
-
-                  <button
-                    className="invmodal-btn primary"
-                    type="button"
-                    onClick={() => shareInviteText(inviteModalData.text)}
-                  >
-                    Share
-                  </button>
-                </div>
+                <button
+                  className="okmodal-btn confirm"
+                  onClick={() => {
+                    setShowOkModal(false);
+                    finalizeTeamAndGo();
+                  }}
+                >
+                  Confirm
+                </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
+        {/* ================= END OK MODAL ================= */}
+        {showInviteModal && inviteModalData && (
+          <div className="invmodal-backdrop">
+            <div className="invmodal-card">
+              <button
+                className="invmodal-close"
+                onClick={() => setShowInviteModal(false)}
+                aria-label="Close"
+                type="button"
+              >
+                ✕
+              </button>
 
-          {/* ================= REMOVE CONFIRM MODAL ================= */}
-          {showRemoveModal && removeTarget && (
-            <div className="remmodal-backdrop">
-              <div className="remmodal-card">
-                <div className="remmodal-header">
-                  <div className="remmodal-title">
-                    <span className="remmodal-usericon" aria-hidden="true">👤</span>
-                    Confirm Remove Player
-                  </div>
+              <h3>
+                {inviteModalData.isRegistered ? "Invite Details" : "Email not registered yet"}
+              </h3>
 
-                  <button
-                    className="remmodal-close"
-                    onClick={closeRemoveConfirm}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
+              <div className="invmodal-textbox">
+                {inviteModalData.text}
+              </div>
 
-                <div className="remmodal-body">
-                  <div className="remmodal-question">
-                    Are you sure you want to remove this player?
-                  </div>
+              <div className="invmodal-actions">
+                <button
+                  className="invmodal-btn"
+                  type="button"
+                  onClick={() => copyInviteText(inviteModalData.text)}
+                >
+                  Copy
+                </button>
 
-                  <div className="remmodal-player">
-                    <span className="remmodal-playericon" aria-hidden="true">👥</span>
-                    <span className="remmodal-email">{removeTarget.email}</span>
-                  </div>
-                </div>
-
-                <div className="remmodal-actions">
-                  <button
-                    className="remmodal-btn cancel"
-                    onClick={closeRemoveConfirm}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    className="remmodal-btn confirm"
-                    onClick={confirmRemoveAccepted}
-                    type="button"
-                  >
-                    Yes
-                  </button>
-                </div>
+                <button
+                  className="invmodal-btn primary"
+                  type="button"
+                  onClick={() => shareInviteText(inviteModalData.text)}
+                >
+                  Share
+                </button>
               </div>
             </div>
-          )}
-          {/* ================= END REMOVE CONFIRM MODAL ================= */}
+          </div>
+        )}
 
-          {/* ================= REMOVED NOTICE MODAL (for removed player) ================= */}
-          {systemNotice && (
-            <div className="sysmodal-backdrop">
-              <div className="sysmodal-card">
-                <div className="sysmodal-header">
-                  <div className="sysmodal-title">
-                    <span className="sysmodal-icon" aria-hidden="true">👤</span>
-                    {systemNotice.title || "Team Update"}
-                  </div>
-                  <button
-                    className="sysmodal-close"
-                    onClick={() => {
-                      markRemovedNoticeSeen(systemNotice);
-                      setSystemNotice(null);
-                      resetAllUIState(); // ✅ สำคัญ: กลับสเตตเริ่มต้นทันที
-                    }}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="sysmodal-body">
-                  <div className="sysmodal-message">
-                    {systemNotice.message}
-                  </div>
-                </div>
-
-                <div className="sysmodal-actions">
-                  <button
-                    className="sysmodal-btn"
-                    type="button"
-                    onClick={() => {
-                      markRemovedNoticeSeen(systemNotice);
-                      setSystemNotice(null);
-                      resetAllUIState(); // ✅ สำคัญ
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {teamUpdateNotice && (
-            <div className="sysmodal-backdrop">
-              <div className="sysmodal-card">
-                <div className="sysmodal-header">
-                  <div className="sysmodal-title">
-                    <span className="sysmodal-icon" aria-hidden="true">👤</span>
-                    {teamUpdateNotice.title}
-                  </div>
-                  <button
-                    className="sysmodal-close"
-                    onClick={() => {
-                      markTeamUpdateSeen(teamUpdateNotice);
-                      setTeamUpdateNotice(null);
-                    }}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="sysmodal-body">
-                  <div className="sysmodal-message">
-                    {teamUpdateNotice.message}
-                  </div>
-                </div>
-
-                <div className="sysmodal-actions">
-                  <button
-                    className="sysmodal-btn"
-                    type="button"
-                     onClick={() => {
-                      markTeamUpdateSeen(teamUpdateNotice);
-                      setTeamUpdateNotice(null);
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================= END REMOVED NOTICE MODAL ================= */}
-          {hostNotice && (
-            <div className="sysmodal-backdrop">
-              <div className="sysmodal-card">
-                <div className="sysmodal-header">
-                  <div className="sysmodal-title">
-                    <span className="sysmodal-icon" aria-hidden="true">👤</span>
-                    {hostNotice.title}
-                  </div>
-                  <button
-                    className="sysmodal-close"
-                    onClick={() => setHostNotice(null)}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="sysmodal-body">
-                  <div className="sysmodal-message">{hostNotice.message}</div>
-                </div>
-
-                <div className="sysmodal-actions">
-                  <button
-                    className="sysmodal-btn"
-                    type="button"
-                    onClick={() => {
-                      markHostNoticeSeen(hostNotice);
-                      setHostNotice(null);
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showExitModal && (
-            <div className="remmodal-backdrop">
-              <div className="remmodal-card">
-                <div className="remmodal-header">
-                  <div className="remmodal-title">
-                    <span className="remmodal-usericon" aria-hidden="true">👤</span>
-                    {exitMode === "delete" ? "Confirm Delete Team" : "Confirm Leave Team"}
-                  </div>
-
-                  <button
-                    className="remmodal-close"
-                    onClick={closeExitModal}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="remmodal-body">
-                  <div className="remmodal-question">
-                    {exitMode === "delete"
-                      ? "Are you sure you want to delete this team? All draft/invites will be cleared."
-                      : "Are you sure you want to leave this team?"}
-                  </div>
-                </div>
-
-                <div className="remmodal-actions">
-                  <button className="remmodal-btn cancel" onClick={closeExitModal} type="button">
-                    Cancel
-                  </button>
-
-                  <button
-                    className="remmodal-btn confirm"
-                    type="button"
-                    onClick={() => {
-                      closeExitModal();
-                      if (exitMode === "delete") resetTeamAndGame_NoConfirm();
-                      else leaveTeamAndNotifyHost();
-                    }}
-                  >
-                    OK
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showLeaveModal && (
-            <div className="remmodal-backdrop">
-              <div className="remmodal-card">
-                <div className="remmodal-header">
-                  <div className="remmodal-title">
-                    <span className="remmodal-usericon" aria-hidden="true">👤</span>
-                    Confirm Leave Team
-                  </div>
-
-                  <button
-                    className="remmodal-close"
-                    onClick={closeLeaveConfirm}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="remmodal-body">
-                  <div className="remmodal-question">
-                    Are you sure you want to leave team{" "}
-                    <b>"{(inviteView?.teamName || teamName || "this team").trim()}"</b>?
-                  </div>
-                </div>
-
-                <div className="remmodal-actions">
-                  <button
-                    className="remmodal-btn cancel"
-                    onClick={closeLeaveConfirm}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-
-                  <button
-                    className="remmodal-btn confirm"
-                    onClick={confirmLeaveTeam}
-                    type="button"
-                  >
-                    OK
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {roleNotice && (
-            <div className="rolemodal-backdrop">
-              <div className="rolemodal-card">
-                <div className="rolemodal-topbar">
-                  <div className="rolemodal-top-title">Your role was changed.</div>
-                </div>
-
-                <div className="rolemodal-body">
-                  <div className="rolemodal-compare">
-                    <div className="rolemodal-col">
-                      <div className="rolemodal-label">Old role</div>
-                      <div className="rolemodal-pill">{roleNotice.oldRole}</div>
-                    </div>
-
-                    <div className="rolemodal-arrow">→</div>
-
-                    <div className="rolemodal-col">
-                      <div className="rolemodal-label new">New role</div>
-                      <div className="rolemodal-pill new">{roleNotice.newRole}</div>
-                    </div>
-                  </div>
-
-                  <button
-                    className="rolemodal-closebtn"
-                    type="button"
-                    onClick={() => {
-                      markRoleNoticeSeen(roleNotice);
-                      setRoleNotice(null);
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          {showTeamNameWarning && (
-            <div className="sysmodal-backdrop">
-              <div className="sysmodal-card sysmodal-success">
-                <div className="sysmodal-header">
-                  <div className="sysmodal-title">
-                    <span className="sysmodal-icon" aria-hidden="true">✅</span>
-                    กรุณาใส่ชื่อทีมก่อน
-                  </div>
-
-                  <button
-                    className="sysmodal-close"
-                    onClick={() => setShowTeamNameWarning(false)}
-                    aria-label="Close"
-                    type="button"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="sysmodal-body">
-                  <div className="sysmodal-message">
-                    โปรดกรอกชื่อทีมก่อนส่งคำเชิญผู้เล่น
-                  </div>
-                </div>
-
-                <div className="sysmodal-actions">
-                  <button
-                    className="sysmodal-btn sysmodal-btn-success"
-                    type="button"
-                    onClick={() => setShowTeamNameWarning(false)}
-                  >
-                    เข้าใจแล้ว
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+        <AccountPageModals
+          showTeamNameWarning={showTeamNameWarning}
+          setShowTeamNameWarning={setShowTeamNameWarning}
+          roleNotice={roleNotice}
+          setRoleNotice={setRoleNotice}
+          markRoleNoticeSeen={markRoleNoticeSeen}
+          hostNotice={hostNotice}
+          setHostNotice={setHostNotice}
+          markHostNoticeSeen={markHostNoticeSeen}
+          systemNotice={systemNotice}
+          setSystemNotice={setSystemNotice}
+          markRemovedNoticeSeen={markRemovedNoticeSeen}
+          resetAllUIState={resetAllUIState}
+          teamUpdateNotice={teamUpdateNotice}
+          setTeamUpdateNotice={setTeamUpdateNotice}
+          markTeamUpdateSeen={markTeamUpdateSeen}
+          showRemoveModal={showRemoveModal}
+          removeTarget={removeTarget}
+          closeRemoveConfirm={closeRemoveConfirm}
+          confirmRemoveAccepted={confirmRemoveAccepted}
+          showLeaveModal={showLeaveModal}
+          closeLeaveConfirm={closeLeaveConfirm}
+          confirmLeaveTeam={confirmLeaveTeam}
+          inviteView={inviteView}
+          teamName={teamName}
+          showExitModal={showExitModal}
+          closeExitModal={closeExitModal}
+          exitMode={exitMode}
+          resetTeamAndGame_NoConfirm={resetTeamAndGame_NoConfirm}
+          leaveTeamAndNotifyHost={leaveTeamAndNotifyHost}
+        />
+      </main>
     </div>
   );
 }

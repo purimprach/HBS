@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { findGameByCode, readGames, writeGames } from "./utils/gameStorage";
 import {
   Copy,
   Wifi,
@@ -123,8 +124,7 @@ export default function AdminLobbyPage() {
     const teamsKey = TEAMS_KEY(normCode(gameCode));
 
     // ===== 0) CLEAN orphan ใน hbs_teams_<code> โดยอิง hbs_games =====
-    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
-    const g = (Array.isArray(games) ? games : []).find((x) => x.code === gameCode);
+    const g = findGameByCode(gameCode);
 
     const validIds = new Set(
         (g?.teams || [])
@@ -142,7 +142,7 @@ export default function AdminLobbyPage() {
     
     // ===== 1) ทีมจริงจาก hbs_games เป็นหลัก =====
     const teamsFromGame = (Array.isArray(g?.teams) ? g.teams : [])
-      .filter((t) => !t?.isDeleted)
+      .filter((t) => !t?.isDeleted && !t?.removedByAdmin)
       .map((t, idx) => ({
         id: t.id ?? `team_${idx}`,
         name: (t.name && String(t.name).trim()) ? t.name : `Team ${idx + 1}`,
@@ -157,6 +157,7 @@ export default function AdminLobbyPage() {
 
     // ===== 2) fallback จาก hbs_teams_<code> เฉพาะกรณีไม่มีใน g.teams =====
     const realTeams = cleaned
+      .filter((t) => !t?.removedByAdmin)
       .filter((t) => !teamsFromGame.some((x) => x.id === t.id))
       .map((t, idx) => ({
         id: t.id ?? `team_${idx}`,
@@ -223,27 +224,35 @@ export default function AdminLobbyPage() {
 
   // ==================== Load Game Data ====================
   useEffect(() => {
-    // 1) from route state (เร็ว)
-    if (location.state?.gameData) {
-      setGameData(location.state.gameData);
-      return;
-    }
+    const loadGame = () => {
+      // 1) from route state
+      if (location.state?.gameData) {
+        setGameData(location.state.gameData);
+        return;
+      }
 
-    // 2) from localStorage by code
-    const savedGames = safeParse(localStorage.getItem(GAMES_KEY), []);
-    const found = (Array.isArray(savedGames) ? savedGames : []).find(
-      (g) => g.code === gameCode
-    );
+      // 2) from central storage
+      const found = findGameByCode(gameCode);
+      if (found) setGameData(found);
+    };
 
-    if (found) setGameData(found);
+    loadGame();
+
+    const onGamesUpdate = () => loadGame();
+
+    window.addEventListener("hbs:games", onGamesUpdate);
+
+    return () => {
+      window.removeEventListener("hbs:games", onGamesUpdate);
+    };
+
   }, [gameCode, location.state]);
 
   useEffect(() => {
     if (!gameCode) return;
 
     // อ่านเกมล่าสุดจาก hbs_games
-    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
-    const game = (Array.isArray(games) ? games : []).find((g) => g.code === gameCode);
+    const game = findGameByCode(gameCode);
     if (!game) return;
 
     const validIds = new Set(
@@ -431,7 +440,7 @@ export default function AdminLobbyPage() {
       return;
     }
 
-    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
+    const games = readGames();
     const index = games.findIndex((g) => g.code === gameCode);
 
     if (index === -1) return;
@@ -439,8 +448,7 @@ export default function AdminLobbyPage() {
     // เปลี่ยนสถานะเกม
     games[index].status = "playing";
     games[index].currentQuarter = 1;
-    localStorage.setItem(GAMES_KEY, JSON.stringify(games));
-    window.dispatchEvent(new Event("hbs:games"));
+    writeGames(games);
 
     alert("เริ่มเกมเรียบร้อยแล้ว!");
     navigate("/admin/active-games", { replace: true });
@@ -457,11 +465,9 @@ export default function AdminLobbyPage() {
 
   const handleConfirmEndGame = () => {
     if (confirmCode === gameData.code) {
-      const savedGames = safeParse(localStorage.getItem(GAMES_KEY), []);
-      const newGames = (Array.isArray(savedGames) ? savedGames : []).filter(
-        (g) => g.code !== gameData.code
-      );
-      localStorage.setItem(GAMES_KEY, JSON.stringify(newGames));
+      const savedGames = readGames();
+      const newGames = savedGames.filter((g) => g.code !== gameData.code);
+      writeGames(newGames);
 
       localStorage.removeItem(TIMER_KEY(gameCode));
       localStorage.removeItem(TEAMS_KEY(gameCode)); // ✅ ล้างทีมเกมนี้
@@ -475,50 +481,57 @@ export default function AdminLobbyPage() {
 
 // ==================== Delete Team (REAL) ====================
 const deleteTeamHard = (teamId) => {
-    if (!teamId || !gameCode) return;
+  if (!teamId || !gameCode) return;
 
-    const ok = window.confirm("ยืนยันลบทีมนี้ถาวร?");
-    if (!ok) return;
+  const ok = window.confirm("ยืนยันลบทีมนี้ถาวร?");
+  if (!ok) return;
 
-    // =========================
-    // 1) update hbs_games
-    // =========================
-    const games = safeParse(localStorage.getItem(GAMES_KEY), []);
-    const gi = games.findIndex((g) => g.code === gameCode);
+  // =========================
+  // 1) update hbs_games
+  // =========================
+  const games = readGames();
+  const gi = games.findIndex((g) => g.code === gameCode);
 
-    if (gi !== -1) {
-        const game = games[gi];
+  if (gi !== -1) {
+    const game = games[gi];
 
-        game.teams = (game.teams || []).map((t) =>
-        t?.id === teamId
-            ? { ...t, isDeleted: true, deletedAt: new Date().toISOString() }
-            : t
-        );
+    game.teams = (game.teams || []).map((t) =>
+      t?.id === teamId
+        ? {
+            ...t,
+            isDraft: true,
+            removedByAdmin: true,
+            removedAt: new Date().toISOString(),
+            status: "not_ready",
+            confirmedAt: null,
+          }
+        : t
+    );
 
-        game.players = (game.players || []).map((p) =>
-        p?.teamId === teamId ? { ...p, teamId: null } : p
-        );
+    game.players = (game.players || []).map((p) =>
+      p?.teamId === teamId
+        ? {
+            ...p,
+            ready: false,
+            readyAt: null,
+          }
+        : p
+    );
 
-        games[gi] = game;
-        localStorage.setItem(GAMES_KEY, JSON.stringify(games));
-    }
+    games[gi] = game;
+    writeGames(games);
+  }
 
-    // =========================
-    // 2) update hbs_teams_<code>
-    // =========================
-    const tKey = TEAMS_KEY(gameCode);
-    const list = safeParse(localStorage.getItem(tKey), []);
-    const newArr = (Array.isArray(list) ? list : []).filter((t) => t?.id !== teamId);
-    localStorage.setItem(tKey, JSON.stringify(newArr));
+  // =========================
+  // 2) update hbs_teams_<code>
+  // =========================
+  const tKey = TEAMS_KEY(gameCode);
+  const list = safeParse(localStorage.getItem(tKey), []);
+  const newArr = (Array.isArray(list) ? list : []).filter((t) => t?.id !== teamId);
+  localStorage.setItem(tKey, JSON.stringify(newArr));
 
-    // =========================
-    // 🔥 3) แจ้งทุกหน้าให้ sync ทันที
-    // =========================
-    window.dispatchEvent(new Event("hbs:games"));
-    window.dispatchEvent(new Event("hbs:teams"));
-
-    // refresh lobby UI
-    setTeams(readTeamsFromStorage());
+  // refresh lobby UI
+  setTeams(readTeamsFromStorage());
 };
 
   if (!adminEmail) return null;

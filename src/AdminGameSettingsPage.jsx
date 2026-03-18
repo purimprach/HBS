@@ -1,5 +1,7 @@
-import React, { useMemo, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import "./AdminGameSettingsPage.css";
+import { readGames, writeGames } from "./utils/gameStorage";
 import {
   User,
   Users,
@@ -20,7 +22,6 @@ import {
   Pencil,
   Mail,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 
 // --- ฟังก์ชันสุ่มรหัสห้อง ---
 const generateRoomCode = () => {
@@ -649,6 +650,7 @@ export default function AdminGameSettingsPage() {
         scoring: scoring,
       },
 
+      teams: [],
       status: "lobby",
       createdAt: new Date().toISOString(),
     };
@@ -656,8 +658,8 @@ export default function AdminGameSettingsPage() {
     setCreatedGameData(gamePayload);
     setIsGameCreated(true);
 
-    const existingGames = JSON.parse(localStorage.getItem(GAMES_KEY) || "[]");
-    localStorage.setItem(GAMES_KEY, JSON.stringify([...existingGames, gamePayload]));
+    const existingGames = readGames();
+    writeGames([...existingGames, gamePayload]);
 
     setTimeout(() => {
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });

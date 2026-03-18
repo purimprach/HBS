@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import "./WaitingListPage.css";
 import { useNavigate } from "react-router-dom";
+import { findGameByCode, readGames, writeGames } from "./utils/gameStorage";
 import {
   // --- Icons หลัก ---
   Clock,
@@ -31,6 +32,7 @@ const GAMES_KEY = "hbs_games";
 const PLAYER_SESSION_KEY = "hbs_current_player";
 const ACTIVE_GAME_CODE_KEY = "hbs_active_game_code_v1";
 const TIMER_KEY = (code) => `hbs_timer_${code}`;
+const ACCOUNT_NOTICE_KEY = "hbs_account_notice";
 
 function startTimerIfPaused(code) {
   if (!code) return;
@@ -101,10 +103,6 @@ function safeParse(raw, fallback) {
   }
 }
 
-function readGames() {
-  return safeParse(localStorage.getItem(GAMES_KEY), []);
-}
-
 function getGameName(game) {
   return (game?.name || "").trim() || "-";
 }
@@ -145,32 +143,44 @@ function resolvePlayerNameInGame(game, key) {
 }
 
 function getCEOName(game, team) {
-  if (!team) return "-";
+  if (!game || !team) return "-";
 
-  // 1) ใช้ leaderName ก่อนเลย ถ้ามี
+  const players = Array.isArray(game.players) ? game.players : [];
+  const roles = team.roles || {};
+
+  // 1) หา key ที่เป็น CEO จาก team.roles ก่อน
+  const ceoEntry = Object.entries(roles).find(([, role]) => role === "CEO");
+  if (ceoEntry) {
+    const [key] = ceoEntry;
+
+    const byId = players.find((p) => p.playerId === key);
+    if (byId?.name) return byId.name;
+
+    const byEmail = players.find(
+      (p) => String(p.email || "").toLowerCase() === String(key).toLowerCase()
+    );
+    if (byEmail?.name) return byEmail.name;
+  }
+
+  // 2) fallback: leaderName
   if ((team.leaderName || "").trim()) {
     return team.leaderName.trim();
   }
 
-  // 2) fallback: ใช้ leaderPlayerId
+  // 3) fallback: leaderPlayerId
   if (team.leaderPlayerId) {
-    const byLeaderId = resolvePlayerNameInGame(game, team.leaderPlayerId);
-    if (byLeaderId && byLeaderId !== "-") return byLeaderId;
+    const byLeaderId = players.find((p) => p.playerId === team.leaderPlayerId);
+    if (byLeaderId?.name) return byLeaderId.name;
   }
 
-  // 3) fallback: ใช้ leaderEmail
+  // 4) fallback: leaderEmail
   if ((team.leaderEmail || "").trim()) {
-    const byLeaderEmail = resolvePlayerNameInGame(game, team.leaderEmail);
-    if (byLeaderEmail && byLeaderEmail !== "-") return byLeaderEmail;
-  }
-
-  // 4) fallback: หาใน roles ว่าใครเป็น CEO
-  const roles = team.roles || {};
-  const ceoEntry = Object.entries(roles).find(([, role]) => role === "CEO");
-  if (ceoEntry) {
-    const [key] = ceoEntry;
-    const byRole = resolvePlayerNameInGame(game, key);
-    if (byRole && byRole !== "-") return byRole;
+    const byLeaderEmail = players.find(
+      (p) =>
+        String(p.email || "").toLowerCase() ===
+        String(team.leaderEmail || "").toLowerCase()
+    );
+    if (byLeaderEmail?.name) return byLeaderEmail.name;
   }
 
   return "-";
@@ -179,18 +189,12 @@ function getCEOName(game, team) {
 function getTeamMemberCount(game, team) {
   if (!game || !team) return 0;
 
-  // ใช้รายชื่อคนจาก Invites ที่สถานะเป็น 'accepted' เป็นหลัก
-  const invites = team.invites || [];
-  const acceptedMembers = invites.filter((i) => i?.status === "accepted");
-
-  // สร้าง Set เพื่อป้องกันอีเมลซ้ำ (Case-insensitive)
-  const uniqEmails = new Set(
-    acceptedMembers.map((i) => String(i.email || "").toLowerCase().trim())
+  const players = Array.isArray(game.players) ? game.players : [];
+  const membersInTeam = players.filter(
+    (p) => p?.teamId === team.id
   );
-  uniqEmails.delete(""); // ลบค่าว่างออกถ้ามี
 
-  // ผลลัพธ์คือ: หัวหน้าทีม (1 คน) + จำนวนสมาชิกที่ยอมรับคำเชิญแล้ว
-  return 1 + uniqEmails.size;
+  return membersInTeam.length;
 }
 
 function isTeamConfirmed(team) {
@@ -264,14 +268,6 @@ function ensureLobbyTimingInStorage(games, gameIndex, isHostNow) {
   return games;
 }
 
-// Mock Data (ค่อยเปลี่ยนเป็น real ทีละส่วน)
-const MOCK_TEAMS = [
-    { name: "Coastal Kings", ceo: "Username 1", members: 4, status: "ยืนยัน" },
-    { name: "Coastal Queen", ceo: "Username 2", members: 4, status: "ยืนยัน" },
-    { name: "Coastal Jack", ceo: "Username 3", members: 4, status: "รอยืนยัน" },
-    { name: "Coastal Ace",  ceo: "Username 5", members: 4, status: "ยืนยัน" },
-];
-
 function WaitingListPage() {
   const navigate = useNavigate();
 
@@ -306,10 +302,7 @@ function WaitingListPage() {
         return;
         }
 
-        const games = readGames();
-        const game = games.find(
-        (g) => (g.code || "").toUpperCase() === (activeCode || "").toUpperCase()
-        );
+        const game = findGameByCode(activeCode);
 
         if (!game) {
         setCurrentRole(null);
@@ -325,14 +318,49 @@ function WaitingListPage() {
         // --- หา role จริงจากทีม ---
         const me = (game.players || []).find((p) => p.playerId === player.id);
         if (!me?.teamId) {
-        setCurrentRole(null);
-        return;
+          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+          setGameData(null);
+          setCurrentRole(null);
+          navigate("/account", { replace: true });
+          return;
         }
 
         const team = (game.teams || []).find((t) => t.id === me.teamId);
         if (!team) {
-        setCurrentRole(null);
-        return;
+          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+          setGameData(null);
+          setCurrentRole(null);
+          navigate("/account", { replace: true });
+          return;
+        }
+
+        // ✅ ถ้าแอดมินเอาทีมออก -> กลับไปหน้า AccountPage พร้อมข้อมูลเดิม
+        if (team.removedByAdmin) {
+          const games = readGames();
+          const gameIdx = games.findIndex(
+            (g) => (g.code || "").toUpperCase() === (game.code || "").toUpperCase()
+          );
+
+          if (gameIdx !== -1) {
+            const targetTeam = (games[gameIdx].teams || []).find((t) => t.id === team.id);
+            if (targetTeam) {
+              targetTeam.removedByAdmin = false;
+            }
+            writeGames(games);
+          }
+
+          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+
+          localStorage.setItem(
+            ACCOUNT_NOTICE_KEY,
+            "แอดมินได้นำทีมของท่านออกจากห้องรอเกม กรุณาตรวจสอบข้อมูลทีมและจัดทีมใหม่อีกครั้ง"
+          );
+
+          setGameData(null);
+          setCurrentRole(null);
+
+          navigate("/account", { replace: true });
+          return;
         }
 
         const role =
@@ -469,10 +497,7 @@ function WaitingListPage() {
     team.confirmedAt = allReady ? new Date().toISOString() : null;
 
     games[gameIdx] = game;
-    localStorage.setItem(GAMES_KEY, JSON.stringify(games));
-
-    window.dispatchEvent(new Event("hbs:games"));
-    window.dispatchEvent(new Event("hbs:teams"));
+    writeGames(games);
 
     // sync state หน้า waiting ทันที
     setGameData({ ...game });
@@ -507,7 +532,7 @@ function WaitingListPage() {
         }
 
         // บันทึกข้อมูลที่ถูกแก้กลับเป็น Draft ลง Storage
-        localStorage.setItem(GAMES_KEY, JSON.stringify(games));
+        writeGames(games);
       }
     }
 
@@ -521,10 +546,6 @@ function WaitingListPage() {
 
     setGameData(null);
     setCurrentRole(null);
-  
-    // ยิง Event ให้หน้าอื่นรับรู้การเปลี่ยนแปลง (ในแท็บเดียวกัน)
-    window.dispatchEvent(new Event("hbs:games"));
-    window.dispatchEvent(new Event("hbs:teams"));
 
     navigate("/account", { replace: true });
   };
@@ -542,17 +563,8 @@ function WaitingListPage() {
   };
 
   const teams = useMemo(() => {
-    // 1) ยังไม่มี gameData -> โชว์ mock ล้วน
     if (!gameData) {
-        return MOCK_TEAMS.map((t, idx) => ({
-        rank: idx + 1,
-        teamId: `mock_${t.name}`,
-        name: t.name,
-        captain: t.ceo,
-        members: t.members,
-        statusText: t.status,
-        isUser: false,
-        }));
+      return [];
     }
 
     // หา team ของเรา (เพื่อไม่ให้โดนกรองทิ้ง)
