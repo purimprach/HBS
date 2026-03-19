@@ -454,6 +454,24 @@ function AccountPage() {
     return res.json();
   }
 
+  async function finalizeTeamAPI(payload) {
+    const res = await fetch("http://localhost:5000/api/teams/finalize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data?.message || "Failed to finalize team");
+    }
+
+    return data;
+  }
+
   function ensureDraftTeamIdReady(currentName) {
     const ensuredId = ensureDraftTeamIdReadyUtil({
       joinedGameCode: joinedGame?.code,
@@ -802,6 +820,23 @@ function AccountPage() {
 
       const me = (g.players || []).find((p) => p.playerId === currentPlayer.id);
       const myTeamId = me?.teamId;
+
+      // ✅ NEW: guard สำหรับ Host/CEO โดยดูจาก draftTeamId ด้วย
+      if (isHost && draftTeamId) {
+        const hostTeamStillExists = (g.teams || []).some(
+          (t) => t?.id === draftTeamId && !t?.isDeleted && !t?.removedByAdmin
+        );
+
+        if (!hostTeamStillExists) {
+          const removedMsg = "แอดมินได้นำทีมของท่านออกจากเกม กรุณาจัดทีมใหม่อีกครั้ง";
+
+          resetAllUIState();
+
+          localStorage.setItem(ACCOUNT_NOTICE_KEY, removedMsg);
+          setAccountNotice(removedMsg);
+          return;
+        }
+      }
 
       if (myTeamId) {
         const myTeam = (g.teams || []).find((t) => t?.id === myTeamId);
@@ -1613,7 +1648,7 @@ function AccountPage() {
     resetAllUIState({ alertMsg: `เกม ${missingCode || ""} ถูกลบโดย Admin แล้ว` });
   }
 
-  const finalizeTeamAndGo = () => {
+  const finalizeTeamAndGo = async () => {
     const games = readGames();
     const player = currentPlayer;
 
@@ -1703,9 +1738,22 @@ function AccountPage() {
     games[idx] = game;
     writeGamesAndRefresh(games);
 
+    try {
+      const res = await finalizeTeamAPI({
+        gameCode: joinedGame.code,
+        teamName: finalTeamName,
+        hostUserId: currentPlayer.id,
+      });
+
+      console.log("✅ FINALIZE TEAM API SUCCESS:", res);
+    } catch (err) {
+      console.error("❌ FINALIZE TEAM API ERROR:", err);
+      alert(err.message || "บันทึกทีมลงฐานข้อมูลไม่สำเร็จ");
+      return;
+    }
+
     removeAccountDraft(currentPlayer?.id);
 
-    // 👉 ไปหน้า WaitingListPage
     navigate("/waiting-room", { state: { gameCode: joinedGame.code } });
   };
 
@@ -1715,7 +1763,9 @@ function AccountPage() {
     if (!trimmed) return false;
 
     const games = readGames();
-    const game = games.find((g) => g.code === joinedGame?.code);
+    const game = games.find(
+      (g) => (g.code || "").trim().toUpperCase() === (joinedGame?.code || "").trim().toUpperCase()
+    );
     if (!game) return false;
 
     const lower = trimmed.toLowerCase();
@@ -1723,12 +1773,31 @@ function AccountPage() {
 
     return (game.teams || []).some((t) => {
       if (!t || t.isDeleted) return false;
-      if (!t.name) return false;
 
-      // ✅ FIX: ignore ทีมของตัวเองทุกกรณี
+      const tName = (t.name || "").trim().toLowerCase();
+      if (!tName) return false;
+      if (tName !== lower) return false;
+
+      // ✅ ไม่ถือว่าทีมปัจจุบันของเราเป็นชื่อซ้ำ
+      if (t.id === draftTeamId) return false;
+
+      // ✅ ไม่ถือว่าทีมที่เราเป็นหัวหน้าเองเป็นชื่อซ้ำ
       if (t.leaderPlayerId === myPlayerId) return false;
 
-      return t.name.trim().toLowerCase() === lower;
+      // ✅ ถ้าเป็น draft team ค้าง และเจ้าของไม่ได้อยู่ทีมนั้นจริงแล้ว -> ไม่นับ
+      const leaderStillInThisTeam = (game.players || []).some(
+        (p) => p.playerId === t.leaderPlayerId && p.teamId === t.id
+      );
+
+      const hasLiveInvites = (t.invites || []).some((inv) =>
+        ["pending", "accepted"].includes(inv.status)
+      );
+
+      if (t.isDraft && !leaderStillInThisTeam && !hasLiveInvites) {
+        return false;
+      }
+
+      return true;
     });
   }
 
@@ -1752,11 +1821,17 @@ function AccountPage() {
      OK -> Create Team
      ========================= */
   const handleOkClick = () => {
+    // ✅ กดได้เฉพาะ Host / CEO เท่านั้น
+    if (!isHost) {
+      alert("กด OK ได้เฉพาะ CEO เท่านั้น");
+      return;
+    }
 
     if (!joinedGame) {
       alert("ยังไม่ได้ Join เกม");
       return;
     }
+
     // ✅ 1) ต้องมีชื่อทีมก่อน
     const trimmedName = (teamName || "").trim();
     if (!trimmedName) {
@@ -1764,17 +1839,17 @@ function AccountPage() {
       return;
     }
 
-    // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room (ทีมในเกมเดียวกัน)
+    // ✅ 2) ห้ามชื่อซ้ำกับทีมอื่นใน Waiting Room
     if (isDuplicateTeamName(trimmedName)) {
       alert("ชื่อทีมนี้ถูกใช้แล้ว กรุณาเปลี่ยนชื่อทีม");
       return;
     }
+
     if (!canOk) {
       alert(`Waiting accepted: ${totalReady}/${requiredTotal}`);
       return;
     }
 
-    // ✅ แค่นี้พอ เปิด popup
     setShowOkModal(true);
   };
 
@@ -1908,12 +1983,35 @@ function AccountPage() {
     effectiveGame?.code,
   ]);
 
+  const acceptedInvitesForView = useMemo(() => {
+    // ✅ ฝั่ง Host / CEO: ใช้ teamMembers ที่แสดงอยู่จริงบนหน้า
+    if (isHost) {
+      return (teamMembers || [])
+        .filter((m) => {
+          const email = normalizeEmail(m.email);
+          if (!email) return false;
+          return getInviteStatusFromStorage(email) === "accepted";
+        })
+        .map((m) => ({
+          email: m.email,
+          role: teamRoles?.[m.key] || "-",
+        }));
+    }
+
+    // ✅ ฝั่ง Member / Invite view
+    const invitedTeam = getInvitedTeamData(inviteView, readGames);
+    return (invitedTeam?.invites || [])
+      .filter((inv) => inv.status === "accepted")
+      .map((inv) => ({
+        email: inv.email,
+        role: inv.role || "-",
+      }));
+  }, [isHost, teamMembers, teamRoles, getInviteStatusFromStorage, inviteView]);
+
   // ✅ นับ accepted จาก invites ใน storage (ของทีม host)
   const acceptedCount = useMemo(() => {
-    const { team } = getHostTeamFromStorage();
-    if (!team) return 0;
-    return (team.invites || []).filter((x) => x.status === "accepted").length;
-  }, [getHostTeamFromStorage]);
+    return acceptedInvitesForView.length;
+  }, [acceptedInvitesForView]);
 
   // ✅ จำนวนสมาชิกที่ "ต้องมีในทีมทั้งหมด" ตาม mode
   const requiredTotal = teamLimit.type === "single" ? 1 : teamLimit.minTotal;
@@ -1927,6 +2025,17 @@ function AccountPage() {
     totalReady >= teamLimit.minTotal &&
     totalReady <= teamLimit.maxTotal;
 
+  console.log("=== OK BUTTON DEBUG ===");
+  console.log("currentPlayer =", currentPlayer?.email);
+  console.log("isHost =", isHost);
+  console.log("isJoined =", isJoined);
+  console.log("acceptedCount =", acceptedCount);
+  console.log("totalReady =", totalReady);
+  console.log("teamLimit =", teamLimit);
+  console.log("teamLimit.minTotal =", teamLimit?.minTotal);
+  console.log("teamLimit.maxTotal =", teamLimit?.maxTotal);
+  console.log("canOk =", canOk);
+
   const okLabel = useMemo(() => {
     if (teamLimit.type === "single") return `Ready ${totalReady}`;
     if (teamLimit.type === "other") return `Ready ${totalReady}`;
@@ -1936,15 +2045,6 @@ function AccountPage() {
 
   // ✅ Data สำหรับ OK Modal (เฉพาะ Accepted)
   const okModalData = useMemo(() => {
-    const { team } = getHostTeamFromStorage();
-
-    const accepted = (team?.invites || [])
-      .filter((x) => x.status === "accepted")
-      .map((x) => ({
-        email: x.email,
-        role: x.role || "-",
-      }));
-
     return {
       gameName: joinedGame?.name || "-",
       gameCode: joinedGame?.code || "-",
@@ -1952,7 +2052,7 @@ function AccountPage() {
       teamName: teamName?.trim() || "Hotel Team",
       hostName: currentPlayer?.name || "Host",
       hostEmail: currentPlayer?.email || "",
-      accepted,
+      accepted: acceptedInvitesForView,
     };
   }, [
     joinedGame?.name,
@@ -1961,7 +2061,7 @@ function AccountPage() {
     currentPlayer?.name,
     currentPlayer?.email,
     teamName,
-    getHostTeamFromStorage,
+    acceptedInvitesForView,
   ]);
 
   useEffect(() => {
@@ -2307,7 +2407,7 @@ function AccountPage() {
                   inviteView={inviteView}
                   teamName={teamName}
                   setTeamName={setTeamName}
-                  canOk={canOk}
+                  canOk={isHost && canOk}
                   handleOkClick={handleOkClick}
                   okLabel={okLabel}
                   isHost={isHost}

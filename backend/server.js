@@ -125,6 +125,128 @@ app.post("/player-login", async (req, res) => {
   }
 });
 
+app.post("/api/teams/finalize", async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const {
+      gameCode,
+      teamName,
+      hostUserId,
+    } = req.body;
+
+    if (!gameCode || !teamName || !hostUserId) {
+      return res.status(400).json({
+        message: "gameCode, teamName, hostUserId จำเป็นต้องกรอก"
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const gameResult = await client.query(
+      `
+      SELECT id, code, name
+      FROM games
+      WHERE UPPER(code) = UPPER($1)
+      LIMIT 1
+      `,
+      [gameCode.trim()]
+    );
+
+    if (gameResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({
+        message: "ไม่พบเกมนี้"
+      });
+    }
+
+    const game = gameResult.rows[0];
+
+    const insertTeamResult = await client.query(
+      `
+      INSERT INTO teams (
+        game_id,
+        team_name,
+        host_user_id,
+        status,
+        is_team_name_locked,
+        is_ready,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, 'active', true, true, NOW(), NOW())
+      RETURNING id, game_id, team_name, host_user_id, status
+      `,
+      [game.id, teamName.trim(), hostUserId]
+    );
+
+    const team = insertTeamResult.rows[0];
+
+    await client.query(
+      `
+      INSERT INTO team_members (
+        team_id,
+        user_id,
+        member_status,
+        joined_at,
+        invited_by_user_id,
+        left_at,
+        created_at,
+        updated_at
+      )
+      VALUES ($1, $2, 'active', NOW(), NULL, NULL, NOW(), NOW())
+      ON CONFLICT DO NOTHING
+      `,
+      [team.id, hostUserId]
+    );
+
+    await client.query("COMMIT");
+
+    return res.json({
+      message: "Team finalized successfully",
+      team
+    });
+
+  } catch (err) {
+    await client.query("ROLLBACK");
+
+    if (err.code === "23505") {
+      return res.status(409).json({
+        message: "ชื่อทีมนี้ถูกใช้แล้วในเกมนี้"
+      });
+    }
+
+    console.error("FINALIZE TEAM ERROR:", err);
+    return res.status(500).json({
+      message: "Server error"
+    });
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/teams/finalize", async (req, res) => {
+  try {
+    const { gameCode, teamName, hostUserId } = req.body;
+
+    console.log("🔥 FINALIZE TEAM REQUEST:", req.body);
+
+    // 🔥 ตรงนี้ยังไม่ต้อง insert DB จริง (test ก่อน)
+    return res.json({
+      success: true,
+      message: "Team finalized (mock)",
+      team: {
+        gameCode,
+        teamName,
+        hostUserId,
+      },
+    });
+  } catch (err) {
+    console.error("❌ FINALIZE ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
