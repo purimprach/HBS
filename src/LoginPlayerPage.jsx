@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Hotel, Eye, EyeOff } from 'lucide-react'; 
+import { ArrowLeft, Hotel, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPlayerPage.css';
 
@@ -36,7 +36,7 @@ const LoginPlayerPage = () => {
         return;
       }
 
-      localStorage.setItem(
+      sessionStorage.setItem(
         PLAYER_SESSION_KEY,
         JSON.stringify({
           id: data.player.id,

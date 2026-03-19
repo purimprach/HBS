@@ -127,9 +127,9 @@ export default function AdminLobbyPage() {
     const g = findGameByCode(gameCode);
 
     const validIds = new Set(
-        (g?.teams || [])
-            .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
-            .map((t) => t.id)
+      (g?.teams || [])
+        .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
+        .map((t) => t.id)
     );
     const list = safeParse(localStorage.getItem(teamsKey), []);
     const arr = Array.isArray(list) ? list : [];
@@ -137,12 +137,12 @@ export default function AdminLobbyPage() {
     // ลบทีมที่ไม่มีอยู่ใน hbs_games แล้ว (orphan)
     const cleaned = arr.filter((t) => validIds.has(t?.id));
     if (cleaned.length !== arr.length) {
-        localStorage.setItem(teamsKey, JSON.stringify(cleaned));
+      localStorage.setItem(teamsKey, JSON.stringify(cleaned));
     }
-    
+
     // ===== 1) ทีมจริงจาก hbs_games เป็นหลัก =====
     const teamsFromGame = (Array.isArray(g?.teams) ? g.teams : [])
-      .filter((t) => !t?.isDeleted && !t?.removedByAdmin)
+      .filter((t) => !t?.isDeleted)
       .map((t, idx) => ({
         id: t.id ?? `team_${idx}`,
         name: (t.name && String(t.name).trim()) ? t.name : `Team ${idx + 1}`,
@@ -170,7 +170,7 @@ export default function AdminLobbyPage() {
 
     // ===== 3) merge โดยใช้ hbs_games เป็นหลัก =====
     return [...teamsFromGame, ...realTeams];
-    };
+  };
 
   // ✅ listen teams updates (WaitingPage ควร dispatch Event("hbs:teams"))
   useEffect(() => {
@@ -179,7 +179,7 @@ export default function AdminLobbyPage() {
     sync(); // initial
 
     const onStorage = (e) => {
-        if (e.key === TEAMS_KEY(gameCode) || e.key === GAMES_KEY) sync();
+      if (e.key === TEAMS_KEY(gameCode) || e.key === GAMES_KEY) sync();
     };
 
     const onCustom = () => sync();
@@ -257,8 +257,8 @@ export default function AdminLobbyPage() {
 
     const validIds = new Set(
       (game.teams || [])
-          .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
-          .map((t) => t.id)
+        .filter((t) => !t?.isDeleted)   // ✅ ไม่เอาทีมที่ถูกลบ
+        .map((t) => t.id)
     );
     const key = TEAMS_KEY(gameCode);
 
@@ -357,34 +357,34 @@ export default function AdminLobbyPage() {
     };
   }, [gameCode]);
 
- useEffect(() => {
-  const code = normCode(gameCode);
-  if (!code) return;
+  useEffect(() => {
+    const code = normCode(gameCode);
+    if (!code) return;
 
-  if (!isTimerRunning) return;
+    if (!isTimerRunning) return;
 
-  const interval = setInterval(() => {
-    const st = readTimerState(code);
-    if (!st) return;
+    const interval = setInterval(() => {
+      const st = readTimerState(code);
+      if (!st) return;
 
-    setTimeLeft(st.timeLeft);
-    setIsTimerRunning(st.isRunning);
+      setTimeLeft(st.timeLeft);
+      setIsTimerRunning(st.isRunning);
 
-    if (st.timeLeft <= 0) {
-      localStorage.setItem(
-        TIMER_KEY(code),
-        JSON.stringify({
-          timeLeft: 0,
-          isRunning: false,
-          lastUpdated: Date.now(),
-        })
-      );
-      window.dispatchEvent(new Event("hbs:timer"));
-    }
-  }, 1000);
+      if (st.timeLeft <= 0) {
+        localStorage.setItem(
+          TIMER_KEY(code),
+          JSON.stringify({
+            timeLeft: 0,
+            isRunning: false,
+            lastUpdated: Date.now(),
+          })
+        );
+        window.dispatchEvent(new Event("hbs:timer"));
+      }
+    }, 1000);
 
-  return () => clearInterval(interval);
-}, [isTimerRunning, gameCode]);
+    return () => clearInterval(interval);
+  }, [isTimerRunning, gameCode]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -393,20 +393,20 @@ export default function AdminLobbyPage() {
   };
 
   const adjustTime = (minutes) => {
-  const code = normCode(gameCode);
-  const st = readTimerState(code) || { timeLeft, isRunning: isTimerRunning, lastUpdated: Date.now() };
+    const code = normCode(gameCode);
+    const st = readTimerState(code) || { timeLeft, isRunning: isTimerRunning, lastUpdated: Date.now() };
 
-  const newVal = Math.max(0, Number(st.timeLeft) + minutes * 60);
+    const newVal = Math.max(0, Number(st.timeLeft) + minutes * 60);
 
-  localStorage.setItem(
-    TIMER_KEY(code),
-    JSON.stringify({
-      timeLeft: newVal,
-      isRunning: !!st.isRunning,
-      lastUpdated: Date.now(),
-    })
-  );
-  window.dispatchEvent(new Event("hbs:timer"));
+    localStorage.setItem(
+      TIMER_KEY(code),
+      JSON.stringify({
+        timeLeft: newVal,
+        isRunning: !!st.isRunning,
+        lastUpdated: Date.now(),
+      })
+    );
+    window.dispatchEvent(new Event("hbs:timer"));
   };
 
   const toggleTimer = () => {
@@ -479,60 +479,69 @@ export default function AdminLobbyPage() {
     }
   };
 
-// ==================== Delete Team (REAL) ====================
-const deleteTeamHard = (teamId) => {
-  if (!teamId || !gameCode) return;
+  // ==================== Delete Team (REAL) ====================
+  const deleteTeamHard = (teamId, isJoined) => {
+    if (!teamId || !gameCode) return;
 
-  const ok = window.confirm("ยืนยันลบทีมนี้ถาวร?");
-  if (!ok) return;
+    // =========================
+    // 🟢 CASE 1: มาจากฝั่งเขียว (READY)
+    // → ย้ายกลับไปเหลือง (ไม่ลบจริง)
+    // =========================
+    if (isJoined) {
+      const ok = window.confirm("ย้ายทีมนี้กลับไปยังสถานะ 'ยังไม่พร้อม' ?");
+      if (!ok) return;
 
-  // =========================
-  // 1) update hbs_games
-  // =========================
-  const games = readGames();
-  const gi = games.findIndex((g) => g.code === gameCode);
+      const games = readGames();
+      const gi = games.findIndex((g) => g.code === gameCode);
 
-  if (gi !== -1) {
-    const game = games[gi];
+      if (gi !== -1) {
+        const game = games[gi];
 
-    game.teams = (game.teams || []).map((t) =>
-      t?.id === teamId
-        ? {
-            ...t,
-            isDraft: true,
-            removedByAdmin: true,
-            removedAt: new Date().toISOString(),
-            status: "not_ready",
-            confirmedAt: null,
-          }
-        : t
-    );
+        game.teams = (game.teams || []).map((t) =>
+          t?.id === teamId
+            ? {
+              ...t,
+              isDraft: true,
+              status: "not_ready",
+              confirmedAt: null,
+              removedByAdmin: false, // ✅ สำคัญ
+            }
+            : t
+        );
 
-    game.players = (game.players || []).map((p) =>
-      p?.teamId === teamId
-        ? {
-            ...p,
-            ready: false,
-            readyAt: null,
-          }
-        : p
-    );
+        games[gi] = game;
+        writeGames(games);
+      }
 
-    games[gi] = game;
-    writeGames(games);
-  }
+      window.dispatchEvent(new Event("hbs:teams"));
+      return;
+    }
 
-  // =========================
-  // 2) update hbs_teams_<code>
-  // =========================
-  const tKey = TEAMS_KEY(gameCode);
-  const list = safeParse(localStorage.getItem(tKey), []);
-  const newArr = (Array.isArray(list) ? list : []).filter((t) => t?.id !== teamId);
-  localStorage.setItem(tKey, JSON.stringify(newArr));
+    // =========================
+    // 🟡 CASE 2: มาจากฝั่งเหลือง (NOT READY)
+    // → ลบจริง
+    // =========================
+    const ok = window.confirm("ยืนยันลบทีมนี้ถาวร?");
+    if (!ok) return;
 
-  // refresh lobby UI
-  setTeams(readTeamsFromStorage());
-};
+    const games = readGames();
+    const gi = games.findIndex((g) => g.code === gameCode);
+
+    if (gi !== -1) {
+      const game = games[gi];
+
+      // ❌ ลบทีมออกจากระบบจริง
+      game.teams = (game.teams || []).filter((t) => t?.id !== teamId);
+
+      // ❌ ลบ player ที่อยู่ทีมนี้ด้วย
+      game.players = (game.players || []).filter((p) => p?.teamId !== teamId);
+
+      games[gi] = game;
+      writeGames(games);
+    }
+
+    window.dispatchEvent(new Event("hbs:teams"));
+  };
 
   if (!adminEmail) return null;
   if (!gameData) return <div className="p-10 text-center">กำลังโหลดข้อมูลห้อง...</div>;
@@ -708,7 +717,7 @@ const deleteTeamHard = (teamId) => {
                             className="btn-card-del"
                             type="button"
                             title="ลบทีมถาวร"
-                            onClick={() => deleteTeamHard(team.id)}
+                            onClick={() => deleteTeamHard(team.id, true)}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -749,10 +758,10 @@ const deleteTeamHard = (teamId) => {
                             className="btn-card-del"
                             type="button"
                             title="ลบทีมถาวร"
-                            onClick={() => deleteTeamHard(team.id)}
-                            >
+                            onClick={() => deleteTeamHard(team.id, false)}
+                          >
                             <Trash2 size={16} />
-                            </button>
+                          </button>
                         </div>
                         <div className="tcc-actions">
                           <button className="btn-pill" type="button">

@@ -325,7 +325,8 @@ function AccountPage() {
     const msg = location.state?.teamRemovedNotice;
     if (!msg) return;
 
-    alert(msg);
+    setAccountNotice(msg);
+    localStorage.setItem(ACCOUNT_NOTICE_KEY, msg);
 
     navigate(location.pathname, { replace: true, state: {} });
   }, [location, navigate]);
@@ -336,9 +337,8 @@ function AccountPage() {
   }, [location.state]);
 
   useEffect(() => {
-    const p = safeJSONParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
+    const p = safeJSONParse(sessionStorage.getItem(PLAYER_SESSION_KEY), null);
 
-    // ถ้ายังไม่ login จริง ให้เดโม่ไว้ก่อน
     if (!p) {
       setCurrentPlayer({
         id: "demo-player",
@@ -347,7 +347,28 @@ function AccountPage() {
       });
       return;
     }
+
     setCurrentPlayer(p);
+
+    const games = readGames();
+    const foundPlayer = games
+      .flatMap((g) => g.players || [])
+      .find((x) => x.playerId === p.id);
+
+    if (foundPlayer?.teamRemovedNotice) {
+      setAccountNotice(foundPlayer.teamRemovedNotice);
+
+      const updatedGames = games.map((g) => ({
+        ...g,
+        players: (g.players || []).map((pl) =>
+          pl.playerId === p.id
+            ? { ...pl, teamRemovedNotice: null }
+            : pl
+        ),
+      }));
+
+      writeGames(updatedGames);
+    }
   }, []);
 
   useEffect(() => {
@@ -537,7 +558,7 @@ function AccountPage() {
     pushRoleChangeNoticeToStorage,
   });
 
-  const resetAllUIState = useCallback(({ alertMsg } = {}) => {
+  const resetAllUIState = useCallback(({ alertMsg, noticeMsg } = {}) => {
     setIsJoined(false);
     setJoinedGame(null);
     setShowTeamSetup(false);
@@ -559,6 +580,11 @@ function AccountPage() {
 
     if (currentPlayer?.id) {
       removeAccountDraft(currentPlayer.id);
+    }
+
+    if (noticeMsg) {
+      localStorage.setItem(ACCOUNT_NOTICE_KEY, noticeMsg);
+      setAccountNotice(noticeMsg);
     }
 
     if (alertMsg) alert(alertMsg);
@@ -1173,7 +1199,10 @@ function AccountPage() {
 
     // ถ้าไม่มีทั้ง teamId และไม่มี host/draft team ของตัวเอง → reset
     if (!hasMyHostTeam) {
-      resetAllUIState();
+      const removedMsg =
+        "แอดมินได้นำทีมของท่านออกจากห้องรอเกม กรุณาตรวจสอบข้อมูลทีมและจัดทีมใหม่อีกครั้ง";
+
+      resetAllUIState({ noticeMsg: removedMsg });
     }
   }, [
     hydrated,
@@ -1707,10 +1736,23 @@ function AccountPage() {
     });
 
     // ✅ NEW: ผูก host เข้ากับทีมด้วย
-    const hostPlayer = (game.players || []).find(
+    let hostPlayer = (game.players || []).find(
       (p) => p.playerId === player.id
     );
-    if (hostPlayer) hostPlayer.teamId = teamId;
+
+    if (hostPlayer) {
+      hostPlayer.teamId = teamId;
+    } else {
+      game.players = game.players || [];
+      game.players.push({
+        playerId: player.id,
+        name: player.name || "Host",
+        email: player.email || "",
+        teamId: teamId,
+        ready: false,
+        joinedAt: new Date().toISOString(),
+      });
+    }
 
     // ✅ ผูกสมาชิก accepted เข้าทีม
     (team.invites || [])
@@ -1738,19 +1780,7 @@ function AccountPage() {
     games[idx] = game;
     writeGamesAndRefresh(games);
 
-    try {
-      const res = await finalizeTeamAPI({
-        gameCode: joinedGame.code,
-        teamName: finalTeamName,
-        hostUserId: currentPlayer.id,
-      });
-
-      console.log("✅ FINALIZE TEAM API SUCCESS:", res);
-    } catch (err) {
-      console.error("❌ FINALIZE TEAM API ERROR:", err);
-      alert(err.message || "บันทึกทีมลงฐานข้อมูลไม่สำเร็จ");
-      return;
-    }
+    setActiveGameCode(joinedGame.code);
 
     removeAccountDraft(currentPlayer?.id);
 
@@ -2202,9 +2232,16 @@ function AccountPage() {
           <Link to="/settings" className="header-btn settings-btn">
             <Settings size={16} /> Settings
           </Link>
-          <Link to="/login" className="header-btn logout-btn">
+          <button
+            type="button"
+            className="header-btn logout-btn"
+            onClick={() => {
+              sessionStorage.removeItem(PLAYER_SESSION_KEY);
+              navigate("/login");
+            }}
+          >
             <LogOut size={16} /> Log Out
-          </Link>
+          </button>
         </div>
       </nav>
 

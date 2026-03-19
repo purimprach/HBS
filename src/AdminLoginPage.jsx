@@ -17,8 +17,8 @@ export default function AdminLoginPage() {
     setErrorMsg("");
     setLoading(true);
 
-    localStorage.removeItem("hbs_admin_token");
-    localStorage.removeItem("hbs_current_admin");
+    sessionStorage.removeItem("hbs_admin_token");
+    sessionStorage.removeItem("hbs_current_admin");
 
     try {
       const response = await fetch("http://localhost:5000/api/admin/login", {
@@ -39,8 +39,8 @@ export default function AdminLoginPage() {
         return;
       }
 
-      localStorage.setItem("hbs_admin_token", data.token);
-      localStorage.setItem("hbs_current_admin", JSON.stringify(data.admin));
+      sessionStorage.setItem("hbs_admin_token", data.token);
+      sessionStorage.setItem("hbs_current_admin", JSON.stringify(data.admin));
 
       const savedGames = JSON.parse(localStorage.getItem("hbs_games") || "[]");
 

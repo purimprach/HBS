@@ -286,94 +286,104 @@ function WaitingListPage() {
      ========================= */
   useEffect(() => {
     function load() {
-        const player = safeParse(localStorage.getItem(PLAYER_SESSION_KEY), null);
-        if (!player?.id) {
+      const player = safeParse(sessionStorage.getItem(PLAYER_SESSION_KEY), null);
+      if (!player?.id) {
         setCurrentPlayer(null);
         setCurrentRole(null);
         setGameData(null);
         return;
-        }
-        setCurrentPlayer(player);
+      }
+      setCurrentPlayer(player);
 
-        const activeCode = localStorage.getItem(ACTIVE_GAME_CODE_KEY);
-        if (!activeCode) {
+      const activeCode = sessionStorage.getItem(ACTIVE_GAME_CODE_KEY);
+      if (!activeCode) {
         setCurrentRole(null);
         setGameData(null);
         return;
-        }
+      }
 
-        const game = findGameByCode(activeCode);
+      const game = findGameByCode(activeCode);
 
-        if (!game) {
+      if (!game) {
         setCurrentRole(null);
         setGameData(null);
         return;
-        }
+      }
 
-        // ✅ เก็บเกมไว้ใช้ render
-        setGameData(game);
-        // ✅ Step3: ถ้ายังไม่มี timer ของเกมนี้ ให้ทีมแรกที่เข้ามาตั้งต้น 10 นาที
-        ensureTimerInitialized((game.code || "").toUpperCase(), 600);
+      // ✅ เก็บเกมไว้ใช้ render
+      setGameData(game);
+      // ✅ Step3: ถ้ายังไม่มี timer ของเกมนี้ ให้ทีมแรกที่เข้ามาตั้งต้น 10 นาที
+      ensureTimerInitialized((game.code || "").toUpperCase(), 600);
 
-        // --- หา role จริงจากทีม ---
-        const me = (game.players || []).find((p) => p.playerId === player.id);
-        if (!me?.teamId) {
-          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
-          setGameData(null);
-          setCurrentRole(null);
-          navigate("/account", { replace: true });
-          return;
-        }
+      // --- หา role จริงจากทีม ---
+      const me = (game.players || []).find((p) => p.playerId === player.id);
+      if (!me?.teamId) {
+        sessionStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+        setGameData(null);
+        setCurrentRole(null);
+        navigate("/account", { replace: true });
+        return;
+      }
 
-        const team = (game.teams || []).find((t) => t.id === me.teamId);
-        if (!team) {
-          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
-          setGameData(null);
-          setCurrentRole(null);
-          navigate("/account", { replace: true });
-          return;
-        }
+      const team = (game.teams || []).find((t) => t.id === me.teamId);
 
-        // ✅ ถ้าแอดมินเอาทีมออก -> กลับไปหน้า AccountPage พร้อมข้อมูลเดิม
-        if (team.removedByAdmin) {
-          const games = readGames();
-          const gameIdx = games.findIndex(
-            (g) => (g.code || "").toUpperCase() === (game.code || "").toUpperCase()
-          );
+      // ✅ ถ้าทีมหาย หรือถูกเอาออกจากห้องรอเกม -> กลับไปหน้า Account พร้อมแจ้งเตือน
+      if (!team || team.isDeleted || team.removedByAdmin || team.isDraft === true) {
+        const removedMsg =
+          "แอดมินได้นำทีมของท่านออกจากห้องรอเกม กรุณาตรวจสอบข้อมูลทีมและจัดทีมใหม่อีกครั้ง";
 
-          if (gameIdx !== -1) {
-            const targetTeam = (games[gameIdx].teams || []).find((t) => t.id === team.id);
-            if (targetTeam) {
-              targetTeam.removedByAdmin = false;
-            }
-            writeGames(games);
+        sessionStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+
+        localStorage.setItem(ACCOUNT_NOTICE_KEY, removedMsg);
+
+        navigate("/account", {
+          replace: true,
+          state: { teamRemovedNotice: removedMsg },
+        });
+
+        return;
+      }
+
+      // ✅ ถ้าแอดมินเอาทีมออก -> กลับไปหน้า AccountPage พร้อมข้อมูลเดิม
+      if (team.removedByAdmin) {
+        const games = readGames();
+        const gameIdx = games.findIndex(
+          (g) => (g.code || "").toUpperCase() === (game.code || "").toUpperCase()
+        );
+
+        if (gameIdx !== -1) {
+          const targetTeam = (games[gameIdx].teams || []).find((t) => t.id === team.id);
+          if (targetTeam) {
+            targetTeam.removedByAdmin = false;
           }
-
-          localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
-
-          localStorage.setItem(
-            ACCOUNT_NOTICE_KEY,
-            "แอดมินได้นำทีมของท่านออกจากห้องรอเกม กรุณาตรวจสอบข้อมูลทีมและจัดทีมใหม่อีกครั้ง"
-          );
-
-          setGameData(null);
-          setCurrentRole(null);
-
-          navigate("/account", { replace: true });
-          return;
+          writeGames(games);
         }
 
-        const role =
-          team.roles?.[player.id] ||
-          team.roles?.[player.email] ||
-          me.role ||
-          null;
+        sessionStorage.removeItem(ACTIVE_GAME_CODE_KEY);
 
-        setCurrentRole(role);
-        if (activeCode) {
-          const code = activeCode.trim().toUpperCase();
-          ensureTimerInitialized(code, 600);
-        }
+        localStorage.setItem(
+          ACCOUNT_NOTICE_KEY,
+          "แอดมินได้นำทีมของท่านออกจากห้องรอเกม กรุณาตรวจสอบข้อมูลทีมและจัดทีมใหม่อีกครั้ง"
+        );
+
+        setGameData(null);
+        setCurrentRole(null);
+
+        navigate("/account", { replace: true });
+        return;
+      }
+
+      const role =
+        team.roles?.[player.id] ||
+        team.roles?.[player.email] ||
+        me.role ||
+        null;
+
+      setCurrentRole(role);
+      if (activeCode) {
+        const code = activeCode.trim().toUpperCase();
+        ensureTimerInitialized(code, 600);
+      }
     }
 
     // โหลดครั้งแรก
@@ -390,9 +400,9 @@ function WaitingListPage() {
     window.addEventListener("storage", onGames);
 
     return () => {
-        window.removeEventListener("hbs:teams", onTeams);
-        window.removeEventListener("hbs:games", onGames);
-        window.removeEventListener("storage", onGames);
+      window.removeEventListener("hbs:teams", onTeams);
+      window.removeEventListener("hbs:games", onGames);
+      window.removeEventListener("storage", onGames);
     };
   }, []);
 
@@ -406,7 +416,7 @@ function WaitingListPage() {
 
   // ✅ เพิ่มตรงนี้ครับ (ต่อจาก useEffect ตัวโหลดข้อมูลหลัก)
   useEffect(() => {
-    const code = (localStorage.getItem(ACTIVE_GAME_CODE_KEY) || "").trim().toUpperCase();
+    const code = (sessionStorage.getItem(ACTIVE_GAME_CODE_KEY) || "").trim().toUpperCase();
     if (!code) return;
 
     const syncNow = () => {
@@ -508,7 +518,7 @@ function WaitingListPage() {
     if (!window.confirm("คุณต้องการกลับไปแก้ไขรายละเอียดทีมใช่หรือไม่?")) return;
 
     const pid = currentPlayer?.id;
-    const activeCode = localStorage.getItem(ACTIVE_GAME_CODE_KEY);
+    const activeCode = sessionStorage.getItem(ACTIVE_GAME_CODE_KEY);
 
     if (pid && activeCode) {
       const games = readGames();
@@ -525,9 +535,9 @@ function WaitingListPage() {
           const team = game.teams?.find(t => t.id === myTeamId);
           if (team) {
             // 🔥 หัวใจสำคัญ: เปลี่ยนสถานะทีมให้กลับเป็น Draft เพื่อให้หน้า Account ปลดล็อกให้แก้ไข
-            team.isDraft = true; 
+            team.isDraft = true;
             // ลบเวลาที่กดยืนยันออก (ถ้ามี)
-            delete team.confirmedAt; 
+            delete team.confirmedAt;
           }
         }
 
@@ -537,7 +547,7 @@ function WaitingListPage() {
     }
 
     // 🚩 ลบแค่ Active Code เพื่อให้หน้า Account ถามรหัสใหม่ (หรือจะค้างไว้ก็ได้)
-    localStorage.removeItem(ACTIVE_GAME_CODE_KEY);
+    sessionStorage.removeItem(ACTIVE_GAME_CODE_KEY);
 
     // 🚩 สำคัญ: ลบ Draft ส่วนตัวของผู้เล่นเพื่อให้ AccountPage ไปดึงข้อมูลสดจากก้อนใหญ่
     if (pid) {
@@ -569,7 +579,7 @@ function WaitingListPage() {
 
     // หา team ของเรา (เพื่อไม่ให้โดนกรองทิ้ง)
     const me = (gameData.players || []).find(
-        (p) => p.playerId === currentPlayer?.id
+      (p) => p.playerId === currentPlayer?.id
     );
     const myTeamId = me?.teamId || null;
 
@@ -586,49 +596,49 @@ function WaitingListPage() {
 
     // 3) map -> row data (✅ members ต้องส่ง t.id)
     const realTeams = filteredTeams.map((t) => {
-        const members = getTeamMemberCount(gameData, t);
-        const captain = getCEOName(gameData, t);
+      const members = getTeamMemberCount(gameData, t);
+      const captain = getCEOName(gameData, t);
 
-        const teamName =
+      const teamName =
         (t.name || "").trim() ||
         (t.teamName || "").trim() ||
         (t.title || "").trim() ||
         "ทีมไม่มีชื่อ";
 
-        const confirmed = isTeamConfirmed(t);
+      const confirmed = isTeamConfirmed(t);
 
-        return {
-          teamId: t.id,
-          name: teamName,
-          captain,
-          members,
-          confirmedAt: t.confirmedAt
-            ? new Date(t.confirmedAt).getTime()
-            : (confirmed ? Date.now() : Number.POSITIVE_INFINITY), // ✅ ให้ทีมที่ confirmed แต่ไม่มี confirmedAt ไม่โดนจัดท้ายสุดตลอด
-          isUser: false,
-          statusText: confirmed ? "ยืนยัน" : "รอยืนยัน",
-        };
+      return {
+        teamId: t.id,
+        name: teamName,
+        captain,
+        members,
+        confirmedAt: t.confirmedAt
+          ? new Date(t.confirmedAt).getTime()
+          : (confirmed ? Date.now() : Number.POSITIVE_INFINITY), // ✅ ให้ทีมที่ confirmed แต่ไม่มี confirmedAt ไม่โดนจัดท้ายสุดตลอด
+        isUser: false,
+        statusText: confirmed ? "ยืนยัน" : "รอยืนยัน",
+      };
     });
 
     // 4) mark ทีมเรา + สถานะตามปุ่มยืนยันของหน้านี้
     const realTeamsMarked = realTeams.map((r) => {
-        if (myTeamId && r.teamId === myTeamId) {
+      if (myTeamId && r.teamId === myTeamId) {
         return {
-            ...r,
-            isUser: true,
-            name: `${r.name} (You)`,
-            statusText: isUserReady ? "ยืนยัน" : "รอยืนยัน",
+          ...r,
+          isUser: true,
+          name: `${r.name} (You)`,
+          statusText: isUserReady ? "ยืนยัน" : "รอยืนยัน",
         };
-        }
-        return r;
+      }
+      return r;
     });
 
     // 5) เรียงตาม confirmedAt
     realTeamsMarked.sort(
-        (a, b) => (a.confirmedAt || Infinity) - (b.confirmedAt || Infinity)
+      (a, b) => (a.confirmedAt || Infinity) - (b.confirmedAt || Infinity)
     );
 
-   return realTeamsMarked.map((t, idx) => ({ ...t, rank: idx + 1 })); 
+    return realTeamsMarked.map((t, idx) => ({ ...t, rank: idx + 1 }));
   }, [gameData, currentPlayer?.id, isUserReady]);
 
   const gameRules = [
@@ -663,14 +673,14 @@ function WaitingListPage() {
           <button
             className={`btn-exit-room ${!isHost ? "btn-disabled" : ""}`}
             onClick={() => {
-                if (!isHost) return;
-                handleExit(); // ✅ สำคัญ: ต้องล้าง ACTIVE_GAME_CODE + set isDraft ก่อน
+              if (!isHost) return;
+              handleExit(); // ✅ สำคัญ: ต้องล้าง ACTIVE_GAME_CODE + set isDraft ก่อน
             }}
             disabled={!isHost}
-            >
+          >
             <LogOut size={16} />
             {isHost ? "แก้ไขทีม" : "หัวหน้าทีมเท่านั้น"}
-            </button>
+          </button>
           <button className="lang-btn">
             <Globe size={16} /> TH
           </button>
@@ -703,18 +713,18 @@ function WaitingListPage() {
           <div className="session-stats-grid">
             {/* จำนวนรอบการเล่น */}
             <div className="stat-box-white">
-            <span className="stat-label">จำนวนรอบการเล่น</span>
-            <span className="stat-value">{getTotalRounds(gameData)}</span>
+              <span className="stat-label">จำนวนรอบการเล่น</span>
+              <span className="stat-value">{getTotalRounds(gameData)}</span>
             </div>
 
             <div className="stat-box-white">
-            <span className="stat-label">ผู้ดูแล</span>
-            <span className="stat-value">{getAdminName(gameData)}</span>
+              <span className="stat-label">ผู้ดูแล</span>
+              <span className="stat-value">{getAdminName(gameData)}</span>
             </div>
 
             <div className="stat-box-white">
-            <span className="stat-label">ชื่อเกม</span>
-            <span className="stat-value">{getGameName(gameData)}</span>
+              <span className="stat-label">ชื่อเกม</span>
+              <span className="stat-value">{getGameName(gameData)}</span>
             </div>
 
             {/* Timer Box */}

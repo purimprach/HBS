@@ -2,8 +2,8 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 
 export default function ProtectedAdminRoute({ children }) {
-  const token = localStorage.getItem("hbs_admin_token");
-  const admin = localStorage.getItem("hbs_current_admin");
+  const token = sessionStorage.getItem("hbs_admin_token");
+  const admin = sessionStorage.getItem("hbs_current_admin");
 
   if (!token || !admin) {
     return <Navigate to="/admin-login" replace />;

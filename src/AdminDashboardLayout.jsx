@@ -56,8 +56,8 @@ export default function AdminDashboardLayout() {
     location.pathname.startsWith("/admin/lobby");
 
   const handleLogout = () => {
-    localStorage.removeItem("hbs_admin_token");
-    localStorage.removeItem("hbs_current_admin");
+    sessionStorage.removeItem("hbs_admin_token");
+    sessionStorage.removeItem("hbs_current_admin");
     navigate("/admin-login", { replace: true });
   };
 
